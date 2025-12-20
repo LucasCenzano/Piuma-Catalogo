@@ -2,7 +2,20 @@
 import dataService from './dataService'; // 👈 1. Importa el dataService
 
 // ✅ CÓDIGO CORRECTO
-const API_BASE_URL = process.env.REACT_APP_API_URL || '';
+// ✅ DYNAMIC API CONFIGURATION FOR MOBILE TESTING
+let API_BASE_URL = process.env.REACT_APP_API_URL || '';
+
+// If running in development and accessed via IP (not localhost), point to the IP:3001
+if (process.env.NODE_ENV === 'development' && typeof window !== 'undefined') {
+  const hostname = window.location.hostname;
+  if (hostname !== 'localhost' && hostname !== '127.0.0.1') {
+    API_BASE_URL = `http://${hostname}:3001`;
+    console.log('📱 Mobile Debugging Detected: Using API at', API_BASE_URL);
+  } else if (!API_BASE_URL) {
+    // Fallback for localhost if env var is missing
+    API_BASE_URL = 'http://localhost:3001';
+  }
+}
 
 
 class AuthService {

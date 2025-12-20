@@ -25,12 +25,7 @@ const AdminVentas = () => {
   // Estado para búsqueda de productos
   const [searchTerm, setSearchTerm] = useState('');
 
-  // Estados para el formulario de item
-  const [newItem, setNewItem] = useState({
-    product_id: '',
-    quantity: 1,
-    unit_price: ''
-  });
+
 
   // Estados para filtros y estadísticas
   const [stats, setStats] = useState(null);
@@ -132,25 +127,6 @@ const AdminVentas = () => {
       payment_method: ''
     });
     // loadSales() se disparará automáticamente por el cambio en el estado
-  };
-
-  const handleNewItemChange = (field, value) => {
-    setNewItem(prev => ({
-      ...prev,
-      [field]: value
-    }));
-
-    // Auto-completar precio cuando se selecciona un producto
-    if (field === 'product_id' && value) {
-      const selectedProduct = products.find(p => p.id === parseInt(value));
-      if (selectedProduct && selectedProduct.price) {
-        const numericPrice = selectedProduct.price.replace(/[^\d]/g, '');
-        setNewItem(prev => ({
-          ...prev,
-          unit_price: numericPrice || ''
-        }));
-      }
-    }
   };
 
   // Función simplificada para agregar desde el grid
