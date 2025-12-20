@@ -531,17 +531,7 @@ app.delete('/api/admin/products/:id',
 // ========== RUTAS DE VENTAS (PROTEGIDAS) ==========
 
 
-console.log('🔗 Conectando rutas de ventas y estadísticas...');
-const salesHandler = require('./api/sales.js');
-const salesStatsHandler = require('./api/sales-stats.js');
 
-// Cualquier petición a /api/sales será manejada por el archivo api/sales.js
-app.all('/api/sales', salesHandler);
-
-// Cualquier petición a /api/sales-stats será manejada por api/sales-stats.js
-app.all('/api/sales-stats', salesStatsHandler);
-
-console.log('✅ Rutas de ventas y estadísticas conectadas.');
 
 // ========== UTILIDADES ==========
 
