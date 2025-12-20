@@ -214,7 +214,12 @@ app.get('/api/products', async (req, res) => {
 
     const products = result.rows.map(p => {
       if (typeof p.images_url === 'string') {
-        p.images_url = JSON.parse(p.images_url);
+        try {
+          p.images_url = JSON.parse(p.images_url);
+        } catch (e) {
+          console.error(`Error parsing images for product ${p.id}:`, e);
+          p.images_url = [];
+        }
       }
       return p;
     });
@@ -242,7 +247,12 @@ app.get('/api/admin/products',
 
       const products = result.rows.map(p => {
         if (typeof p.images_url === 'string') {
-          p.images_url = JSON.parse(p.images_url);
+          try {
+            p.images_url = JSON.parse(p.images_url);
+          } catch (e) {
+            console.error(`Error parsing images for product ${p.id}:`, e);
+            p.images_url = [];
+          }
         }
         return p;
       });
