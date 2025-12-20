@@ -33,6 +33,7 @@ async function query(text, params) {
 }
 
 // ========== MIDDLEWARE GLOBAL ==========
+app.set('trust proxy', 1); // Confía en el primer proxy (Vercel)
 app.use(helmet()); // Seguridad headers HTTP
 app.use(cors(securityConfig.cors));
 app.use(express.json({ limit: '10mb' }));
