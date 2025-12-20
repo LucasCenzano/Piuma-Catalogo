@@ -125,8 +125,11 @@ function Catalog({ bags, openModal, selectedCategory }) {
 
     const sorted = [...filtered].sort((a, b) => {
       const parsePrice = (priceStr) => {
-        if (!priceStr || typeof priceStr !== 'string') return 0;
-        return parseFloat(priceStr.replace(/[^0-9,.-]+/g, "").replace(",", "."));
+        if (!priceStr) return 0;
+        let clean = priceStr.toString().replace(/[^0-9,.-]/g, '');
+        clean = clean.replace(/\./g, '');
+        clean = clean.replace(',', '.');
+        return parseFloat(clean) || 0;
       };
 
       switch (sortOrder) {
@@ -257,13 +260,20 @@ function Catalog({ bags, openModal, selectedCategory }) {
             let originalPrice = null;
 
             if (hasDiscount && bag.price) {
-              const numericPrice = parseFloat(bag.price.replace(/[^0-9,.-]+/g, "").replace(",", ".")) || 0;
+              // 1. Clean string: remove currency symbols, spaces, etc., but keep digits, commas, dots, minus
+              // 2. Argentine format: "10.000,00". Remove dots (thousands), replace comma with dot (decimal).
+              let cleanPrice = bag.price.toString().replace(/[^0-9,.-]/g, '');
+              cleanPrice = cleanPrice.replace(/\./g, ''); // Remove thousands separator
+              cleanPrice = cleanPrice.replace(',', '.'); // Replace decimal separator
+
+              const numericPrice = parseFloat(cleanPrice) || 0;
+
               if (numericPrice > 0) {
                 const discountAmount = numericPrice * (discountPct / 100);
                 const newPriceVal = numericPrice - discountAmount;
-                // Format back to currency string approximate
+                // Format back to currency string
                 originalPrice = bag.price;
-                finalPrice = `$${newPriceVal.toLocaleString('es-AR', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
+                finalPrice = `$${newPriceVal.toLocaleString('es-AR', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`;
               }
             }
 
