@@ -3,7 +3,7 @@ import dataService from './dataService'; // 👈 1. Importa el dataService
 
 // ✅ CÓDIGO CORRECTO
 const API_BASE_URL = process.env.REACT_APP_API_URL || '';
- 
+
 
 class AuthService {
   constructor() {
@@ -44,11 +44,11 @@ class AuthService {
     try {
       console.log('🔐 Intentando login...');
       console.log('🌐 URL de API:', `${API_BASE_URL}/api/auth`);
-      
+
       // Limpiar posibles tokens anteriores para evitar headers grandes
       localStorage.removeItem('authToken');
       localStorage.removeItem('user');
-      
+
       const response = await fetch(`${API_BASE_URL}/api/auth`, {
         method: 'POST',
         headers: {
@@ -68,7 +68,7 @@ class AuthService {
         console.error('❌ Respuesta no es JSON:', contentType);
         const textResponse = await response.text();
         console.error('📄 Contenido de respuesta:', textResponse.substring(0, 500));
-        
+
         throw new Error(`Servidor devolvió respuesta inválida (${response.status}). Verifica que las APIs estén funcionando.`);
       }
 
@@ -82,11 +82,11 @@ class AuthService {
         // Guardar en localStorage
         localStorage.setItem('authToken', data.token);
         localStorage.setItem('user', JSON.stringify(data.user));
-        
+
         // Actualizar instancia
         this.token = data.token;
         this.user = data.user;
-        
+
         console.log('✅ Login exitoso');
         return { success: true, user: data.user };
       } else {
@@ -94,7 +94,7 @@ class AuthService {
       }
     } catch (error) {
       console.error('❌ Error en login:', error);
-      
+
       // Mensajes de error más específicos
       if (error.message.includes('Failed to fetch')) {
         throw new Error('No se puede conectar al servidor. Verifica que esté ejecutándose.');
@@ -119,44 +119,44 @@ class AuthService {
     }
   }
 
-      // ✅ CÓDIGO CORRECTO
-    isTokenExpired() {
-      const token = this.getToken();
-      if (!token) return true;
+  // ✅ CÓDIGO CORRECTO
+  isTokenExpired() {
+    const token = this.getToken();
+    if (!token) return true;
 
-      try {
-        // 1. Separar el token en sus 3 partes
-        const payloadBase64 = token.split('.')[1];
-        
-        // 2. Si no tiene una parte de payload, es inválido
-        if (!payloadBase64) {
-          return true;
-        }
+    try {
+      // 1. Separar el token en sus 3 partes
+      const payloadBase64 = token.split('.')[1];
 
-        // 3. Decodificar SOLO la parte del payload
-        const decodedJson = atob(payloadBase64);
-        
-        // 4. Convertir el JSON decodificado en un objeto
-        const decodedPayload = JSON.parse(decodedJson);
-
-        // 5. Comparar la fecha de expiración (exp) con la fecha actual
-        // La fecha 'exp' está en segundos, Date.now() en milisegundos.
-        if (decodedPayload.exp * 1000 < Date.now()) {
-          console.log('⏰ Token expirado');
-          return true;
-        }
-
-        return false;
-      } catch (error) {
-        console.error('❌ Error verificando token:', error);
-        return true; // Si hay error al decodificar, se asume que es inválido
+      // 2. Si no tiene una parte de payload, es inválido
+      if (!payloadBase64) {
+        return true;
       }
+
+      // 3. Decodificar SOLO la parte del payload
+      const decodedJson = atob(payloadBase64);
+
+      // 4. Convertir el JSON decodificado en un objeto
+      const decodedPayload = JSON.parse(decodedJson);
+
+      // 5. Comparar la fecha de expiración (exp) con la fecha actual
+      // La fecha 'exp' está en segundos, Date.now() en milisegundos.
+      if (decodedPayload.exp * 1000 < Date.now()) {
+        console.log('⏰ Token expirado');
+        return true;
+      }
+
+      return false;
+    } catch (error) {
+      console.error('❌ Error verificando token:', error);
+      return true; // Si hay error al decodificar, se asume que es inválido
     }
+  }
 
   // Realizar petición autenticada con mejor manejo de errores
   async authenticatedFetch(url, options = {}) {
     const currentToken = this.getToken();
-    
+
     if (!currentToken) {
       console.error('❌ No hay token disponible');
       throw new Error('No autorizado - Sin token');
@@ -172,8 +172,12 @@ class AuthService {
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${currentToken}`,
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0',
         ...options.headers,
       },
+      cache: 'no-store',
     };
 
     console.log('📡 Petición autenticada a:', url);
@@ -249,7 +253,7 @@ class AuthService {
       if (!productData.id) {
         throw new Error('ID del producto es requerido');
       }
-        const response = await this.authenticatedFetch(`${API_BASE_URL}/api/admin/products/${productData.id}`, {
+      const response = await this.authenticatedFetch(`${API_BASE_URL}/api/admin/products/${productData.id}`, {
         method: 'PUT',
         body: JSON.stringify(productData),
       });
@@ -261,8 +265,7 @@ class AuthService {
 
       dataService.invalidateCache(); // 👈 3. Invalida la caché aquí también
       return await response.json();
-    } catch (error)
-    {
+    } catch (error) {
       console.error('❌ Error actualizando producto:', error);
       throw error;
     }
@@ -295,7 +298,7 @@ class AuthService {
         method: 'GET',
         headers: { 'Content-Type': 'application/json' }
       });
-      
+
       console.log('📡 Estado de conexión:', response.status);
       return response.ok;
     } catch (error) {
@@ -313,22 +316,22 @@ class AuthService {
     return this.user && this.user.role === 'admin';
   }
 
-  
+
   // Agregar esta nueva función
   async verifyToken() {
     try {
       const token = this.getToken();
       const user = this.getUser();
-      
+
       if (!token || !user) {
         return false;
       }
-      
+
       if (this.isTokenExpired()) {
         this.logout();
         return false;
       }
-      
+
       return true;
     } catch (error) {
       console.error('Error verificando token:', error);

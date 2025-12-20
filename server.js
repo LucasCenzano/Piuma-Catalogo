@@ -325,6 +325,8 @@ app.put('/api/admin/products/:id',
     try {
       const { id } = req.params;
       const updates = req.body;
+      console.log('📝 Actualizando producto:', id);
+      console.log('📦 Datos recibidos:', JSON.stringify(updates, null, 2));
 
       const fields = [];
       const values = [];
