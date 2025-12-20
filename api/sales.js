@@ -168,6 +168,17 @@ module.exports = async function handler(req, res) {
             LIMIT $${paramCount} OFFSET $${paramCount + 1}
           `, queryParams);
 
+          const generalStats = await query(`
+      SELECT 
+        COUNT(*) as total_sales,
+        COALESCE(SUM(total_amount), 0) as total_revenue, -- Total vendido (teórico)
+        COALESCE(SUM(amount_paid), 0) as total_collected, -- ✅ Total cobrado (real)
+        COALESCE(SUM(total_amount) - SUM(COALESCE(amount_paid, 0)), 0) as total_pending, -- ✅ Total por cobrar
+        COALESCE(AVG(total_amount), 0) as average_sale
+      FROM sales s
+      WHERE 1=1 ${whereClause}
+    `, queryParams.slice(0, -2));
+
           // Contar total de ventas para paginación
           const countResult = await query(`
             SELECT COUNT(DISTINCT s.id) as total
@@ -328,7 +339,8 @@ module.exports = async function handler(req, res) {
         // Campos actualizables
         const updatableFields = [
           'customer_name', 'customer_lastname', 'customer_phone',
-          'customer_email', 'payment_method', 'notes'
+          'customer_email', 'payment_method', 'notes',
+          'status', 'amount_paid' // ✅ AÑADIDO: Permite editar estado y montos
         ];
 
         updatableFields.forEach(field => {

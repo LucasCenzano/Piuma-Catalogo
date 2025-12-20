@@ -29,21 +29,21 @@ function validateToken(authHeader) {
 
   try {
     const token = authHeader.substring(7); // Extrae el token después de 'Bearer '
-    
+
     // Tu token no es un JWT estándar, así que continuamos con tu lógica de decodificación
     // NOTA: Esta decodificación no es segura para producción sin una verificación de firma.
     if (token.startsWith('bearer_')) {
-        const tokenData = token.substring(7);
-        const decoded = JSON.parse(Buffer.from(tokenData, 'base64').toString());
-         if (decoded.exp && decoded.exp < Date.now()) {
-            return { valid: false, error: 'Token expirado' };
-        }
-        if (decoded.role !== 'admin') {
-            return { valid: false, error: 'Sin permisos de administrador' };
-        }
-        return { valid: true, user: decoded };
+      const tokenData = token.substring(7);
+      const decoded = JSON.parse(Buffer.from(tokenData, 'base64').toString());
+      if (decoded.exp && decoded.exp < Date.now()) {
+        return { valid: false, error: 'Token expirado' };
+      }
+      if (decoded.role !== 'admin') {
+        return { valid: false, error: 'Sin permisos de administrador' };
+      }
+      return { valid: true, user: decoded };
     }
-    
+
     // Si el token es un JWT estándar
     const payloadBase64 = token.split('.')[1];
     if (!payloadBase64) {
@@ -86,11 +86,11 @@ module.exports = async function handler(req, res) {
   // Validar token
   const authHeader = req.headers.authorization;
   const tokenValidation = validateToken(authHeader);
-  
+
   if (!tokenValidation.valid) {
-    return res.status(401).json({ 
+    return res.status(401).json({
       error: 'No autorizado',
-      details: tokenValidation.error 
+      details: tokenValidation.error
     });
   }
 
@@ -99,31 +99,33 @@ module.exports = async function handler(req, res) {
     const period = req.query.period || '30';
     const startDate = req.query.start_date;
     const endDate = req.query.end_date;
-    
+
     let dateFilter = '';
     const queryParams = [];
-    
+
     if (startDate && endDate) {
       dateFilter = 'AND s.created_at BETWEEN $1 AND $2';
       queryParams.push(startDate, endDate);
     } else {
       dateFilter = 'AND s.created_at >= CURRENT_DATE - INTERVAL \'' + period + ' days\'';
     }
-    
+
     // 1. Estadísticas generales
     const generalStats = await query(`
       SELECT 
         COUNT(*) as total_sales,
-        COALESCE(SUM(total_amount), 0) as total_revenue,
+        COALESCE(SUM(total_amount), 0) as total_revenue, -- Total vendido
+        COALESCE(SUM(amount_paid), 0) as total_collected, -- ✅ Total cobrado real
+        COALESCE(SUM(total_amount) - SUM(COALESCE(amount_paid, 0)), 0) as total_pending, -- ✅ Deuda pendiente
         COALESCE(AVG(total_amount), 0) as average_sale,
         COUNT(CASE WHEN payment_method = 'efectivo' THEN 1 END) as cash_sales,
         COUNT(CASE WHEN payment_method = 'transferencia' THEN 1 END) as transfer_sales,
-        COALESCE(SUM(CASE WHEN payment_method = 'efectivo' THEN total_amount ELSE 0 END), 0) as cash_revenue,
-        COALESCE(SUM(CASE WHEN payment_method = 'transferencia' THEN total_amount ELSE 0 END), 0) as transfer_revenue
+        COALESCE(SUM(CASE WHEN payment_method = 'efectivo' THEN amount_paid ELSE 0 END), 0) as cash_revenue, -- ✅ Usar lo pagado
+        COALESCE(SUM(CASE WHEN payment_method = 'transferencia' THEN amount_paid ELSE 0 END), 0) as transfer_revenue -- ✅ Usar lo pagado
       FROM sales s
       WHERE 1=1 ${dateFilter}
     `, queryParams);
-    
+
     // 2. Ventas por día (últimos días)
     const dailySales = await query(`
       SELECT 
@@ -136,7 +138,7 @@ module.exports = async function handler(req, res) {
       ORDER BY date DESC
       LIMIT 30
     `, queryParams);
-    
+
     // 3. Productos más vendidos
     const topProducts = await query(`
       SELECT 
@@ -155,7 +157,7 @@ module.exports = async function handler(req, res) {
       ORDER BY total_quantity_sold DESC
       LIMIT 10
     `, queryParams);
-    
+
     // 4. Ventas por categoría
     const categoryStats = await query(`
       SELECT 
@@ -170,7 +172,7 @@ module.exports = async function handler(req, res) {
       GROUP BY p.category
       ORDER BY category_revenue DESC
     `, queryParams);
-    
+
     // 5. Clientes frecuentes
     const topCustomers = await query(`
       SELECT 
@@ -188,7 +190,7 @@ module.exports = async function handler(req, res) {
       ORDER BY total_spent DESC
       LIMIT 10
     `, queryParams);
-    
+
     // 6. Métodos de pago
     const paymentMethods = await query(`
       SELECT 
@@ -201,7 +203,7 @@ module.exports = async function handler(req, res) {
       GROUP BY payment_method
       ORDER BY count DESC
     `, queryParams);
-    
+
     // 7. Ventas por hora del día
     const hourlySales = await query(`
       SELECT 
@@ -213,7 +215,7 @@ module.exports = async function handler(req, res) {
       GROUP BY EXTRACT(HOUR FROM created_at)
       ORDER BY hour
     `, queryParams);
-    
+
     // Construir respuesta
     const stats = {
       period: {
@@ -229,14 +231,14 @@ module.exports = async function handler(req, res) {
       payment_methods: paymentMethods.rows,
       hourly_distribution: hourlySales.rows
     };
-    
+
     console.log(`📊 Estadísticas de ventas consultadas por ${tokenValidation.user.username}`);
-    
+
     return res.status(200).json(stats);
-    
+
   } catch (error) {
     console.error('Error en sales-stats API:', error);
-    return res.status(500).json({ 
+    return res.status(500).json({
       error: 'Error interno del servidor',
       details: error.message
     });
