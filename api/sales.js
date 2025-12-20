@@ -256,7 +256,7 @@ module.exports = async function handler(req, res) {
             // Intentar buscar por nombre+apellido+telefono para evitar duplicados obvios
             const existingCustomer = await client.query(`
                SELECT id FROM customers 
-               WHERE first_name = $1 AND last_name = $2 
+               WHERE first_name ILIKE $1 AND last_name ILIKE $2 
                AND (phone = $3 OR ($3 IS NULL AND phone IS NULL))
              `, [customer_name.trim(), customer_lastname.trim(), customer_phone?.trim() || null]);
 
