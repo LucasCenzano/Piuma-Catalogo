@@ -6,6 +6,7 @@ import { Link } from 'react-router-dom';
 
 // Categorías válidas con íconos
 const ADMIN_SECTIONS = [
+  { id: 'sales', name: 'Ventas', icon: '💰', path: '/admin/ventas' },
   { id: 'dashboard', name: 'Tablero', icon: '📊' },
   { id: 'products', name: 'Productos', icon: '🛍️' },
   { id: 'reports', name: 'Informes', icon: '📋' },
@@ -151,6 +152,10 @@ const AdminPanel = ({ onLogout }) => {
   const [newImages, setNewImages] = useState([]);
   const [newImageUrl, setNewImageUrl] = useState('');
 
+  const [newIsFeatured, setNewIsFeatured] = useState(false);
+  const [newIsNew, setNewIsNew] = useState(false);
+  const [newDiscountPercentage, setNewDiscountPercentage] = useState(0);
+
   // Estados para edición
   const [editName, setEditName] = useState('');
   const [editPrice, setEditPrice] = useState('');
@@ -159,6 +164,9 @@ const AdminPanel = ({ onLogout }) => {
   const [editInStock, setEditInStock] = useState(true);
   const [editImages, setEditImages] = useState([]);
   const [editImageUrl, setEditImageUrl] = useState('');
+  const [editIsFeatured, setEditIsFeatured] = useState(false);
+  const [editIsNew, setEditIsNew] = useState(false);
+  const [editDiscountPercentage, setEditDiscountPercentage] = useState(0);
 
   // ✅ 2. FUNCIÓN PARA ORDENAR (corregida)
   const requestSort = (key) => {
@@ -259,7 +267,10 @@ const AdminPanel = ({ onLogout }) => {
         category: newCategory,
         description: newDescription.trim(),
         inStock: newInStock,
-        imagesUrl: newImages
+        imagesUrl: newImages,
+        isFeatured: newIsFeatured,
+        isNew: newIsNew,
+        discountPercentage: parseInt(newDiscountPercentage) || 0
       });
 
       // Limpiar formulario
@@ -270,6 +281,9 @@ const AdminPanel = ({ onLogout }) => {
       setNewInStock(true);
       setNewImages([]);
       setNewImageUrl('');
+      setNewIsFeatured(false);
+      setNewIsNew(false);
+      setNewDiscountPercentage(0);
       setShowAddForm(false);
 
       await loadProducts();
@@ -305,7 +319,10 @@ const AdminPanel = ({ onLogout }) => {
         category: editCategory,
         description: editDescription.trim(),
         inStock: editInStock,
-        imagesUrl: editImages
+        imagesUrl: editImages,
+        isFeatured: editIsFeatured,
+        isNew: editIsNew,
+        discountPercentage: parseInt(editDiscountPercentage) || 0
       });
 
       cancelEditing();
@@ -359,6 +376,9 @@ const AdminPanel = ({ onLogout }) => {
     setEditInStock(product.in_stock);
     setEditImages(Array.isArray(product.images_url) ? product.images_url : []);
     setEditImageUrl('');
+    setEditIsFeatured(product.is_featured || false);
+    setEditIsNew(product.is_new || false);
+    setEditDiscountPercentage(product.discount_percentage || 0);
   };
 
   const cancelEditing = () => {
@@ -370,6 +390,9 @@ const AdminPanel = ({ onLogout }) => {
     setEditInStock(true);
     setEditImages([]);
     setEditImageUrl('');
+    setEditIsFeatured(false);
+    setEditIsNew(false);
+    setEditDiscountPercentage(0);
   };
 
   const addNewImage = () => {
@@ -871,6 +894,56 @@ const AdminPanel = ({ onLogout }) => {
                       />
                       En Stock
                     </label>
+                  </div>
+
+                  <div style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+                    gap: '1.5rem',
+                    marginBottom: '1.5rem',
+                    padding: '1rem',
+                    background: '#f8f9fa',
+                    borderRadius: '12px',
+                    border: '1px solid #e9ecef'
+                  }}>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', fontFamily: 'Montserrat, sans-serif' }}>
+                      <input
+                        type="checkbox"
+                        checked={newIsNew}
+                        onChange={(e) => setNewIsNew(e.target.checked)}
+                        style={{ width: '18px', height: '18px', accentColor: '#28a745' }}
+                      />
+                      🆕 Nuevo
+                    </label>
+
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', fontFamily: 'Montserrat, sans-serif' }}>
+                      <input
+                        type="checkbox"
+                        checked={newIsFeatured}
+                        onChange={(e) => setNewIsFeatured(e.target.checked)}
+                        style={{ width: '18px', height: '18px', accentColor: '#ffc107' }}
+                      />
+                      ⭐ Destacado
+                    </label>
+
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                      <span style={{ fontFamily: 'Montserrat, sans-serif' }}>🏷️ Oferta (%):</span>
+                      <input
+                        type="number"
+                        min="0"
+                        max="100"
+                        placeholder="0"
+                        value={newDiscountPercentage}
+                        onChange={(e) => setNewDiscountPercentage(e.target.value)}
+                        style={{
+                          width: '80px',
+                          padding: '0.5rem',
+                          borderRadius: '8px',
+                          border: '1px solid #ced4da',
+                          outline: 'none'
+                        }}
+                      />
+                    </div>
                   </div>
 
                   <textarea
@@ -1465,6 +1538,56 @@ const AdminPanel = ({ onLogout }) => {
                                               En Stock
                                             </label>
 
+                                            <div style={{
+                                              display: 'grid',
+                                              gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+                                              gap: '1rem',
+                                              padding: '1rem',
+                                              background: '#fff',
+                                              borderRadius: '12px',
+                                              border: '1px solid #e9ecef',
+                                              marginTop: '0.5rem'
+                                            }}>
+                                              <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', fontFamily: 'Montserrat, sans-serif' }}>
+                                                <input
+                                                  type="checkbox"
+                                                  checked={editIsNew}
+                                                  onChange={(e) => setEditIsNew(e.target.checked)}
+                                                  style={{ width: '18px', height: '18px', accentColor: '#28a745' }}
+                                                />
+                                                🆕 Nuevo
+                                              </label>
+
+                                              <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', fontFamily: 'Montserrat, sans-serif' }}>
+                                                <input
+                                                  type="checkbox"
+                                                  checked={editIsFeatured}
+                                                  onChange={(e) => setEditIsFeatured(e.target.checked)}
+                                                  style={{ width: '18px', height: '18px', accentColor: '#ffc107' }}
+                                                />
+                                                ⭐ Destacado
+                                              </label>
+
+                                              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                                <span style={{ fontFamily: 'Montserrat, sans-serif' }}>🏷️ Oferta (%):</span>
+                                                <input
+                                                  type="number"
+                                                  min="0"
+                                                  max="100"
+                                                  placeholder="0"
+                                                  value={editDiscountPercentage}
+                                                  onChange={(e) => setEditDiscountPercentage(e.target.value)}
+                                                  style={{
+                                                    width: '80px',
+                                                    padding: '0.5rem',
+                                                    borderRadius: '8px',
+                                                    border: '1px solid #ced4da',
+                                                    outline: 'none'
+                                                  }}
+                                                />
+                                              </div>
+                                            </div>
+
                                             <textarea
                                               value={editDescription}
                                               onChange={(e) => setEditDescription(e.target.value)}
@@ -1662,9 +1785,25 @@ const AdminPanel = ({ onLogout }) => {
                                 {VALID_CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
                               </select>
                               <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.5rem', background: '#f8f9fa', borderRadius: '8px' }}>
-                                <input type="checkbox" checked={editInStock} onChange={(e) => setEditInStock(e.target.checked)} style={{ width: '20px', height: '20px' }} />
+                                <input type="checkbox" checked={editInStock} onChange={(e) => setEditInStock(e.target.checked)} style={{ width: '20px', height: '20px', accentColor: '#d4af37' }} />
                                 <span>En Stock</span>
                               </div>
+
+                              <div style={{ padding: '0.8rem', background: '#f8f9fa', borderRadius: '8px', border: '1px solid #e9ecef', display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
+                                <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                  <input type="checkbox" checked={editIsNew} onChange={(e) => setEditIsNew(e.target.checked)} style={{ width: '20px', height: '20px', accentColor: '#28a745' }} />
+                                  <span>🆕 Nuevo</span>
+                                </label>
+                                <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                  <input type="checkbox" checked={editIsFeatured} onChange={(e) => setEditIsFeatured(e.target.checked)} style={{ width: '20px', height: '20px', accentColor: '#ffc107' }} />
+                                  <span>⭐ Destacado</span>
+                                </label>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                  <span>🏷️ Oferta (%):</span>
+                                  <input type="number" value={editDiscountPercentage} onChange={(e) => setEditDiscountPercentage(e.target.value)} placeholder="0" style={{ padding: '0.5rem', border: '1px solid #ddd', borderRadius: '8px', width: '60px' }} />
+                                </div>
+                              </div>
+
                               <textarea value={editDescription} onChange={(e) => setEditDescription(e.target.value)} placeholder="Descripción" rows={3} style={{ padding: '0.8rem', border: '1px solid #ddd', borderRadius: '8px', width: '100%', fontSize: '16px' }} />
 
                               {/* Sección de Imágenes en Móvil */}
@@ -1983,7 +2122,13 @@ const AdminPanel = ({ onLogout }) => {
             {ADMIN_SECTIONS.map(section => (
               <button
                 key={section.id}
-                onClick={() => setActiveSection(section.id)}
+                onClick={() => {
+                  if (section.path) {
+                    window.location.href = section.path;
+                  } else {
+                    setActiveSection(section.id);
+                  }
+                }}
                 style={{
                   background: activeSection === section.id
                     ? 'linear-gradient(135deg, #d4af37 0%, #c19b26 100%)'
@@ -2123,8 +2268,12 @@ const AdminPanel = ({ onLogout }) => {
                 <button
                   key={section.id}
                   onClick={() => {
-                    setActiveSection(section.id);
-                    setMobileMenuOpen(false);
+                    if (section.path) {
+                      window.location.href = section.path;
+                    } else {
+                      setActiveSection(section.id);
+                      setMobileMenuOpen(false);
+                    }
                   }}
                   style={{
                     background: activeSection === section.id

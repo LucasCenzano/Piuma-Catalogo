@@ -52,7 +52,7 @@ if (process.env.NODE_ENV === 'development') {
 app.post('/api/auth', loginLimiter, loginValidation, async (req, res) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
-    return res.status(400).json({ 
+    return res.status(400).json({
       error: 'Datos inválidos',
       details: errors.array()
     });
@@ -67,7 +67,7 @@ app.post('/api/auth', loginLimiter, loginValidation, async (req, res) => {
     );
 
     if (userResult.rows.length === 0) {
-      return res.status(401).json({ 
+      return res.status(401).json({
         error: 'Credenciales inválidas',
         code: 'INVALID_CREDENTIALS'
       });
@@ -76,16 +76,16 @@ app.post('/api/auth', loginLimiter, loginValidation, async (req, res) => {
     const user = userResult.rows[0];
 
     if (!user.is_active) {
-      return res.status(403).json({ 
+      return res.status(403).json({
         error: 'Cuenta desactivada',
         code: 'ACCOUNT_DISABLED'
       });
     }
 
     const isValidPassword = await bcrypt.compare(password, user.password_hash);
-    
+
     if (!isValidPassword) {
-      return res.status(401).json({ 
+      return res.status(401).json({
         error: 'Credenciales inválidas',
         code: 'INVALID_CREDENTIALS'
       });
@@ -102,7 +102,7 @@ app.post('/api/auth', loginLimiter, loginValidation, async (req, res) => {
       email: user.email,
       role: user.role
     };
-    
+
     const accessToken = generateAccessToken(userData);
     const refreshToken = generateRefreshToken(userData);
 
@@ -115,7 +115,7 @@ app.post('/api/auth', loginLimiter, loginValidation, async (req, res) => {
 
   } catch (error) {
     console.error('Error en autenticación:', error);
-    res.status(500).json({ 
+    res.status(500).json({
       error: 'Error interno del servidor',
       code: 'INTERNAL_ERROR'
     });
@@ -134,16 +134,16 @@ app.get('/api/auth/verify', authenticate, (req, res) => {
 app.post('/api/auth/change-password', authenticate, async (req, res) => {
   try {
     const { currentPassword, newPassword } = req.body;
-    
+
     if (!currentPassword || !newPassword) {
-      return res.status(400).json({ 
-        error: 'Contraseñas requeridas' 
+      return res.status(400).json({
+        error: 'Contraseñas requeridas'
       });
     }
 
     if (newPassword.length < 8) {
-      return res.status(400).json({ 
-        error: 'Nueva contraseña debe tener mínimo 8 caracteres' 
+      return res.status(400).json({
+        error: 'Nueva contraseña debe tener mínimo 8 caracteres'
       });
     }
 
@@ -157,13 +157,13 @@ app.post('/api/auth/change-password', authenticate, async (req, res) => {
     }
 
     const isCurrentValid = await bcrypt.compare(
-      currentPassword, 
+      currentPassword,
       userResult.rows[0].password_hash
     );
-    
+
     if (!isCurrentValid) {
-      return res.status(401).json({ 
-        error: 'Contraseña actual incorrecta' 
+      return res.status(401).json({
+        error: 'Contraseña actual incorrecta'
       });
     }
 
@@ -174,9 +174,9 @@ app.post('/api/auth/change-password', authenticate, async (req, res) => {
       [newHash, req.user.id]
     );
 
-    res.json({ 
-      success: true, 
-      message: 'Contraseña actualizada' 
+    res.json({
+      success: true,
+      message: 'Contraseña actualizada'
     });
 
   } catch (error) {
@@ -194,30 +194,31 @@ app.get('/api/products', async (req, res) => {
         'SELECT * FROM products WHERE id = $1',
         [parseInt(req.query.id)]
       );
-      
+
       if (result.rows.length === 0) {
         return res.status(404).json({ error: 'Producto no encontrado' });
       }
-      
+
       const product = result.rows[0];
       if (typeof product.images_url === 'string') {
         product.images_url = JSON.parse(product.images_url);
       }
-      
+
       return res.json(product);
     }
 
+    // UPDATE: Order by is_new DESC, then is_featured DESC, then category, then name
     const result = await query(
-      'SELECT * FROM products WHERE is_active = true ORDER BY category, name'
+      'SELECT * FROM products WHERE is_active = true ORDER BY is_new DESC, is_featured DESC, category, name'
     );
-    
+
     const products = result.rows.map(p => {
       if (typeof p.images_url === 'string') {
         p.images_url = JSON.parse(p.images_url);
       }
       return p;
     });
-    
+
     res.json(products);
 
   } catch (error) {
@@ -229,22 +230,23 @@ app.get('/api/products', async (req, res) => {
 // ========== RUTAS ADMIN (PROTEGIDAS) ==========
 
 // Obtener productos (admin)
-app.get('/api/admin/products', 
-  authenticate, 
-  requireRole('admin'), 
+app.get('/api/admin/products',
+  authenticate,
+  requireRole('admin'),
   async (req, res) => {
     try {
+      // UPDATE: Same sort order for admin
       const result = await query(
-        'SELECT * FROM products WHERE is_active = true ORDER BY category, name'
+        'SELECT * FROM products WHERE is_active = true ORDER BY is_new DESC, is_featured DESC, category, name'
       );
-      
+
       const products = result.rows.map(p => {
         if (typeof p.images_url === 'string') {
           p.images_url = JSON.parse(p.images_url);
         }
         return p;
       });
-      
+
       res.json(products);
     } catch (error) {
       console.error('Error en admin/products:', error);
@@ -261,14 +263,17 @@ app.post('/api/admin/products',
   async (req, res) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
-      return res.status(400).json({ 
+      return res.status(400).json({
         error: 'Datos inválidos',
         details: errors.array()
       });
     }
 
     try {
-      const { name, price, category, description, inStock, imagesUrl } = req.body;
+      const {
+        name, price, category, description, inStock, imagesUrl,
+        isFeatured, isNew, discountPercentage
+      } = req.body;
 
       const maxIdResult = await query(
         'SELECT COALESCE(MAX(id), 0) + 1 as next_id FROM products'
@@ -276,8 +281,11 @@ app.post('/api/admin/products',
       const nextId = maxIdResult.rows[0].next_id;
 
       const result = await query(`
-        INSERT INTO products (id, name, price, category, description, in_stock, images_url)
-        VALUES ($1, $2, $3, $4, $5, $6, $7)
+        INSERT INTO products (
+          id, name, price, category, description, in_stock, images_url,
+          is_featured, is_new, discount_percentage
+        )
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
         RETURNING *
       `, [
         nextId,
@@ -286,7 +294,10 @@ app.post('/api/admin/products',
         category,
         description || '',
         inStock !== undefined ? inStock : true,
-        JSON.stringify(imagesUrl || [])
+        JSON.stringify(imagesUrl || []),
+        isFeatured || false,
+        isNew || false,
+        discountPercentage || 0
       ]);
 
       const product = result.rows[0];
@@ -319,22 +330,29 @@ app.put('/api/admin/products/:id',
       const values = [];
       let paramCount = 1;
 
-      const allowedFields = ['name', 'price', 'category', 'description', 'inStock', 'imagesUrl'];
-      
+      const allowedFields = [
+        'name', 'price', 'category', 'description', 'inStock', 'imagesUrl',
+        'isFeatured', 'isNew', 'discountPercentage'
+      ];
+
       for (const field of allowedFields) {
         if (updates[field] !== undefined) {
-          const dbField = field === 'inStock' ? 'in_stock' 
-                        : field === 'imagesUrl' ? 'images_url' 
-                        : field;
-          
-          fields.push(`${dbField} = $${paramCount}`);
-          
-          if (field === 'imagesUrl') {
-            values.push(JSON.stringify(updates[field]));
-          } else {
-            values.push(updates[field]);
+          let dbField = field;
+          let value = updates[field];
+
+          // Map field names to DB columns
+          if (field === 'inStock') dbField = 'in_stock';
+          else if (field === 'imagesUrl') {
+            dbField = 'images_url';
+            value = JSON.stringify(value);
           }
-          
+          else if (field === 'isFeatured') dbField = 'is_featured';
+          else if (field === 'isNew') dbField = 'is_new';
+          else if (field === 'discountPercentage') dbField = 'discount_percentage';
+
+          fields.push(`${dbField} = $${paramCount}`);
+          values.push(value);
+
           paramCount++;
         }
       }
@@ -393,20 +411,20 @@ app.delete('/api/admin/products/:id',
       }
 
       // Cambiamos el mensaje de éxito
-      res.json({ 
+      res.json({
         message: 'Producto desactivado exitosamente',
         deactivatedProduct: result.rows[0]
       });
 
     } catch (error) {
       console.error('Error desactivando producto:', error);
-      
+
       // ✅ AÑADIMOS MANEJO DE ERROR ESPECÍFICO
       // Si el error es por una foreign key (código 23503 de PostgreSQL)...
       if (error.code === '23503') {
         // Devolvemos un error 409 Conflict, que es más descriptivo
-        return res.status(409).json({ 
-          error: 'Este producto no se puede modificar porque está asociado a una o más ventas.' 
+        return res.status(409).json({
+          error: 'Este producto no se puede modificar porque está asociado a una o más ventas.'
         });
       }
 
@@ -436,13 +454,13 @@ console.log('✅ Rutas de ventas y estadísticas conectadas.');
 app.get('/api/health', async (req, res) => {
   try {
     const result = await query('SELECT NOW() as current_time');
-    res.json({ 
+    res.json({
       status: 'OK',
       database: 'connected',
       time: result.rows[0].current_time
     });
   } catch (error) {
-    res.status(500).json({ 
+    res.status(500).json({
       status: 'ERROR',
       database: 'disconnected',
       error: error.message
@@ -453,7 +471,7 @@ app.get('/api/health', async (req, res) => {
 // Manejo de errores global
 app.use((err, req, res, next) => {
   console.error('Error no manejado:', err);
-  res.status(500).json({ 
+  res.status(500).json({
     error: 'Error interno del servidor',
     ...(process.env.NODE_ENV === 'development' && { details: err.message })
   });

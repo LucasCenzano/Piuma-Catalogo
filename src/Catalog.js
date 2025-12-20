@@ -243,7 +243,29 @@ function Catalog({ bags, openModal, selectedCategory }) {
             const allImages = getAllImages(bag);
             const currentImage = getProductImage(bag);
             const currentIndex = getCurrentImageIndex(bag.id);
-            const isInStock = bag.inStock === true;
+            // API returns snake_case for DB columns, but verify if you use camelCase adapter.
+            // Based on server.js, raw DB rows are returned. So it is in_stock, is_new, is_featured, discount_percentage.
+            const isInStock = bag.in_stock !== false; // Default true if undefined, but explicit DB logic usually returns boolean
+
+            const isNew = bag.is_new;
+            const isFeatured = bag.is_featured;
+            const discountPct = bag.discount_percentage || 0;
+            const hasDiscount = discountPct > 0;
+
+            // Price calculation logic
+            let finalPrice = bag.price;
+            let originalPrice = null;
+
+            if (hasDiscount && bag.price) {
+              const numericPrice = parseFloat(bag.price.replace(/[^0-9,.-]+/g, "").replace(",", ".")) || 0;
+              if (numericPrice > 0) {
+                const discountAmount = numericPrice * (discountPct / 100);
+                const newPriceVal = numericPrice - discountAmount;
+                // Format back to currency string approximate
+                originalPrice = bag.price;
+                finalPrice = `$${newPriceVal.toLocaleString('es-AR', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
+              }
+            }
 
             return (
               <div key={bag.id} className="product-card">
@@ -255,6 +277,26 @@ function Catalog({ bags, openModal, selectedCategory }) {
                     loading={index < 4 ? "eager" : "lazy"}
                     onClick={() => currentImage && openModal(currentImage, bag.name, allImages, currentIndex)}
                   />
+
+                  {/* Badges Overlay */}
+                  <div className="product-badges" style={{ position: 'absolute', top: '10px', left: '10px', display: 'flex', flexDirection: 'column', gap: '5px', zIndex: 2 }}>
+                    {isNew && (
+                      <span style={{ backgroundColor: '#28a745', color: 'white', padding: '4px 8px', borderRadius: '4px', fontSize: '0.8rem', fontWeight: 'bold', boxShadow: '0 2px 4px rgba(0,0,0,0.2)' }}>
+                        NUEVO
+                      </span>
+                    )}
+                    {isFeatured && (
+                      <span style={{ backgroundColor: '#ffc107', color: '#333', padding: '4px 8px', borderRadius: '4px', fontSize: '0.8rem', fontWeight: 'bold', boxShadow: '0 2px 4px rgba(0,0,0,0.2)' }}>
+                        DESTACADO
+                      </span>
+                    )}
+                    {hasDiscount && (
+                      <span style={{ backgroundColor: '#dc3545', color: 'white', padding: '4px 8px', borderRadius: '4px', fontSize: '0.8rem', fontWeight: 'bold', boxShadow: '0 2px 4px rgba(0,0,0,0.2)' }}>
+                        {discountPct}% OFF
+                      </span>
+                    )}
+                  </div>
+
                   {allImages.length > 1 && (
                     <>
                       <button className="image-nav-btn prev-btn" onClick={(e) => handlePrevImage(e, bag.id, allImages.length)}>‹</button>
@@ -266,13 +308,24 @@ function Catalog({ bags, openModal, selectedCategory }) {
                 <div className="product-info">
                   <h3 className="product-name">{bag.name}</h3>
                   <p className="product-description">{bag.description || 'Sin descripción'}</p>
-                  <div className="product-details">
-                    {bag.price && <p className="product-price">{bag.price}</p>}
-                    <span className={`stock-status ${isInStock ? 'in-stock' : 'out-of-stock'}`}>
+                  <div className="product-details" style={{ flexDirection: 'column', alignItems: 'flex-start', gap: '5px' }}>
+
+                    <div className="price-container">
+                      {hasDiscount ? (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                          <span style={{ textDecoration: 'line-through', color: '#999', fontSize: '0.9rem' }}>{originalPrice}</span>
+                          <span className="product-price" style={{ color: '#dc3545' }}>{finalPrice}</span>
+                        </div>
+                      ) : (
+                        bag.price && <p className="product-price">{bag.price}</p>
+                      )}
+                    </div>
+
+                    <span className={`stock-status ${isInStock ? 'in-stock' : 'out-of-stock'}`} style={{ marginTop: '5px' }}>
                       {isInStock ? '✓ En Stock' : '✗ Sin Stock'}
                     </span>
                   </div>
-                  <p className="product-category">{bag.category}</p>
+                  <p className="product-category" style={{ marginTop: '10px' }}>{bag.category}</p>
                 </div>
               </div>
             );
