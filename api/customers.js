@@ -85,11 +85,38 @@ module.exports = async function handler(req, res) {
         const params = [];
 
         if (search) {
-          queryText += ` WHERE c.first_name ILIKE $1 OR c.last_name ILIKE $1 OR c.phone ILIKE $1 OR c.email ILIKE $1`;
+          queryText += ` WHERE (
+            c.first_name ILIKE $1 OR 
+            c.last_name ILIKE $1 OR 
+            CONCAT(c.first_name, ' ', c.last_name) ILIKE $1 OR
+            c.phone ILIKE $1 OR 
+            c.email ILIKE $1
+          )`;
           params.push(`%${search}%`);
         }
 
-        queryText += ` GROUP BY c.id ORDER BY total_spent DESC, c.first_name ASC`;
+        // Sorting
+        const sortBy = req.query.sortBy || 'spent'; // name, recent, spent, purchases
+        const sortOrder = req.query.sortOrder || 'desc';
+
+        queryText += ` GROUP BY c.id`;
+
+        switch (sortBy) {
+          case 'name':
+            queryText += ` ORDER BY c.first_name ${sortOrder}, c.last_name ${sortOrder}`;
+            break;
+          case 'recent':
+            // Clientes más recientes (por última compra o creación)
+            queryText += ` ORDER BY COALESCE(MAX(s.created_at), c.created_at) ${sortOrder}`;
+            break;
+          case 'purchases':
+            queryText += ` ORDER BY total_purchases ${sortOrder}`;
+            break;
+          case 'spent':
+          default:
+            queryText += ` ORDER BY total_spent ${sortOrder}`;
+            break;
+        }
 
         // Paginación si se quisiera (opcional por ahora)
         queryText += ' LIMIT 50';

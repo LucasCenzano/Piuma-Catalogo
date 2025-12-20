@@ -1977,12 +1977,15 @@ const CustomersListAPI = ({ authService, API_BASE_URL, formatCurrency, formatDat
   const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState('');
 
-  const loadCustomers = useCallback(async (searchTerm = '') => {
+  const [sortBy, setSortBy] = useState('spent');
+  const [sortOrder, setSortOrder] = useState('desc');
+
+  const loadCustomers = useCallback(async (searchTerm = '', sort = 'spent', order = 'desc') => {
     setLoading(true);
     try {
-      const url = searchTerm
-        ? `${API_BASE_URL}/api/customers?search=${searchTerm}`
-        : `${API_BASE_URL}/api/customers`;
+      let url = `${API_BASE_URL}/api/customers?sortBy=${sort}&sortOrder=${order}`;
+      if (searchTerm) url += `&search=${searchTerm}`;
+
       const res = await authService.authenticatedFetch(url);
       if (res.ok) {
         const data = await res.json();
@@ -1992,7 +1995,7 @@ const CustomersListAPI = ({ authService, API_BASE_URL, formatCurrency, formatDat
     finally { setLoading(false); }
   }, [authService, API_BASE_URL]);
 
-  useEffect(() => { loadCustomers(); }, [loadCustomers]);
+  useEffect(() => { loadCustomers(search, sortBy, sortOrder); }, [loadCustomers, sortBy, sortOrder]); // Auto-reload on sort change
 
   return (
     <div style={{
@@ -2004,22 +2007,48 @@ const CustomersListAPI = ({ authService, API_BASE_URL, formatCurrency, formatDat
     }}>
       <h3 style={{ textAlign: 'center', marginBottom: '2rem', fontFamily: 'Didot, serif', fontSize: '1.8rem' }}>👥 Lista de Clientes</h3>
 
-      <div style={{ marginBottom: '2rem', display: 'flex', gap: '1rem' }}>
-        <input
-          type="text"
-          placeholder="Buscar cliente..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          style={{ flex: 1, padding: '0.8rem', borderRadius: '8px', border: '1px solid #ddd' }}
-        />
-        <button
-          onClick={() => loadCustomers(search)}
-          style={{
-            background: '#333', color: 'white', border: 'none',
-            padding: '0.8rem 1.5rem', borderRadius: '8px', cursor: 'pointer'
-          }}>
-          Buscar
-        </button>
+      <div style={{ marginBottom: '2rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+        <div style={{ display: 'flex', gap: '1rem' }}>
+          <input
+            type="text"
+            placeholder="Buscar cliente..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            style={{ flex: 1, padding: '0.8rem', borderRadius: '8px', border: '1px solid #ddd' }}
+          />
+          <button
+            onClick={() => loadCustomers(search, sortBy, sortOrder)}
+            style={{
+              background: '#333', color: 'white', border: 'none',
+              padding: '0.8rem 1.5rem', borderRadius: '8px', cursor: 'pointer'
+            }}>
+            Buscar
+          </button>
+        </div>
+
+        {/* Sort Controls */}
+        <div style={{ display: 'flex', gap: '1rem', alignItems: 'center', justifyContent: 'flex-end' }}>
+          <label style={{ fontWeight: 'bold', color: '#666' }}>Ordenar por:</label>
+          <select
+            value={sortBy}
+            onChange={(e) => setSortBy(e.target.value)}
+            style={{ padding: '0.5rem', borderRadius: '8px', border: '1px solid #ddd' }}
+          >
+            <option value="spent">💰 Mayor Gasto</option>
+            <option value="purchases">🛒 Más Compras</option>
+            <option value="recent">📅 Más Recientes</option>
+            <option value="name">🔤 Alfabético</option>
+          </select>
+          <button
+            onClick={() => setSortOrder(prev => prev === 'asc' ? 'desc' : 'asc')}
+            style={{
+              padding: '0.5rem 1rem', borderRadius: '8px', border: '1px solid #ddd',
+              background: 'white', cursor: 'pointer'
+            }}
+          >
+            {sortOrder === 'asc' ? '⬆️ Asc' : '⬇️ Desc'}
+          </button>
+        </div>
       </div>
 
       {loading ? <div style={{ textAlign: 'center' }}>Cargando...</div> : (
