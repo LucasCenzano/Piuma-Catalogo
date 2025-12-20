@@ -17,7 +17,12 @@ const AdminVentas = () => {
     customer_fullname: '',
     customer_phone: '',
     customer_email: '',
+    customer_fullname: '',
+    customer_phone: '',
+    customer_email: '',
     payment_method: 'efectivo',
+    payment_status: 'paid', // 'paid' or 'pending'
+    amount_paid: '',
     notes: '',
     items: []
   });
@@ -205,11 +210,19 @@ const AdminVentas = () => {
 
     try {
       setLoading(true);
+
+      const total = calculateTotal();
+      const amountPaid = newSale.payment_status === 'paid'
+        ? total
+        : (parseFloat(newSale.amount_paid) || 0);
+
       const saleData = {
         ...newSale,
         customer_name: firstName,
         customer_lastname: lastName,
-        total_amount: calculateTotal()
+        total_amount: total,
+        amount_paid: amountPaid,
+        status: newSale.payment_status
       };
 
       const response = await authService.authenticatedFetch(`${API_BASE_URL}/api/sales`, { // 👈 Corregido
@@ -227,6 +240,8 @@ const AdminVentas = () => {
           customer_phone: '',
           customer_email: '',
           payment_method: 'efectivo',
+          payment_status: 'paid',
+          amount_paid: '',
           notes: '',
           items: []
         });
@@ -305,6 +320,8 @@ const AdminVentas = () => {
   const renderTabNavigation = () => (
     <div style={{
       display: 'flex',
+      flexWrap: 'wrap', // Habilitar wrap
+      gap: '1rem',      // Espacio entre botones
       justifyContent: 'center',
       marginBottom: '2rem',
       background: 'white',
@@ -322,20 +339,23 @@ const AdminVentas = () => {
           key={tab.key}
           onClick={() => setActiveTab(tab.key)}
           style={{
-            padding: '1rem 2rem',
+            flex: '1 1 auto', // Flexible size
+            padding: '1rem',  // Reduced padding for mobile
             border: 'none',
             borderRadius: '12px',
             cursor: 'pointer',
             fontWeight: '600',
-            fontSize: '1rem',
+            fontSize: '0.9rem', // Slightly smaller font
             display: 'flex',
             alignItems: 'center',
+            justifyContent: 'center', // Center content
             gap: '0.5rem',
             transition: 'all 0.3s ease',
             background: activeTab === tab.key
               ? 'linear-gradient(135deg, #d4af37 0%, #c19b26 100%)'
               : 'transparent',
-            color: activeTab === tab.key ? 'white' : '#333'
+            color: activeTab === tab.key ? 'white' : '#333',
+            minWidth: '120px' // Minimum width
           }}
         >
           <span style={{ fontSize: '1.2rem' }}>{tab.icon}</span>
@@ -459,22 +479,74 @@ const AdminVentas = () => {
             gap: '1.5rem',
             marginTop: '1.5rem'
           }}>
-            <select
-              value={newSale.payment_method}
-              onChange={(e) => handleNewSaleChange('payment_method', e.target.value)}
-              style={{
-                padding: '1rem',
-                border: '2px solid #e9ecef',
-                borderRadius: '12px',
-                fontSize: '1rem',
-                backgroundColor: 'white',
-                cursor: 'pointer',
-                outline: 'none'
-              }}
-            >
-              <option value="efectivo">💵 Efectivo</option>
-              <option value="transferencia">🏦 Transferencia</option>
-            </select>
+            {/* Método de Pago */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+              <label style={{ fontSize: '0.85rem', fontWeight: 'bold', color: '#666' }}>Método</label>
+              <select
+                value={newSale.payment_method}
+                onChange={(e) => handleNewSaleChange('payment_method', e.target.value)}
+                style={{
+                  padding: '1rem',
+                  border: '2px solid #e9ecef',
+                  borderRadius: '12px',
+                  fontSize: '1rem',
+                  backgroundColor: 'white',
+                  outline: 'none',
+                  width: '100%'
+                }}
+              >
+                <option value="efectivo">💵 Efectivo</option>
+                <option value="transferencia">🏦 Transferencia</option>
+              </select>
+            </div>
+
+            {/* Estado del Pago */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+              <label style={{ fontSize: '0.85rem', fontWeight: 'bold', color: '#666' }}>Estado</label>
+              <select
+                value={newSale.payment_status}
+                onChange={(e) => handleNewSaleChange('payment_status', e.target.value)}
+                style={{
+                  padding: '1rem',
+                  border: '2px solid #e9ecef',
+                  borderRadius: '12px',
+                  fontSize: '1rem',
+                  backgroundColor: 'white',
+                  outline: 'none',
+                  width: '100%'
+                }}
+              >
+                <option value="paid">✅ Pagado</option>
+                <option value="pending">⏳ Pendiente</option>
+              </select>
+            </div>
+
+            {/* Monto Abonado (solo si es pendiente) */}
+            {newSale.payment_status === 'pending' && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                <label style={{ fontSize: '0.85rem', fontWeight: 'bold', color: '#666' }}>Abonó</label>
+                <input
+                  type="number"
+                  placeholder="Monto abonado ($)"
+                  value={newSale.amount_paid}
+                  onChange={(e) => handleNewSaleChange('amount_paid', e.target.value)}
+                  style={{
+                    padding: '1rem',
+                    border: '2px solid #e9ecef',
+                    borderRadius: '12px',
+                    fontSize: '1rem',
+                    outline: 'none',
+                    width: '100%',
+                    boxSizing: 'border-box'
+                  }}
+                />
+                {newSale.amount_paid && (
+                  <span style={{ fontSize: '0.8rem', color: '#dc3545', fontWeight: 'bold' }}>
+                    Debe: {formatCurrency(calculateTotal() - (parseFloat(newSale.amount_paid) || 0))}
+                  </span>
+                )}
+              </div>
+            )}
 
             <textarea
               placeholder="Notas (opcional)"
@@ -489,7 +561,9 @@ const AdminVentas = () => {
                 resize: 'vertical',
                 outline: 'none',
                 transition: 'border-color 0.3s ease',
-                gridColumn: '1 / -1'
+                gridColumn: '1 / -1',
+                width: '100%',
+                boxSizing: 'border-box'
               }}
               onFocus={(e) => e.target.style.borderColor = '#d4af37'}
               onBlur={(e) => e.target.style.borderColor = '#e9ecef'}
@@ -748,28 +822,34 @@ const AdminVentas = () => {
         📊 Lista de Ventas
       </h3>
       <div style={{
-        display: 'flex', gap: '1rem', alignItems: 'center', marginBottom: '2rem',
-        padding: '1.5rem', background: '#f8f9fa', borderRadius: '12px'
+        display: 'flex',
+        flexWrap: 'wrap', // Responsive wrapping
+        gap: '1rem',
+        alignItems: 'center',
+        marginBottom: '2rem',
+        padding: '1.5rem',
+        background: '#f8f9fa',
+        borderRadius: '12px'
       }}>
         <input
           type="date"
           name="start_date"
           value={salesFilter.start_date}
           onChange={handleFilterChange}
-          style={{ padding: '0.75rem', borderRadius: '8px', border: '1px solid #ccc' }}
+          style={{ flex: '1 1 150px', padding: '0.75rem', borderRadius: '8px', border: '1px solid #ccc' }}
         />
         <input
           type="date"
           name="end_date"
           value={salesFilter.end_date}
           onChange={handleFilterChange}
-          style={{ padding: '0.75rem', borderRadius: '8px', border: '1px solid #ccc' }}
+          style={{ flex: '1 1 150px', padding: '0.75rem', borderRadius: '8px', border: '1px solid #ccc' }}
         />
         <select
           name="payment_method"
           value={salesFilter.payment_method}
           onChange={handleFilterChange}
-          style={{ padding: '0.75rem', borderRadius: '8px', border: '1px solid #ccc' }}
+          style={{ flex: '1 1 150px', padding: '0.75rem', borderRadius: '8px', border: '1px solid #ccc' }}
         >
           <option value="">Todos los métodos</option>
           <option value="efectivo">Efectivo</option>
