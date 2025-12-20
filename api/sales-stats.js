@@ -115,13 +115,13 @@ module.exports = async function handler(req, res) {
       SELECT 
         COUNT(*) as total_sales,
         COALESCE(SUM(total_amount), 0) as total_revenue, -- Total vendido
-        COALESCE(SUM(amount_paid), 0) as total_collected, -- ✅ Total cobrado real
-        COALESCE(SUM(total_amount) - SUM(COALESCE(amount_paid, 0)), 0) as total_pending, -- ✅ Deuda pendiente
+        COALESCE(SUM(COALESCE(amount_paid, CASE WHEN status = 'pending' THEN 0 ELSE total_amount END)), 0) as total_collected, -- ✅ Total cobrado real (robusto para legacy)
+        COALESCE(SUM(total_amount) - SUM(COALESCE(amount_paid, CASE WHEN status = 'pending' THEN 0 ELSE total_amount END)), 0) as total_pending, -- ✅ Deuda real
         COALESCE(AVG(total_amount), 0) as average_sale,
         COUNT(CASE WHEN payment_method = 'efectivo' THEN 1 END) as cash_sales,
         COUNT(CASE WHEN payment_method = 'transferencia' THEN 1 END) as transfer_sales,
-        COALESCE(SUM(CASE WHEN payment_method = 'efectivo' THEN amount_paid ELSE 0 END), 0) as cash_revenue, -- ✅ Usar lo pagado
-        COALESCE(SUM(CASE WHEN payment_method = 'transferencia' THEN amount_paid ELSE 0 END), 0) as transfer_revenue -- ✅ Usar lo pagado
+        COALESCE(SUM(CASE WHEN payment_method = 'efectivo' THEN COALESCE(amount_paid, CASE WHEN status = 'pending' THEN 0 ELSE total_amount END) ELSE 0 END), 0) as cash_revenue, -- ✅ Usar lo pagado real
+        COALESCE(SUM(CASE WHEN payment_method = 'transferencia' THEN COALESCE(amount_paid, CASE WHEN status = 'pending' THEN 0 ELSE total_amount END) ELSE 0 END), 0) as transfer_revenue -- ✅ Usar lo pagado real
       FROM sales s
       WHERE 1=1 ${dateFilter}
     `, queryParams);

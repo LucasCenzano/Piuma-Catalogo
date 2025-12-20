@@ -171,9 +171,9 @@ module.exports = async function handler(req, res) {
           const generalStats = await query(`
       SELECT 
         COUNT(*) as total_sales,
-        COALESCE(SUM(total_amount), 0) as total_revenue, -- Total vendido (teórico)
-        COALESCE(SUM(amount_paid), 0) as total_collected, -- ✅ Total cobrado (real)
-        COALESCE(SUM(total_amount) - SUM(COALESCE(amount_paid, 0)), 0) as total_pending, -- ✅ Total por cobrar
+        COALESCE(SUM(total_amount), 0) as total_revenue, -- Total vendido
+        COALESCE(SUM(COALESCE(amount_paid, CASE WHEN status = 'pending' THEN 0 ELSE total_amount END)), 0) as total_collected, -- ✅ Total cobrado real (robusto)
+        COALESCE(SUM(total_amount) - SUM(COALESCE(amount_paid, CASE WHEN status = 'pending' THEN 0 ELSE total_amount END)), 0) as total_pending, -- ✅ Deuda real
         COALESCE(AVG(total_amount), 0) as average_sale
       FROM sales s
       WHERE 1=1 ${whereClause}
