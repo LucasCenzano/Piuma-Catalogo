@@ -11,7 +11,13 @@ const { authenticate, requireRole } = require('./middleware/auth');
 const { loginLimiter, apiLimiter } = require('./middleware/rateLimiter');
 const { loginValidation, productValidation } = require('./utils/validators');
 const { generateAccessToken, generateRefreshToken } = require('./utils/tokenService');
+const { generateAccessToken, generateRefreshToken } = require('./utils/tokenService');
 const { validationResult } = require('express-validator');
+
+// Import handlers for serverless-like structure
+const salesHandler = require('./api/sales');
+const salesStatsHandler = require('./api/sales-stats');
+const customersHandler = require('./api/customers');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -565,7 +571,15 @@ app.use((err, req, res, next) => {
   });
 });
 
+// ========== RUTAS DE HANDLERS ESPECIFÍCOS (Migración Serverless a Monolito) ==========
+// Para que Vercel/Express manejen correctamente los archivos en /api/
+
+app.all('/api/sales', (req, res) => salesHandler(req, res));
+app.all('/api/sales-stats', (req, res) => salesStatsHandler(req, res));
+app.all('/api/customers', (req, res) => customersHandler(req, res));
+
 // 404
+
 app.use((req, res) => {
   res.status(404).json({ error: 'Ruta no encontrada' });
 });
