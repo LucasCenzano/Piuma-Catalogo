@@ -14,9 +14,7 @@ const AdminVentas = () => {
 
   // Estados para nueva venta
   const [newSale, setNewSale] = useState({
-    customer_fullname: '',
-    customer_phone: '',
-    customer_email: '',
+
     customer_fullname: '',
     customer_phone: '',
     customer_email: '',
