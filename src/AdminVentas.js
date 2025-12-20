@@ -168,7 +168,6 @@ const AdminVentas = () => {
       customer_phone: customer.phone || '',
       customer_email: customer.email || ''
     }));
-    setCustomerSearchTerm('');
     setShowCustomerResults(false);
   };
 
