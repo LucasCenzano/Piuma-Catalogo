@@ -88,7 +88,7 @@ module.exports = async function handler(req, res) {
           queryText += ` WHERE (
             c.first_name ILIKE $1 OR 
             c.last_name ILIKE $1 OR 
-            CONCAT(c.first_name, ' ', c.last_name) ILIKE $1 OR
+            (c.first_name || ' ' || c.last_name) ILIKE $1 OR
             c.phone ILIKE $1 OR 
             c.email ILIKE $1
           )`;
