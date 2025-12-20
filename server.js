@@ -117,7 +117,8 @@ app.post('/api/auth', loginLimiter, loginValidation, async (req, res) => {
     console.error('Error en autenticación:', error);
     res.status(500).json({
       error: 'Error interno del servidor',
-      code: 'INTERNAL_ERROR'
+      code: 'INTERNAL_ERROR',
+      details: error.message // DEBUG: exposing error
     });
   }
 });
@@ -559,7 +560,7 @@ app.use((err, req, res, next) => {
   console.error('Error no manejado:', err);
   res.status(500).json({
     error: 'Error interno del servidor',
-    ...(process.env.NODE_ENV === 'development' && { details: err.message })
+    details: err.message // DEBUG: exposing error always
   });
 });
 
