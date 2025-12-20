@@ -1995,7 +1995,7 @@ const CustomersListAPI = ({ authService, API_BASE_URL, formatCurrency, formatDat
     finally { setLoading(false); }
   }, [authService, API_BASE_URL]);
 
-  useEffect(() => { loadCustomers(search, sortBy, sortOrder); }, [loadCustomers, sortBy, sortOrder]); // Auto-reload on sort change
+  useEffect(() => { loadCustomers(search, sortBy, sortOrder); }, [loadCustomers, sortBy, sortOrder, search]); // Auto-reload on filters change
 
   return (
     <div style={{
