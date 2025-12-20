@@ -335,7 +335,6 @@ const AdminPanel = ({ onLogout }) => {
         inStock: editInStock,
         imagesUrl: editImages,
         isFeatured: editIsFeatured,
-        isFeatured: editIsFeatured,
         isNew: editIsNew,
         discountPercentage: parseInt(editDiscountPercentage) || 0,
         variants: editVariants // Enviar variantes actualizadas
@@ -394,7 +393,6 @@ const AdminPanel = ({ onLogout }) => {
     setEditImageUrl('');
     setEditIsFeatured(product.is_featured || false);
     setEditIsNew(product.is_new || false);
-    setEditIsNew(product.is_new || false);
     setEditDiscountPercentage(product.discount_percentage || 0);
     setEditVariants(product.variants || []);
   };
@@ -409,7 +407,6 @@ const AdminPanel = ({ onLogout }) => {
     setEditImages([]);
     setEditImageUrl('');
     setEditIsFeatured(false);
-    setEditIsNew(false);
     setEditIsNew(false);
     setEditDiscountPercentage(0);
     setEditVariants([]);
