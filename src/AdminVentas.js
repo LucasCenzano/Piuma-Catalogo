@@ -979,82 +979,101 @@ const AdminVentas = () => {
           </button>
         </div>
       ) : (
-        <div style={{ overflowX: 'auto' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '800px' }}>
-            <thead>
-              <tr style={{
-                background: 'linear-gradient(135deg, #e6e3d4 0%, #ddd8c7 100%)'
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '1.5rem' }}>
+          {sales.map(sale => {
+            const isPending = sale.status === 'pending' || (sale.amount_paid < sale.total_amount);
+            const pendingAmount = sale.total_amount - (sale.amount_paid || 0);
+
+            return (
+              <div key={sale.id} style={{
+                background: 'white',
+                borderRadius: '12px',
+                padding: '1.5rem',
+                boxShadow: '0 4px 6px rgba(0,0,0,0.05)',
+                border: '1px solid #e9ecef',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '1rem'
               }}>
-                <th style={{ padding: '1rem', textAlign: 'left', fontWeight: '600' }}>ID</th>
-                <th style={{ padding: '1rem', textAlign: 'left', fontWeight: '600' }}>Cliente</th>
-                <th style={{ padding: '1rem', textAlign: 'left', fontWeight: '600' }}>Contacto</th>
-                <th style={{ padding: '1rem', textAlign: 'center', fontWeight: '600' }}>Método Pago</th>
-                <th style={{ padding: '1rem', textAlign: 'right', fontWeight: '600' }}>Total</th>
-                <th style={{ padding: '1rem', textAlign: 'center', fontWeight: '600' }}>Items</th>
-                <th style={{ padding: '1rem', textAlign: 'center', fontWeight: '600' }}>Fecha</th>
-                <th style={{ padding: '1rem', textAlign: 'center', fontWeight: '600' }}>Acciones</th>
-              </tr>
-            </thead>
-            <tbody>
-              {sales.map(sale => (
-                <tr key={sale.id} style={{ borderBottom: '1px solid #dee2e6' }}>
-                  <td style={{ padding: '1rem', fontWeight: '600' }}>{sale.id}</td>
-                  <td style={{ padding: '1rem' }}>
-                    <div>
-                      <strong>{sale.customer_name} {sale.customer_lastname}</strong>
-                      {sale.notes && (
-                        <div style={{ fontSize: '0.8rem', color: '#666', marginTop: '0.25rem' }}>
-                          💬 {sale.notes}
-                        </div>
-                      )}
+                {/* Header Card */}
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                  <div>
+                    <div style={{ fontWeight: 'bold', fontSize: '1.1rem', color: '#333' }}>
+                      #{sale.id} - {sale.customer_name} {sale.customer_lastname}
                     </div>
-                  </td>
-                  <td style={{ padding: '1rem', fontSize: '0.9rem' }}>
-                    {sale.customer_phone && <div>📞 {sale.customer_phone}</div>}
-                    {sale.customer_email && <div>✉️ {sale.customer_email}</div>}
-                  </td>
-                  <td style={{ padding: '1rem', textAlign: 'center' }}>
-                    <button
-                      onClick={() => handleDeleteSale(sale.id)}
-                      style={{
-                        background: 'linear-gradient(135deg, #dc3545 0%, #c82333 100%)',
-                        color: 'white',
-                        border: 'none',
-                        padding: '0.5rem 1rem',
-                        borderRadius: '8px',
-                        cursor: 'pointer',
-                        fontSize: '0.8rem'
-                      }}
-                    >
-                      🗑️ Eliminar
-                    </button>
-                  </td>
-                  <td style={{ padding: '1rem', textAlign: 'center' }}>
-                    <span style={{
-                      padding: '0.5rem 1rem',
-                      borderRadius: '20px',
-                      fontSize: '0.8rem',
-                      fontWeight: '600',
-                      background: sale.payment_method === 'efectivo'
-                        ? 'linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%)'
-                        : 'linear-gradient(135deg, #cce5ff 0%, #b3d9ff 100%)',
-                      color: sale.payment_method === 'efectivo' ? '#155724' : '#004085'
-                    }}>
-                      {sale.payment_method === 'efectivo' ? '💵 Efectivo' : '🏦 Transferencia'}
-                    </span>
-                  </td>
-                  <td style={{
-                    padding: '1rem',
-                    textAlign: 'center',
-                    fontSize: '0.9rem',
-                    color: '#666'
+                    <div style={{ fontSize: '0.9rem', color: '#666' }}>
+                      {formatDate(sale.created_at)}
+                    </div>
+                  </div>
+                  <div style={{ textAlign: 'right' }}>
+                    <div style={{ fontWeight: 'bold', fontSize: '1.2rem', color: isPending ? '#dc3545' : '#28a745' }}>
+                      {formatCurrency(sale.total_amount)}
+                    </div>
+                    {isPending && (
+                      <div style={{ fontSize: '0.85rem', color: '#dc3545', fontWeight: 'bold' }}>
+                        Debe: {formatCurrency(pendingAmount)}
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Info Cliente */}
+                <div style={{ fontSize: '0.9rem', color: '#555', background: '#f8f9fa', padding: '0.8rem', borderRadius: '8px' }}>
+                  {sale.customer_phone && <div>📞 {sale.customer_phone}</div>}
+                  {sale.customer_email && <div>✉️ {sale.customer_email}</div>}
+                  {sale.notes && <div style={{ marginTop: '0.5rem', fontStyle: 'italic' }}>💬 "{sale.notes}"</div>}
+                </div>
+
+                {/* Métodos de Pago y Estado */}
+                <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                  <span style={{
+                    padding: '0.4rem 0.8rem',
+                    borderRadius: '20px',
+                    fontSize: '0.8rem',
+                    fontWeight: '600',
+                    background: sale.payment_method === 'efectivo' ? '#d4edda' : '#cce5ff',
+                    color: sale.payment_method === 'efectivo' ? '#155724' : '#004085'
                   }}>
-                    {formatDate(sale.created_at)}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+                    {sale.payment_method === 'efectivo' ? '💵 Efectivo' : '🏦 Transferencia'}
+                  </span>
+
+                  <span style={{
+                    padding: '0.4rem 0.8rem',
+                    borderRadius: '20px',
+                    fontSize: '0.8rem',
+                    fontWeight: '600',
+                    background: isPending ? '#f8d7da' : '#d4edda',
+                    color: isPending ? '#721c24' : '#155724'
+                  }}>
+                    {isPending ? '⏳ Pendiente' : '✅ Pagado'}
+                  </span>
+                </div>
+
+                {/* Acciones */}
+                <div style={{ paddingTop: '1rem', borderTop: '1px solid #eee', display: 'flex', justifyContent: 'flex-end' }}>
+                  <button
+                    onClick={() => handleDeleteSale(sale.id)}
+                    style={{
+                      background: 'none',
+                      color: '#dc3545',
+                      border: '1px solid #dc3545',
+                      padding: '0.5rem 1rem',
+                      borderRadius: '6px',
+                      cursor: 'pointer',
+                      fontSize: '0.9rem',
+                      fontWeight: '600',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.5rem',
+                      transition: 'all 0.2s'
+                    }}
+                  >
+                    🗑️ Eliminar
+                  </button>
+                </div>
+              </div>
+            );
+          })}
         </div>
       )}
     </div>
