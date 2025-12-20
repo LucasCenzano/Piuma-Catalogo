@@ -12,6 +12,16 @@ function ImageGallery({ images, name }) {
         setCurrentImageIndex((prevIndex) => (prevIndex - 1 + images.length) % images.length);
     };
 
+    React.useEffect(() => {
+        if (!images || images.length <= 1) return;
+
+        const interval = setInterval(() => {
+            setCurrentImageIndex((prevIndex) => (prevIndex + 1) % images.length);
+        }, 3000);
+
+        return () => clearInterval(interval);
+    }, [images]);
+
     return (
         <div className="image-gallery">
             <img 

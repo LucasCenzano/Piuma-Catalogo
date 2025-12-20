@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import authService from './authService';
 import './AdminPanel.css';
+import './AdminPanelResponsive.css';
 import { Link } from 'react-router-dom';
 
 // Categorías válidas con íconos
@@ -12,11 +13,11 @@ const ADMIN_SECTIONS = [
 ];
 
 const VALID_CATEGORIES = [
-  'Bandoleras', 
-  'Carteras', 
-  'Billeteras', 
-  'Mochilas', 
-  'Riñoneras', 
+  'Bandoleras',
+  'Carteras',
+  'Billeteras',
+  'Mochilas',
+  'Riñoneras',
   'Porta Celulares'
 ];
 
@@ -26,7 +27,7 @@ const SafeImage = ({ src, alt, style, ...props }) => {
 
   if (!src || imageError) {
     return (
-      <div 
+      <div
         style={{
           ...style,
           display: 'flex',
@@ -67,11 +68,11 @@ const DashboardStats = ({ products }) => {
   };
 
   return (
-    <div style={{ 
-      display: 'grid', 
-      gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', 
+    <div style={{
+      display: 'grid',
+      gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
       gap: '2rem',
-      marginBottom: '3rem' 
+      marginBottom: '3rem'
     }}>
       <div style={{
         background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
@@ -85,7 +86,7 @@ const DashboardStats = ({ products }) => {
         <h3 style={{ margin: '0 0 0.5rem 0', fontSize: '2.5rem', fontWeight: '700' }}>{stats.total}</h3>
         <p style={{ margin: 0, opacity: 0.9 }}>Total Productos</p>
       </div>
-      
+
       <div style={{
         background: 'linear-gradient(135deg, #2ed573 0%, #3742fa 100%)',
         color: 'white',
@@ -98,7 +99,7 @@ const DashboardStats = ({ products }) => {
         <h3 style={{ margin: '0 0 0.5rem 0', fontSize: '2.5rem', fontWeight: '700' }}>{stats.inStock}</h3>
         <p style={{ margin: 0, opacity: 0.9 }}>En Stock</p>
       </div>
-      
+
       <div style={{
         background: 'linear-gradient(135deg, #ff6b6b 0%, #ff8e53 100%)',
         color: 'white',
@@ -111,7 +112,7 @@ const DashboardStats = ({ products }) => {
         <h3 style={{ margin: '0 0 0.5rem 0', fontSize: '2.5rem', fontWeight: '700' }}>{stats.outStock}</h3>
         <p style={{ margin: 0, opacity: 0.9 }}>Sin Stock</p>
       </div>
-      
+
       <div style={{
         background: 'linear-gradient(135deg, #ffa726 0%, #fb8c00 100%)',
         color: 'white',
@@ -137,7 +138,7 @@ const AdminPanel = ({ onLogout }) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [editingProductId, setEditingProductId] = useState(null);
   const [showAddForm, setShowAddForm] = useState(false);
-  
+
   // ✅ 1. ESTADO PARA GUARDAR EL ORDEN
   const [sortConfig, setSortConfig] = useState({ key: 'id', direction: 'descending' });
 
@@ -176,30 +177,30 @@ const AdminPanel = ({ onLogout }) => {
       sortableProducts.sort((a, b) => {
         let aValue = a[sortConfig.key];
         let bValue = b[sortConfig.key];
-        
+
         // Manejar valores null/undefined
         if (aValue == null) return 1;
         if (bValue == null) return -1;
-        
+
         // SI ES PRECIO, CONVERTIR A NÚMERO
         if (sortConfig.key === 'price') {
           aValue = parseFloat(String(aValue).replace(/[^0-9.-]/g, '')) || 0;
           bValue = parseFloat(String(bValue).replace(/[^0-9.-]/g, '')) || 0;
         }
-        
+
         // SI ES NOMBRE, CONVERTIR A MINÚSCULAS
         if (sortConfig.key === 'name') {
           aValue = String(aValue).toLowerCase();
           bValue = String(bValue).toLowerCase();
         }
-        
+
         // ✅ SI ES STOCK (BOOLEANO)
         if (sortConfig.key === 'in_stock') {
           // Convertir booleano a número: true = 1, false = 0
           aValue = aValue ? 1 : 0;
           bValue = bValue ? 1 : 0;
         }
-        
+
         // Comparación
         if (aValue < bValue) {
           return sortConfig.direction === 'ascending' ? -1 : 1;
@@ -238,12 +239,12 @@ const AdminPanel = ({ onLogout }) => {
 
   const handleCreateProduct = async (e) => {
     e.preventDefault();
-    
+
     if (!newName.trim()) {
       alert('El nombre es requerido');
       return;
     }
-    
+
     if (!newCategory) {
       alert('La categoría es requerida');
       return;
@@ -251,7 +252,7 @@ const AdminPanel = ({ onLogout }) => {
 
     try {
       setLoading(true);
-      
+
       await authService.createProduct({
         name: newName.trim(),
         price: newPrice.trim(),
@@ -260,7 +261,7 @@ const AdminPanel = ({ onLogout }) => {
         inStock: newInStock,
         imagesUrl: newImages
       });
-      
+
       // Limpiar formulario
       setNewName('');
       setNewPrice('');
@@ -270,7 +271,7 @@ const AdminPanel = ({ onLogout }) => {
       setNewImages([]);
       setNewImageUrl('');
       setShowAddForm(false);
-      
+
       await loadProducts();
       alert('Producto creado exitosamente');
     } catch (error) {
@@ -283,12 +284,12 @@ const AdminPanel = ({ onLogout }) => {
 
   const handleUpdateProduct = async (e) => {
     e.preventDefault();
-    
+
     if (!editName.trim()) {
       alert('El nombre es requerido');
       return;
     }
-    
+
     if (!editCategory) {
       alert('La categoría es requerida');
       return;
@@ -296,7 +297,7 @@ const AdminPanel = ({ onLogout }) => {
 
     try {
       setLoading(true);
-      
+
       await authService.updateProduct({
         id: editingProductId,
         name: editName.trim(),
@@ -306,7 +307,7 @@ const AdminPanel = ({ onLogout }) => {
         inStock: editInStock,
         imagesUrl: editImages
       });
-      
+
       cancelEditing();
       await loadProducts();
       alert('Producto actualizado exitosamente');
@@ -417,9 +418,9 @@ const AdminPanel = ({ onLogout }) => {
       case 'dashboard':
         return (
           <div>
-            <h2 style={{ 
-              fontFamily: 'Didot, serif', 
-              fontSize: '2.5rem', 
+            <h2 style={{
+              fontFamily: 'Didot, serif',
+              fontSize: '2.5rem',
               color: '#333',
               textAlign: 'center',
               marginBottom: '3rem',
@@ -428,7 +429,7 @@ const AdminPanel = ({ onLogout }) => {
               📊 Panel de Control
             </h2>
             <DashboardStats products={products} />
-            
+
             {/* Productos recientes */}
             <div style={{
               background: 'white',
@@ -437,7 +438,7 @@ const AdminPanel = ({ onLogout }) => {
               boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1)',
               border: '1px solid rgba(230, 227, 212, 0.5)'
             }}>
-              <h3 style={{ 
+              <h3 style={{
                 fontFamily: 'Didot, serif',
                 fontSize: '1.8rem',
                 color: '#333',
@@ -446,10 +447,10 @@ const AdminPanel = ({ onLogout }) => {
               }}>
                 📦 Productos Recientes
               </h3>
-              <div style={{ 
-                display: 'grid', 
-                gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', 
-                gap: '1.5rem' 
+              <div style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))',
+                gap: '1.5rem'
               }}>
                 {products.slice(0, 6).map(product => (
                   <div key={product.id} style={{
@@ -459,12 +460,12 @@ const AdminPanel = ({ onLogout }) => {
                     textAlign: 'center',
                     border: '1px solid #dee2e6'
                   }}>
-                    <SafeImage 
+                    <SafeImage
                       src={getProductImageUrl(product)}
                       alt={product.name}
-                      style={{ 
-                        width: '60px', 
-                        height: '60px', 
+                      style={{
+                        width: '60px',
+                        height: '60px',
                         objectFit: 'cover',
                         borderRadius: '8px',
                         margin: '0 auto 1rem'
@@ -499,7 +500,7 @@ const AdminPanel = ({ onLogout }) => {
               boxShadow: '0 8px 32px rgba(40, 167, 69, 0.3)'
             }}>
               <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>💰</div>
-              <h3 style={{ 
+              <h3 style={{
                 color: 'white',
                 fontSize: '1.8rem',
                 marginBottom: '1rem',
@@ -526,7 +527,7 @@ const AdminPanel = ({ onLogout }) => {
                     boxShadow: '0 4px 15px rgba(0, 0, 0, 0.1)',
                     transition: 'all 0.3s ease'
                   }}
-                  // Ya no necesita el onClick
+                // Ya no necesita el onClick
                 >
                   🚀 Ir a Ventas
                 </button>
@@ -538,25 +539,25 @@ const AdminPanel = ({ onLogout }) => {
       case 'products':
         return (
           <div>
-            <div style={{ 
-              display: 'flex', 
-              justifyContent: 'space-between', 
+            <div style={{
+              display: 'flex',
+              justifyContent: 'space-between',
               alignItems: 'center',
               marginBottom: '2rem',
               flexWrap: 'wrap',
               gap: '1rem'
             }}>
-              <h2 style={{ 
-                fontFamily: 'Didot, serif', 
-                fontSize: '2.5rem', 
+              <h2 style={{
+                fontFamily: 'Didot, serif',
+                fontSize: '2.5rem',
                 color: '#333',
                 margin: 0,
                 fontWeight: '400'
               }}>
                 🛍️ Gestión de Productos ({products.length})
               </h2>
-              
-              <button 
+
+              <button
                 onClick={() => setShowAddForm(!showAddForm)}
                 style={{
                   background: 'linear-gradient(135deg, #d4af37 0%, #c19b26 100%)',
@@ -609,7 +610,7 @@ const AdminPanel = ({ onLogout }) => {
               }}>
                 🔍 Ordenar por:
               </span>
-              
+
               <div style={{
                 display: 'flex',
                 gap: '0.75rem',
@@ -621,8 +622,8 @@ const AdminPanel = ({ onLogout }) => {
                     padding: '0.75rem 1.5rem',
                     borderRadius: '12px',
                     border: sortConfig.key === 'id' ? '2px solid #d4af37' : '2px solid #e9ecef',
-                    background: sortConfig.key === 'id' 
-                      ? 'linear-gradient(135deg, #d4af37 0%, #c19b26 100%)' 
+                    background: sortConfig.key === 'id'
+                      ? 'linear-gradient(135deg, #d4af37 0%, #c19b26 100%)'
                       : 'white',
                     color: sortConfig.key === 'id' ? 'white' : '#333',
                     cursor: 'pointer',
@@ -649,8 +650,8 @@ const AdminPanel = ({ onLogout }) => {
                     padding: '0.75rem 1.5rem',
                     borderRadius: '12px',
                     border: sortConfig.key === 'name' ? '2px solid #d4af37' : '2px solid #e9ecef',
-                    background: sortConfig.key === 'name' 
-                      ? 'linear-gradient(135deg, #d4af37 0%, #c19b26 100%)' 
+                    background: sortConfig.key === 'name'
+                      ? 'linear-gradient(135deg, #d4af37 0%, #c19b26 100%)'
                       : 'white',
                     color: sortConfig.key === 'name' ? 'white' : '#333',
                     cursor: 'pointer',
@@ -677,8 +678,8 @@ const AdminPanel = ({ onLogout }) => {
                     padding: '0.75rem 1.5rem',
                     borderRadius: '12px',
                     border: sortConfig.key === 'price' ? '2px solid #d4af37' : '2px solid #e9ecef',
-                    background: sortConfig.key === 'price' 
-                      ? 'linear-gradient(135deg, #d4af37 0%, #c19b26 100%)' 
+                    background: sortConfig.key === 'price'
+                      ? 'linear-gradient(135deg, #d4af37 0%, #c19b26 100%)'
                       : 'white',
                     color: sortConfig.key === 'price' ? 'white' : '#333',
                     cursor: 'pointer',
@@ -705,8 +706,8 @@ const AdminPanel = ({ onLogout }) => {
                     padding: '0.75rem 1.5rem',
                     borderRadius: '12px',
                     border: sortConfig.key === 'in_stock' ? '2px solid #d4af37' : '2px solid #e9ecef',
-                    background: sortConfig.key === 'in_stock' 
-                      ? 'linear-gradient(135deg, #d4af37 0%, #c19b26 100%)' 
+                    background: sortConfig.key === 'in_stock'
+                      ? 'linear-gradient(135deg, #d4af37 0%, #c19b26 100%)'
                       : 'white',
                     color: sortConfig.key === 'in_stock' ? 'white' : '#333',
                     cursor: 'pointer',
@@ -727,7 +728,7 @@ const AdminPanel = ({ onLogout }) => {
                   )}
                 </button>
               </div>
-              
+
               {sortConfig.key && (
                 <button
                   onClick={() => setSortConfig({ key: null, direction: 'ascending' })}
@@ -770,8 +771,8 @@ const AdminPanel = ({ onLogout }) => {
                   height: '4px',
                   background: 'linear-gradient(90deg, #d4af37 0%, #e6c757 50%, #d4af37 100%)'
                 }} />
-                
-                <h3 style={{ 
+
+                <h3 style={{
                   fontFamily: 'Didot, serif',
                   fontSize: '1.8rem',
                   color: '#333',
@@ -781,11 +782,11 @@ const AdminPanel = ({ onLogout }) => {
                 }}>
                   ✨ Nuevo Producto
                 </h3>
-                
+
                 <form onSubmit={handleCreateProduct}>
-                  <div style={{ 
-                    display: 'grid', 
-                    gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', 
+                  <div style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
                     gap: '1.5rem',
                     marginBottom: '1.5rem'
                   }}>
@@ -805,7 +806,7 @@ const AdminPanel = ({ onLogout }) => {
                         outline: 'none'
                       }}
                     />
-                    
+
                     <input
                       type="text"
                       placeholder="Precio (ej: $25.000)"
@@ -822,10 +823,10 @@ const AdminPanel = ({ onLogout }) => {
                       }}
                     />
                   </div>
-                  
-                  <div style={{ 
-                    display: 'grid', 
-                    gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', 
+
+                  <div style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
                     gap: '1.5rem',
                     marginBottom: '1.5rem'
                   }}>
@@ -849,7 +850,7 @@ const AdminPanel = ({ onLogout }) => {
                         <option key={category} value={category}>{category}</option>
                       ))}
                     </select>
-                    
+
                     <label style={{
                       display: 'flex',
                       alignItems: 'center',
@@ -871,7 +872,7 @@ const AdminPanel = ({ onLogout }) => {
                       En Stock
                     </label>
                   </div>
-                  
+
                   <textarea
                     placeholder="Descripción del producto"
                     value={newDescription}
@@ -898,7 +899,7 @@ const AdminPanel = ({ onLogout }) => {
                     marginBottom: '2rem',
                     border: '1px solid rgba(230, 227, 212, 0.8)'
                   }}>
-                    <h4 style={{ 
+                    <h4 style={{
                       fontFamily: 'Didot, serif',
                       color: '#333',
                       marginBottom: '1rem',
@@ -907,7 +908,7 @@ const AdminPanel = ({ onLogout }) => {
                     }}>
                       🖼️ Agregar Imágenes
                     </h4>
-                    
+
                     <div style={{ display: 'flex', gap: '1rem', marginBottom: '1rem', flexWrap: 'wrap' }}>
                       <input
                         type="url"
@@ -924,9 +925,9 @@ const AdminPanel = ({ onLogout }) => {
                           outline: 'none'
                         }}
                       />
-                      
-                      <button 
-                        type="button" 
+
+                      <button
+                        type="button"
                         onClick={addNewImage}
                         disabled={!newImageUrl}
                         style={{
@@ -944,7 +945,7 @@ const AdminPanel = ({ onLogout }) => {
                         ➕ Agregar
                       </button>
                     </div>
-                    
+
                     {newImages.length > 0 && (
                       <div>
                         <p style={{ marginBottom: '1rem', fontWeight: '500' }}>
@@ -953,13 +954,13 @@ const AdminPanel = ({ onLogout }) => {
                         <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
                           {newImages.map((url, index) => (
                             <div key={index} style={{ position: 'relative' }}>
-                              <SafeImage 
-                                src={url} 
+                              <SafeImage
+                                src={url}
                                 alt={`Imagen ${index + 1}`}
-                                style={{ 
-                                  width: '80px', 
-                                  height: '80px', 
-                                  objectFit: 'cover', 
+                                style={{
+                                  width: '80px',
+                                  height: '80px',
+                                  objectFit: 'cover',
                                   borderRadius: '8px',
                                   border: '2px solid #dee2e6'
                                 }}
@@ -995,16 +996,16 @@ const AdminPanel = ({ onLogout }) => {
                     )}
                   </div>
 
-                  <div style={{ 
-                    display: 'flex', 
-                    gap: '1rem', 
+                  <div style={{
+                    display: 'flex',
+                    gap: '1rem',
                     justifyContent: 'center',
                     paddingTop: '1rem',
                     borderTop: '2px solid rgba(230, 227, 212, 0.6)',
                     flexWrap: 'wrap'
                   }}>
-                    <button 
-                      type="submit" 
+                    <button
+                      type="submit"
                       disabled={loading}
                       style={{
                         background: loading ? '#6c757d' : 'linear-gradient(135deg, #d4af37 0%, #c19b26 100%)',
@@ -1024,9 +1025,9 @@ const AdminPanel = ({ onLogout }) => {
                     >
                       {loading ? '⏳ Creando...' : '✨ Crear Producto'}
                     </button>
-                    
-                    <button 
-                      type="button" 
+
+                    <button
+                      type="button"
                       onClick={() => setShowAddForm(false)}
                       style={{
                         background: 'linear-gradient(135deg, #6c757d 0%, #5a6268 100%)',
@@ -1064,7 +1065,7 @@ const AdminPanel = ({ onLogout }) => {
                 <p style={{ fontSize: '1.2rem', color: '#666', marginBottom: '2rem' }}>
                   No hay productos cargados
                 </p>
-                <button 
+                <button
                   onClick={loadProducts}
                   style={{
                     background: 'linear-gradient(135deg, #d4af37 0%, #c19b26 100%)',
@@ -1081,561 +1082,635 @@ const AdminPanel = ({ onLogout }) => {
                 </button>
               </div>
             ) : (
-              <div style={{
-                background: 'white',
-                borderRadius: '16px',
-                overflow: 'hidden',
-                boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1)',
-                border: '1px solid rgba(230, 227, 212, 0.5)'
-              }}>
-                <div style={{ 
-                  overflowX: 'auto',
-                  minWidth: '100%'
+              <>
+                <div className="desktop-view" style={{
+                  background: 'white',
+                  borderRadius: '16px',
+                  overflow: 'hidden',
+                  boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1)',
+                  border: '1px solid rgba(230, 227, 212, 0.5)'
                 }}>
-                  <table style={{ 
-                    width: '100%', 
-                    borderCollapse: 'collapse',
-                    minWidth: '800px'
+                  <div style={{
+                    overflowX: 'auto',
+                    minWidth: '100%'
                   }}>
-                    <thead>
-                      <tr style={{
-                        background: 'linear-gradient(135deg, #e6e3d4 0%, #ddd8c7 100%)'
-                      }}>
-                        <th style={{ 
-                          padding: '1.5rem 1rem', 
-                          textAlign: 'left',
-                          fontFamily: 'Montserrat, sans-serif',
-                          fontWeight: '600',
-                          fontSize: '0.9rem',
-                          color: '#333',
-                          textTransform: 'uppercase',
-                          letterSpacing: '0.5px',
-                          borderBottom: '2px solid rgba(230, 227, 212, 0.8)'
-                        }}>ID</th>
-                        
-                        <th style={{ 
-                          padding: '1.5rem 1rem', 
-                          textAlign: 'left',
-                          fontFamily: 'Montserrat, sans-serif',
-                          fontWeight: '600',
-                          fontSize: '0.9rem',
-                          color: '#333',
-                          textTransform: 'uppercase',
-                          letterSpacing: '0.5px',
-                          borderBottom: '2px solid rgba(230, 227, 212, 0.8)'
-                        }}>Imagen</th>
-                        
-                        <th style={{ 
-                          padding: '1.5rem 1rem', 
-                          textAlign: 'left',
-                          fontFamily: 'Montserrat, sans-serif',
-                          fontWeight: '600',
-                          fontSize: '0.9rem',
-                          color: '#333',
-                          textTransform: 'uppercase',
-                          letterSpacing: '0.5px',
-                          borderBottom: '2px solid rgba(230, 227, 212, 0.8)'
-                        }}>Nombre</th>
-                        
-                        <th style={{ 
-                          padding: '1.5rem 1rem', 
-                          textAlign: 'left',
-                          fontFamily: 'Montserrat, sans-serif',
-                          fontWeight: '600',
-                          fontSize: '0.9rem',
-                          color: '#333',
-                          textTransform: 'uppercase',
-                          letterSpacing: '0.5px',
-                          borderBottom: '2px solid rgba(230, 227, 212, 0.8)',
-                          maxWidth: '200px'
-                        }}>Descripción</th>
-                        
-                        <th style={{ 
-                          padding: '1.5rem 1rem', 
-                          textAlign: 'left',
-                          fontFamily: 'Montserrat, sans-serif',
-                          fontWeight: '600',
-                          fontSize: '0.9rem',
-                          color: '#333',
-                          textTransform: 'uppercase',
-                          letterSpacing: '0.5px',
-                          borderBottom: '2px solid rgba(230, 227, 212, 0.8)'
-                        }}>Precio</th>
-                        
-                        <th style={{ 
-                          padding: '1.5rem 1rem', 
-                          textAlign: 'left',
-                          fontFamily: 'Montserrat, sans-serif',
-                          fontWeight: '600',
-                          fontSize: '0.9rem',
-                          color: '#333',
-                          textTransform: 'uppercase',
-                          letterSpacing: '0.5px',
-                          borderBottom: '2px solid rgba(230, 227, 212, 0.8)'
-                        }}>Categoría</th>
-                        
-                        <th style={{ 
-                          padding: '1.5rem 1rem', 
-                          textAlign: 'left',
-                          fontFamily: 'Montserrat, sans-serif',
-                          fontWeight: '600',
-                          fontSize: '0.9rem',
-                          color: '#333',
-                          textTransform: 'uppercase',
-                          letterSpacing: '0.5px',
-                          borderBottom: '2px solid rgba(230, 227, 212, 0.8)'
-                        }}>Stock</th>
-                        
-                        <th style={{ 
-                          padding: '1.5rem 1rem', 
-                          textAlign: 'left',
-                          fontFamily: 'Montserrat, sans-serif',
-                          fontWeight: '600',
-                          fontSize: '0.9rem',
-                          color: '#333',
-                          textTransform: 'uppercase',
-                          letterSpacing: '0.5px',
-                          borderBottom: '2px solid rgba(230, 227, 212, 0.8)'
-                        }}>Acciones</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {sortedProducts.map(product => (
-                        <React.Fragment key={product.id}>
-                          <tr style={{
-                            borderBottom: '1px solid rgba(230, 227, 212, 0.4)',
-                            transition: 'all 0.3s ease',
-                            backgroundColor: editingProductId === product.id ? 'rgba(212, 175, 55, 0.1)' : 'transparent'
-                          }}>
-                            <td style={{ 
-                              padding: '1.25rem 1rem', 
-                              color: '#333',
-                              fontSize: '0.9rem',
-                              fontWeight: '600'
-                            }}>{product.id}</td>
-                            <td style={{ padding: '1.25rem 1rem' }}>
-                              <SafeImage 
-                                src={getProductImageUrl(product)}
-                                alt={product.name}
-                                style={{ 
-                                  width: '60px', 
-                                  height: '60px', 
-                                  objectFit: 'cover',
-                                  borderRadius: '8px',
-                                  border: '2px solid #dee2e6'
-                                }}
-                              />
-                            </td>
-                            <td style={{ 
-                              padding: '1.25rem 1rem',
-                              color: '#333',
-                              fontSize: '0.9rem'
+                    <table style={{
+                      width: '100%',
+                      borderCollapse: 'collapse',
+                      minWidth: '800px'
+                    }}>
+                      <thead>
+                        <tr style={{
+                          background: 'linear-gradient(135deg, #e6e3d4 0%, #ddd8c7 100%)'
+                        }}>
+                          <th style={{
+                            padding: '1.5rem 1rem',
+                            textAlign: 'left',
+                            fontFamily: 'Montserrat, sans-serif',
+                            fontWeight: '600',
+                            fontSize: '0.9rem',
+                            color: '#333',
+                            textTransform: 'uppercase',
+                            letterSpacing: '0.5px',
+                            borderBottom: '2px solid rgba(230, 227, 212, 0.8)'
+                          }}>ID</th>
+
+                          <th style={{
+                            padding: '1.5rem 1rem',
+                            textAlign: 'left',
+                            fontFamily: 'Montserrat, sans-serif',
+                            fontWeight: '600',
+                            fontSize: '0.9rem',
+                            color: '#333',
+                            textTransform: 'uppercase',
+                            letterSpacing: '0.5px',
+                            borderBottom: '2px solid rgba(230, 227, 212, 0.8)'
+                          }}>Imagen</th>
+
+                          <th style={{
+                            padding: '1.5rem 1rem',
+                            textAlign: 'left',
+                            fontFamily: 'Montserrat, sans-serif',
+                            fontWeight: '600',
+                            fontSize: '0.9rem',
+                            color: '#333',
+                            textTransform: 'uppercase',
+                            letterSpacing: '0.5px',
+                            borderBottom: '2px solid rgba(230, 227, 212, 0.8)'
+                          }}>Nombre</th>
+
+                          <th style={{
+                            padding: '1.5rem 1rem',
+                            textAlign: 'left',
+                            fontFamily: 'Montserrat, sans-serif',
+                            fontWeight: '600',
+                            fontSize: '0.9rem',
+                            color: '#333',
+                            textTransform: 'uppercase',
+                            letterSpacing: '0.5px',
+                            borderBottom: '2px solid rgba(230, 227, 212, 0.8)',
+                            maxWidth: '200px'
+                          }}>Descripción</th>
+
+                          <th style={{
+                            padding: '1.5rem 1rem',
+                            textAlign: 'left',
+                            fontFamily: 'Montserrat, sans-serif',
+                            fontWeight: '600',
+                            fontSize: '0.9rem',
+                            color: '#333',
+                            textTransform: 'uppercase',
+                            letterSpacing: '0.5px',
+                            borderBottom: '2px solid rgba(230, 227, 212, 0.8)'
+                          }}>Precio</th>
+
+                          <th style={{
+                            padding: '1.5rem 1rem',
+                            textAlign: 'left',
+                            fontFamily: 'Montserrat, sans-serif',
+                            fontWeight: '600',
+                            fontSize: '0.9rem',
+                            color: '#333',
+                            textTransform: 'uppercase',
+                            letterSpacing: '0.5px',
+                            borderBottom: '2px solid rgba(230, 227, 212, 0.8)'
+                          }}>Categoría</th>
+
+                          <th style={{
+                            padding: '1.5rem 1rem',
+                            textAlign: 'left',
+                            fontFamily: 'Montserrat, sans-serif',
+                            fontWeight: '600',
+                            fontSize: '0.9rem',
+                            color: '#333',
+                            textTransform: 'uppercase',
+                            letterSpacing: '0.5px',
+                            borderBottom: '2px solid rgba(230, 227, 212, 0.8)'
+                          }}>Stock</th>
+
+                          <th style={{
+                            padding: '1.5rem 1rem',
+                            textAlign: 'left',
+                            fontFamily: 'Montserrat, sans-serif',
+                            fontWeight: '600',
+                            fontSize: '0.9rem',
+                            color: '#333',
+                            textTransform: 'uppercase',
+                            letterSpacing: '0.5px',
+                            borderBottom: '2px solid rgba(230, 227, 212, 0.8)'
+                          }}>Acciones</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {sortedProducts.map(product => (
+                          <React.Fragment key={product.id}>
+                            <tr style={{
+                              borderBottom: '1px solid rgba(230, 227, 212, 0.4)',
+                              transition: 'all 0.3s ease',
+                              backgroundColor: editingProductId === product.id ? 'rgba(212, 175, 55, 0.1)' : 'transparent'
                             }}>
-                              <strong>{product.name}</strong>
-                              {(!product.images_url || product.images_url.length === 0) && (
-                                <div style={{ 
-                                  fontSize: '0.7rem', 
-                                  color: '#e67e22', 
-                                  marginTop: '2px',
-                                  fontWeight: '500'
-                                }}>
-                                  ⚠️ Sin imágenes
-                                </div>
-                              )}
-                            </td>
-                            <td style={{ 
-                              padding: '1.25rem 1rem',
-                              color: '#666',
-                              fontSize: '0.85rem',
-                              maxWidth: '200px',
-                              overflow: 'hidden',
-                              textOverflow: 'ellipsis',
-                              whiteSpace: 'nowrap'
-                            }}>
-                              {product.description || '—'}
-                            </td>
-                            <td style={{ 
-                              padding: '1.25rem 1rem',
-                              color: '#333',
-                              fontSize: '0.9rem',
-                              fontWeight: '600'
-                            }}>{product.price}</td>
-                            <td style={{ 
-                              padding: '1.25rem 1rem',
-                              color: '#666',
-                              fontSize: '0.9rem'
-                            }}>{product.category}</td>
-                            <td style={{ padding: '1.25rem 1rem' }}>
-                              <button
-                                onClick={() => handleToggleStock(product)}
-                                disabled={loading}
-                                style={{
-                                  padding: '0.6rem 1.2rem',
-                                  borderRadius: '20px',
-                                  fontSize: '0.8rem',
-                                  fontWeight: '500',
-                                  cursor: loading ? 'not-allowed' : 'pointer',
-                                  transition: 'all 0.3s ease',
-                                  minWidth: '120px',
-                                  textTransform: 'uppercase',
-                                  letterSpacing: '0.5px',
-                                  background: product.in_stock 
-                                    ? 'linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%)' 
-                                    : 'linear-gradient(135deg, #f8d7da 0%, #f5c6cb 100%)',
-                                  color: product.in_stock ? '#155724' : '#721c24',
-                                  border: `1px solid ${product.in_stock ? 'rgba(21, 87, 36, 0.2)' : 'rgba(114, 28, 36, 0.2)'}`,
-                                  opacity: loading ? 0.5 : 1
-                                }}
-                              >
-                                {product.in_stock ? '✅ En Stock' : '❌ Sin Stock'}
-                              </button>
-                            </td>
-                            <td style={{ padding: '1.25rem 1rem' }}>
-                              <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
+                              <td style={{
+                                padding: '1.25rem 1rem',
+                                color: '#333',
+                                fontSize: '0.9rem',
+                                fontWeight: '600'
+                              }}>{product.id}</td>
+                              <td style={{ padding: '1.25rem 1rem' }}>
+                                <SafeImage
+                                  src={getProductImageUrl(product)}
+                                  alt={product.name}
+                                  style={{
+                                    width: '60px',
+                                    height: '60px',
+                                    objectFit: 'cover',
+                                    borderRadius: '8px',
+                                    border: '2px solid #dee2e6'
+                                  }}
+                                />
+                              </td>
+                              <td style={{
+                                padding: '1.25rem 1rem',
+                                color: '#333',
+                                fontSize: '0.9rem'
+                              }}>
+                                <strong>{product.name}</strong>
+                                {(!product.images_url || product.images_url.length === 0) && (
+                                  <div style={{
+                                    fontSize: '0.7rem',
+                                    color: '#e67e22',
+                                    marginTop: '2px',
+                                    fontWeight: '500'
+                                  }}>
+                                    ⚠️ Sin imágenes
+                                  </div>
+                                )}
+                              </td>
+                              <td style={{
+                                padding: '1.25rem 1rem',
+                                color: '#666',
+                                fontSize: '0.85rem',
+                                maxWidth: '200px',
+                                overflow: 'hidden',
+                                textOverflow: 'ellipsis',
+                                whiteSpace: 'nowrap'
+                              }}>
+                                {product.description || '—'}
+                              </td>
+                              <td style={{
+                                padding: '1.25rem 1rem',
+                                color: '#333',
+                                fontSize: '0.9rem',
+                                fontWeight: '600'
+                              }}>{product.price}</td>
+                              <td style={{
+                                padding: '1.25rem 1rem',
+                                color: '#666',
+                                fontSize: '0.9rem'
+                              }}>{product.category}</td>
+                              <td style={{ padding: '1.25rem 1rem' }}>
                                 <button
-                                  onClick={() => editingProductId === product.id ? cancelEditing() : startEditing(product)}
+                                  onClick={() => handleToggleStock(product)}
                                   disabled={loading}
                                   style={{
-                                    padding: '0.6rem 1rem',
-                                    background: editingProductId === product.id 
-                                      ? 'linear-gradient(135deg, #dc3545 0%, #c82333 100%)'
-                                      : 'linear-gradient(135deg, #007bff 0%, #0056b3 100%)',
-                                    color: 'white',
-                                    border: 'none',
-                                    borderRadius: '8px',
+                                    padding: '0.6rem 1.2rem',
+                                    borderRadius: '20px',
                                     fontSize: '0.8rem',
+                                    fontWeight: '500',
                                     cursor: loading ? 'not-allowed' : 'pointer',
                                     transition: 'all 0.3s ease',
-                                    fontWeight: '500',
+                                    minWidth: '120px',
                                     textTransform: 'uppercase',
                                     letterSpacing: '0.5px',
-                                    minWidth: '80px',
+                                    background: product.in_stock
+                                      ? 'linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%)'
+                                      : 'linear-gradient(135deg, #f8d7da 0%, #f5c6cb 100%)',
+                                    color: product.in_stock ? '#155724' : '#721c24',
+                                    border: `1px solid ${product.in_stock ? 'rgba(21, 87, 36, 0.2)' : 'rgba(114, 28, 36, 0.2)'}`,
                                     opacity: loading ? 0.5 : 1
                                   }}
                                 >
-                                  {editingProductId === product.id ? '❌ Cancelar' : '✏️ Editar'}
+                                  {product.in_stock ? '✅ En Stock' : '❌ Sin Stock'}
                                 </button>
-                                <button
-                                  onClick={() => handleDeleteProduct(product.id)}
-                                  disabled={loading || editingProductId === product.id}
-                                  style={{
-                                    padding: '0.6rem 1rem',
-                                    background: 'linear-gradient(135deg, #dc3545 0%, #c82333 100%)',
-                                    color: 'white',
-                                    border: 'none',
-                                    borderRadius: '8px',
-                                    fontSize: '0.8rem',
-                                    cursor: (loading || editingProductId === product.id) ? 'not-allowed' : 'pointer',
-                                    transition: 'all 0.3s ease',
-                                    fontWeight: '500',
-                                    textTransform: 'uppercase',
-                                    letterSpacing: '0.5px',
-                                    minWidth: '80px',
-                                    opacity: (loading || editingProductId === product.id) ? 0.5 : 1
-                                  }}
-                                >
-                                  🗑️ Desactivar
-                                </button>
-                              </div>
-                            </td>
-                          </tr>
-
-                          {/* Formulario de edición inline */}
-                          {editingProductId === product.id && (
-                            <tr style={{ background: 'white' }}>
-                              <td colSpan="8">
-                                <div style={{
-                                  padding: '2.5rem',
-                                  border: '2px solid #d4af37',
-                                  borderRadius: '16px',
-                                  margin: '1rem',
-                                  background: 'white',
-                                  boxShadow: '0 12px 40px rgba(0, 0, 0, 0.15)',
-                                  position: 'relative',
-                                  overflow: 'hidden'
-                                }}>
-                                  <div style={{
-                                    position: 'absolute',
-                                    top: 0,
-                                    left: 0,
-                                    right: 0,
-                                    height: '4px',
-                                    background: 'linear-gradient(90deg, #d4af37 0%, #e6c757 50%, #d4af37 100%)'
-                                  }} />
-                                  
-                                  <h4 style={{ 
-                                    fontFamily: 'Didot, serif',
-                                    color: '#333',
-                                    margin: '0 0 2rem 0',
-                                    fontSize: '1.4rem',
-                                    fontWeight: '400',
-                                    textAlign: 'center'
-                                  }}>
-                                    ✏️ Editando: {product.name}
-                                  </h4>
-                                  
-                                  <form onSubmit={handleUpdateProduct}>
-                                    <div style={{ 
-                                      display: 'grid', 
-                                      gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', 
-                                      gap: '2rem',
-                                      marginBottom: '2rem'
-                                    }}>
-                                      <div>
-                                        <h5 style={{ 
-                                          margin: '0 0 1rem 0',
-                                          color: '#333',
-                                          fontSize: '1rem',
-                                          fontWeight: '600'
-                                        }}>
-                                          📝 Información Básica
-                                        </h5>
-                                        
-                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                                          <input
-                                            type="text"
-                                            value={editName}
-                                            onChange={(e) => setEditName(e.target.value)}
-                                            placeholder="Nombre del producto"
-                                            required
-                                            style={{
-                                              padding: '1rem',
-                                              border: '2px solid #e9ecef',
-                                              borderRadius: '12px',
-                                              fontSize: '1rem',
-                                              outline: 'none',
-                                              transition: 'all 0.3s ease'
-                                            }}
-                                          />
-                                          
-                                          <input
-                                            type="text"
-                                            value={editPrice}
-                                            onChange={(e) => setEditPrice(e.target.value)}
-                                            placeholder="Precio (ej: $25.000)"
-                                            style={{
-                                              padding: '1rem',
-                                              border: '2px solid #e9ecef',
-                                              borderRadius: '12px',
-                                              fontSize: '1rem',
-                                              outline: 'none',
-                                              transition: 'all 0.3s ease'
-                                            }}
-                                          />
-                                          
-                                          <select
-                                            value={editCategory}
-                                            onChange={(e) => setEditCategory(e.target.value)}
-                                            required
-                                            style={{
-                                              padding: '1rem',
-                                              border: '2px solid #e9ecef',
-                                              borderRadius: '12px',
-                                              fontSize: '1rem',
-                                              backgroundColor: 'white',
-                                              cursor: 'pointer',
-                                              outline: 'none'
-                                            }}
-                                          >
-                                            <option value="">Seleccionar categoría</option>
-                                            {VALID_CATEGORIES.map(category => (
-                                              <option key={category} value={category}>{category}</option>
-                                            ))}
-                                          </select>
-                                          
-                                          <label style={{
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            gap: '0.75rem',
-                                            padding: '1rem',
-                                            background: '#f8f9fa',
-                                            borderRadius: '12px',
-                                            border: '2px solid #e9ecef',
-                                            cursor: 'pointer',
-                                            fontWeight: '500'
-                                          }}>
-                                            <input
-                                              type="checkbox"
-                                              checked={editInStock}
-                                              onChange={(e) => setEditInStock(e.target.checked)}
-                                              style={{ width: '18px', height: '18px', accentColor: '#d4af37' }}
-                                            />
-                                            En Stock
-                                          </label>
-                                          
-                                          <textarea
-                                            value={editDescription}
-                                            onChange={(e) => setEditDescription(e.target.value)}
-                                            placeholder="Descripción del producto"
-                                            rows={3}
-                                            style={{
-                                              padding: '1rem',
-                                              border: '2px solid #e9ecef',
-                                              borderRadius: '12px',
-                                              fontSize: '1rem',
-                                              resize: 'vertical',
-                                              outline: 'none',
-                                              transition: 'all 0.3s ease'
-                                            }}
-                                          />
-                                        </div>
-                                      </div>
-
-                                      <div>
-                                        <h5 style={{ 
-                                          margin: '0 0 1rem 0',
-                                          color: '#333',
-                                          fontSize: '1rem',
-                                          fontWeight: '600'
-                                        }}>
-                                          🖼️ Gestión de Imágenes
-                                        </h5>
-                                        
-                                        <div style={{ display: 'flex', gap: '1rem', marginBottom: '1rem' }}>
-                                          <input
-                                            type="url"
-                                            placeholder="URL de la imagen"
-                                            value={editImageUrl}
-                                            onChange={(e) => setEditImageUrl(e.target.value)}
-                                            style={{
-                                              flex: 1,
-                                              padding: '1rem',
-                                              border: '2px solid #e9ecef',
-                                              borderRadius: '12px',
-                                              fontSize: '1rem',
-                                              outline: 'none'
-                                            }}
-                                          />
-                                          
-                                          <button 
-                                            type="button" 
-                                            onClick={addEditImage}
-                                            disabled={!editImageUrl}
-                                            style={{
-                                              background: editImageUrl ? 'linear-gradient(135deg, #28a745 0%, #20c997 100%)' : '#6c757d',
-                                              color: 'white',
-                                              border: 'none',
-                                              padding: '1rem',
-                                              borderRadius: '12px',
-                                              cursor: editImageUrl ? 'pointer' : 'not-allowed',
-                                              fontWeight: '600',
-                                              minWidth: '80px'
-                                            }}
-                                          >
-                                            ➕
-                                          </button>
-                                        </div>
-                                        
-                                        {editImages.length > 0 && (
-                                          <div>
-                                            <p style={{ marginBottom: '1rem', fontWeight: '500' }}>
-                                              Imágenes ({editImages.length}/10):
-                                            </p>
-                                            <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
-                                              {editImages.map((url, index) => (
-                                                <div key={index} style={{ position: 'relative' }}>
-                                                  <SafeImage 
-                                                    src={url} 
-                                                    alt={`Imagen ${index + 1}`}
-                                                    style={{ 
-                                                      width: '60px', 
-                                                      height: '60px', 
-                                                      objectFit: 'cover', 
-                                                      borderRadius: '8px',
-                                                      border: '2px solid #dee2e6'
-                                                    }}
-                                                  />
-                                                  <button
-                                                    type="button"
-                                                    onClick={() => removeEditImage(index)}
-                                                    style={{
-                                                      position: 'absolute',
-                                                      top: '-8px',
-                                                      right: '-8px',
-                                                      background: '#dc3545',
-                                                      color: 'white',
-                                                      border: 'none',
-                                                      borderRadius: '50%',
-                                                      width: '24px',
-                                                      height: '24px',
-                                                      cursor: 'pointer',
-                                                      fontSize: '14px',
-                                                      fontWeight: 'bold',
-                                                      display: 'flex',
-                                                      alignItems: 'center',
-                                                      justifyContent: 'center'
-                                                    }}
-                                                  >
-                                                    ×
-                                                  </button>
-                                                </div>
-                                              ))}
-                                            </div>
-                                          </div>
-                                        )}
-                                      </div>
-                                    </div>
-                                    
-                                    <div style={{ 
-                                      display: 'flex', 
-                                      gap: '1rem', 
-                                      justifyContent: 'center',
-                                      paddingTop: '2rem',
-                                      borderTop: '2px solid rgba(230, 227, 212, 0.6)'
-                                    }}>
-                                      <button 
-                                        type="submit" 
-                                        disabled={loading}
-                                        style={{
-                                          background: loading ? '#6c757d' : 'linear-gradient(135deg, #28a745 0%, #20c997 100%)',
-                                          color: 'white',
-                                          border: 'none',
-                                          padding: '1rem 2.5rem',
-                                          borderRadius: '12px',
-                                          fontSize: '1rem',
-                                          fontWeight: '600',
-                                          cursor: loading ? 'not-allowed' : 'pointer',
-                                          transition: 'all 0.3s ease',
-                                          textTransform: 'uppercase',
-                                          letterSpacing: '0.5px',
-                                          minWidth: '160px'
-                                        }}
-                                      >
-                                        {loading ? '⏳ Guardando...' : '✅ Guardar Cambios'}
-                                      </button>
-                                      
-                                      <button 
-                                        type="button" 
-                                        onClick={cancelEditing}
-                                        style={{
-                                          background: 'linear-gradient(135deg, #6c757d 0%, #5a6268 100%)',
-                                          color: 'white',
-                                          border: 'none',
-                                          padding: '1rem 2.5rem',
-                                          borderRadius: '12px',
-                                          fontSize: '1rem',
-                                          fontWeight: '600',
-                                          cursor: 'pointer',
-                                          transition: 'all 0.3s ease',
-                                          textTransform: 'uppercase',
-                                          letterSpacing: '0.5px',
-                                          minWidth: '160px'
-                                        }}
-                                      >
-                                        ❌ Cancelar
-                                      </button>
-                                    </div>
-                                  </form>
+                              </td>
+                              <td style={{ padding: '1.25rem 1rem' }}>
+                                <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
+                                  <button
+                                    onClick={() => editingProductId === product.id ? cancelEditing() : startEditing(product)}
+                                    disabled={loading}
+                                    style={{
+                                      padding: '0.6rem 1rem',
+                                      background: editingProductId === product.id
+                                        ? 'linear-gradient(135deg, #dc3545 0%, #c82333 100%)'
+                                        : 'linear-gradient(135deg, #007bff 0%, #0056b3 100%)',
+                                      color: 'white',
+                                      border: 'none',
+                                      borderRadius: '8px',
+                                      fontSize: '0.8rem',
+                                      cursor: loading ? 'not-allowed' : 'pointer',
+                                      transition: 'all 0.3s ease',
+                                      fontWeight: '500',
+                                      textTransform: 'uppercase',
+                                      letterSpacing: '0.5px',
+                                      minWidth: '80px',
+                                      opacity: loading ? 0.5 : 1
+                                    }}
+                                  >
+                                    {editingProductId === product.id ? '❌ Cancelar' : '✏️ Editar'}
+                                  </button>
+                                  <button
+                                    onClick={() => handleDeleteProduct(product.id)}
+                                    disabled={loading || editingProductId === product.id}
+                                    style={{
+                                      padding: '0.6rem 1rem',
+                                      background: 'linear-gradient(135deg, #dc3545 0%, #c82333 100%)',
+                                      color: 'white',
+                                      border: 'none',
+                                      borderRadius: '8px',
+                                      fontSize: '0.8rem',
+                                      cursor: (loading || editingProductId === product.id) ? 'not-allowed' : 'pointer',
+                                      transition: 'all 0.3s ease',
+                                      fontWeight: '500',
+                                      textTransform: 'uppercase',
+                                      letterSpacing: '0.5px',
+                                      minWidth: '80px',
+                                      opacity: (loading || editingProductId === product.id) ? 0.5 : 1
+                                    }}
+                                  >
+                                    🗑️ Desactivar
+                                  </button>
                                 </div>
                               </td>
                             </tr>
-                          )}
-                        </React.Fragment>
-                      ))}
-                    </tbody>
-                  </table>
+
+                            {/* Formulario de edición inline */}
+                            {editingProductId === product.id && (
+                              <tr style={{ background: 'white' }}>
+                                <td colSpan="8">
+                                  <div style={{
+                                    padding: '2.5rem',
+                                    border: '2px solid #d4af37',
+                                    borderRadius: '16px',
+                                    margin: '1rem',
+                                    background: 'white',
+                                    boxShadow: '0 12px 40px rgba(0, 0, 0, 0.15)',
+                                    position: 'relative',
+                                    overflow: 'hidden'
+                                  }}>
+                                    <div style={{
+                                      position: 'absolute',
+                                      top: 0,
+                                      left: 0,
+                                      right: 0,
+                                      height: '4px',
+                                      background: 'linear-gradient(90deg, #d4af37 0%, #e6c757 50%, #d4af37 100%)'
+                                    }} />
+
+                                    <h4 style={{
+                                      fontFamily: 'Didot, serif',
+                                      color: '#333',
+                                      margin: '0 0 2rem 0',
+                                      fontSize: '1.4rem',
+                                      fontWeight: '400',
+                                      textAlign: 'center'
+                                    }}>
+                                      ✏️ Editando: {product.name}
+                                    </h4>
+
+                                    <form onSubmit={handleUpdateProduct}>
+                                      <div style={{
+                                        display: 'grid',
+                                        gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
+                                        gap: '2rem',
+                                        marginBottom: '2rem'
+                                      }}>
+                                        <div>
+                                          <h5 style={{
+                                            margin: '0 0 1rem 0',
+                                            color: '#333',
+                                            fontSize: '1rem',
+                                            fontWeight: '600'
+                                          }}>
+                                            📝 Información Básica
+                                          </h5>
+
+                                          <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                                            <input
+                                              type="text"
+                                              value={editName}
+                                              onChange={(e) => setEditName(e.target.value)}
+                                              placeholder="Nombre del producto"
+                                              required
+                                              style={{
+                                                padding: '1rem',
+                                                border: '2px solid #e9ecef',
+                                                borderRadius: '12px',
+                                                fontSize: '1rem',
+                                                outline: 'none',
+                                                transition: 'all 0.3s ease'
+                                              }}
+                                            />
+
+                                            <input
+                                              type="text"
+                                              value={editPrice}
+                                              onChange={(e) => setEditPrice(e.target.value)}
+                                              placeholder="Precio (ej: $25.000)"
+                                              style={{
+                                                padding: '1rem',
+                                                border: '2px solid #e9ecef',
+                                                borderRadius: '12px',
+                                                fontSize: '1rem',
+                                                outline: 'none',
+                                                transition: 'all 0.3s ease'
+                                              }}
+                                            />
+
+                                            <select
+                                              value={editCategory}
+                                              onChange={(e) => setEditCategory(e.target.value)}
+                                              required
+                                              style={{
+                                                padding: '1rem',
+                                                border: '2px solid #e9ecef',
+                                                borderRadius: '12px',
+                                                fontSize: '1rem',
+                                                backgroundColor: 'white',
+                                                cursor: 'pointer',
+                                                outline: 'none'
+                                              }}
+                                            >
+                                              <option value="">Seleccionar categoría</option>
+                                              {VALID_CATEGORIES.map(category => (
+                                                <option key={category} value={category}>{category}</option>
+                                              ))}
+                                            </select>
+
+                                            <label style={{
+                                              display: 'flex',
+                                              alignItems: 'center',
+                                              gap: '0.75rem',
+                                              padding: '1rem',
+                                              background: '#f8f9fa',
+                                              borderRadius: '12px',
+                                              border: '2px solid #e9ecef',
+                                              cursor: 'pointer',
+                                              fontWeight: '500'
+                                            }}>
+                                              <input
+                                                type="checkbox"
+                                                checked={editInStock}
+                                                onChange={(e) => setEditInStock(e.target.checked)}
+                                                style={{ width: '18px', height: '18px', accentColor: '#d4af37' }}
+                                              />
+                                              En Stock
+                                            </label>
+
+                                            <textarea
+                                              value={editDescription}
+                                              onChange={(e) => setEditDescription(e.target.value)}
+                                              placeholder="Descripción del producto"
+                                              rows={3}
+                                              style={{
+                                                padding: '1rem',
+                                                border: '2px solid #e9ecef',
+                                                borderRadius: '12px',
+                                                fontSize: '1rem',
+                                                resize: 'vertical',
+                                                outline: 'none',
+                                                transition: 'all 0.3s ease'
+                                              }}
+                                            />
+                                          </div>
+                                        </div>
+
+                                        <div>
+                                          <h5 style={{
+                                            margin: '0 0 1rem 0',
+                                            color: '#333',
+                                            fontSize: '1rem',
+                                            fontWeight: '600'
+                                          }}>
+                                            🖼️ Gestión de Imágenes
+                                          </h5>
+
+                                          <div style={{ display: 'flex', gap: '1rem', marginBottom: '1rem' }}>
+                                            <input
+                                              type="url"
+                                              placeholder="URL de la imagen"
+                                              value={editImageUrl}
+                                              onChange={(e) => setEditImageUrl(e.target.value)}
+                                              style={{
+                                                flex: 1,
+                                                padding: '1rem',
+                                                border: '2px solid #e9ecef',
+                                                borderRadius: '12px',
+                                                fontSize: '1rem',
+                                                outline: 'none'
+                                              }}
+                                            />
+
+                                            <button
+                                              type="button"
+                                              onClick={addEditImage}
+                                              disabled={!editImageUrl}
+                                              style={{
+                                                background: editImageUrl ? 'linear-gradient(135deg, #28a745 0%, #20c997 100%)' : '#6c757d',
+                                                color: 'white',
+                                                border: 'none',
+                                                padding: '1rem',
+                                                borderRadius: '12px',
+                                                cursor: editImageUrl ? 'pointer' : 'not-allowed',
+                                                fontWeight: '600',
+                                                minWidth: '80px'
+                                              }}
+                                            >
+                                              ➕
+                                            </button>
+                                          </div>
+
+                                          {editImages.length > 0 && (
+                                            <div>
+                                              <p style={{ marginBottom: '1rem', fontWeight: '500' }}>
+                                                Imágenes ({editImages.length}/10):
+                                              </p>
+                                              <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
+                                                {editImages.map((url, index) => (
+                                                  <div key={index} style={{ position: 'relative' }}>
+                                                    <SafeImage
+                                                      src={url}
+                                                      alt={`Imagen ${index + 1}`}
+                                                      style={{
+                                                        width: '60px',
+                                                        height: '60px',
+                                                        objectFit: 'cover',
+                                                        borderRadius: '8px',
+                                                        border: '2px solid #dee2e6'
+                                                      }}
+                                                    />
+                                                    <button
+                                                      type="button"
+                                                      onClick={() => removeEditImage(index)}
+                                                      style={{
+                                                        position: 'absolute',
+                                                        top: '-8px',
+                                                        right: '-8px',
+                                                        background: '#dc3545',
+                                                        color: 'white',
+                                                        border: 'none',
+                                                        borderRadius: '50%',
+                                                        width: '24px',
+                                                        height: '24px',
+                                                        cursor: 'pointer',
+                                                        fontSize: '14px',
+                                                        fontWeight: 'bold',
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        justifyContent: 'center'
+                                                      }}
+                                                    >
+                                                      ×
+                                                    </button>
+                                                  </div>
+                                                ))}
+                                              </div>
+                                            </div>
+                                          )}
+                                        </div>
+                                      </div>
+
+                                      <div style={{
+                                        display: 'flex',
+                                        gap: '1rem',
+                                        justifyContent: 'center',
+                                        paddingTop: '2rem',
+                                        borderTop: '2px solid rgba(230, 227, 212, 0.6)'
+                                      }}>
+                                        <button
+                                          type="submit"
+                                          disabled={loading}
+                                          style={{
+                                            background: loading ? '#6c757d' : 'linear-gradient(135deg, #28a745 0%, #20c997 100%)',
+                                            color: 'white',
+                                            border: 'none',
+                                            padding: '1rem 2.5rem',
+                                            borderRadius: '12px',
+                                            fontSize: '1rem',
+                                            fontWeight: '600',
+                                            cursor: loading ? 'not-allowed' : 'pointer',
+                                            transition: 'all 0.3s ease',
+                                            textTransform: 'uppercase',
+                                            letterSpacing: '0.5px',
+                                            minWidth: '160px'
+                                          }}
+                                        >
+                                          {loading ? '⏳ Guardando...' : '✅ Guardar Cambios'}
+                                        </button>
+
+                                        <button
+                                          type="button"
+                                          onClick={cancelEditing}
+                                          style={{
+                                            background: 'linear-gradient(135deg, #6c757d 0%, #5a6268 100%)',
+                                            color: 'white',
+                                            border: 'none',
+                                            padding: '1rem 2.5rem',
+                                            borderRadius: '12px',
+                                            fontSize: '1rem',
+                                            fontWeight: '600',
+                                            cursor: 'pointer',
+                                            transition: 'all 0.3s ease',
+                                            textTransform: 'uppercase',
+                                            letterSpacing: '0.5px',
+                                            minWidth: '160px'
+                                          }}
+                                        >
+                                          ❌ Cancelar
+                                        </button>
+                                      </div>
+                                    </form>
+                                  </div>
+                                </td>
+                              </tr>
+                            )}
+                          </React.Fragment>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
                 </div>
-              </div>
+
+                <div className="mobile-view" style={{ display: 'none', flexDirection: 'column', gap: '1.5rem' }}>
+                  {sortedProducts.map(product => (
+                    <div key={product.id} style={{
+                      background: 'white',
+                      borderRadius: '16px',
+                      overflow: 'hidden',
+                      boxShadow: '0 4px 15px rgba(0,0,0,0.08)',
+                      border: '1px solid rgba(230, 227, 212, 0.6)',
+                      display: 'flex',
+                      flexDirection: 'column'
+                    }}>
+                      {editingProductId === product.id ? (
+                        <div style={{ padding: '1.5rem' }}>
+                          <h4 style={{ textAlign: 'center', marginBottom: '1rem', color: '#333' }}>✏️ Editando {product.name}</h4>
+                          <form onSubmit={handleUpdateProduct}>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                              <input type="text" value={editName} onChange={(e) => setEditName(e.target.value)} placeholder="Nombre" style={{ padding: '0.8rem', border: '1px solid #ddd', borderRadius: '8px', width: '100%', fontSize: '16px' }} />
+                              <input type="text" value={editPrice} onChange={(e) => setEditPrice(e.target.value)} placeholder="Precio" style={{ padding: '0.8rem', border: '1px solid #ddd', borderRadius: '8px', width: '100%', fontSize: '16px' }} />
+                              <select value={editCategory} onChange={(e) => setEditCategory(e.target.value)} style={{ padding: '0.8rem', border: '1px solid #ddd', borderRadius: '8px', width: '100%', fontSize: '16px', background: 'white' }}>
+                                <option value="">Categoría</option>
+                                {VALID_CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
+                              </select>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.5rem', background: '#f8f9fa', borderRadius: '8px' }}>
+                                <input type="checkbox" checked={editInStock} onChange={(e) => setEditInStock(e.target.checked)} style={{ width: '20px', height: '20px' }} />
+                                <span>En Stock</span>
+                              </div>
+                              <textarea value={editDescription} onChange={(e) => setEditDescription(e.target.value)} placeholder="Descripción" rows={3} style={{ padding: '0.8rem', border: '1px solid #ddd', borderRadius: '8px', width: '100%', fontSize: '16px' }} />
+
+                              <div style={{ display: 'flex', gap: '0.5rem', marginTop: '1rem' }}>
+                                <button type="submit" disabled={loading} style={{ flex: 1, padding: '1rem', background: '#28a745', color: 'white', border: 'none', borderRadius: '8px', fontWeight: 'bold' }}>Guardar</button>
+                                <button type="button" onClick={cancelEditing} style={{ flex: 1, padding: '1rem', background: '#666', color: 'white', border: 'none', borderRadius: '8px', fontWeight: 'bold' }}>Cancelar</button>
+                              </div>
+                            </div>
+                          </form>
+                        </div>
+                      ) : (
+                        <>
+                          <div style={{
+                            padding: '1.5rem',
+                            background: 'linear-gradient(135deg, #fcfbf8 0%, #f3f1eb 100%)',
+                            display: 'flex',
+                            gap: '1rem',
+                            alignItems: 'center',
+                            borderBottom: '1px solid rgba(0,0,0,0.05)'
+                          }}>
+                            <SafeImage src={getProductImageUrl(product)} alt={product.name} style={{ width: '80px', height: '80px', objectFit: 'cover', borderRadius: '12px', border: '2px solid white', boxShadow: '0 4px 10px rgba(0,0,0,0.1)' }} />
+                            <div style={{ flex: 1 }}>
+                              <h3 style={{ margin: '0 0 0.25rem 0', fontSize: '1.1rem', color: '#333' }}>{product.name}</h3>
+                              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                <span style={{ fontSize: '0.85rem', color: '#666', background: 'white', padding: '0.2rem 0.6rem', borderRadius: '8px', border: '1px solid #ddd' }}>{product.category}</span>
+                                <span style={{ fontWeight: 'bold', fontSize: '1.1rem', color: '#333' }}>{product.price}</span>
+                              </div>
+                            </div>
+                          </div>
+                          <div style={{ padding: '1rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#f9f9f9', padding: '0.75rem', borderRadius: '10px' }}>
+                              <span style={{ fontSize: '0.9rem', color: '#666' }}>Disponibilidad:</span>
+                              <button onClick={() => handleToggleStock(product)} style={{ padding: '0.5rem 1rem', borderRadius: '20px', fontSize: '0.8rem', fontWeight: '600', textTransform: 'uppercase', border: 'none', background: product.in_stock ? '#d4edda' : '#f8d7da', color: product.in_stock ? '#155724' : '#721c24' }}>
+                                {product.in_stock ? '✅ En Stock' : '❌ Agotado'}
+                              </button>
+                            </div>
+                            <div style={{ display: 'flex', gap: '0.75rem' }}>
+                              <button onClick={() => startEditing(product)} style={{ flex: 1, padding: '0.9rem', background: '#007bff', color: 'white', border: 'none', borderRadius: '10px', fontWeight: '600', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}>✏️ Editar</button>
+                              <button onClick={() => handleDeleteProduct(product.id)} style={{ flex: 1, padding: '0.9rem', background: '#dc3545', color: 'white', border: 'none', borderRadius: '10px', fontWeight: '600', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}>🗑️ Borrar</button>
+                            </div>
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </>
             )}
           </div>
         );
@@ -1644,9 +1719,9 @@ const AdminPanel = ({ onLogout }) => {
         return (
           <div style={{ textAlign: 'center', padding: '4rem 2rem' }}>
             <div style={{ fontSize: '4rem', marginBottom: '1rem', opacity: 0.5 }}>📋</div>
-            <h2 style={{ 
-              fontFamily: 'Didot, serif', 
-              fontSize: '2rem', 
+            <h2 style={{
+              fontFamily: 'Didot, serif',
+              fontSize: '2rem',
               color: '#333',
               marginBottom: '1rem',
               fontWeight: '400'
@@ -1654,7 +1729,7 @@ const AdminPanel = ({ onLogout }) => {
               Informes
             </h2>
             <p style={{ fontSize: '1.1rem', color: '#666', maxWidth: '500px', margin: '0 auto' }}>
-              Próximamente podrás generar reportes de inventario, ventas por categoría, 
+              Próximamente podrás generar reportes de inventario, ventas por categoría,
               productos más populares y exportar datos en diferentes formatos.
             </p>
           </div>
@@ -1664,9 +1739,9 @@ const AdminPanel = ({ onLogout }) => {
         return (
           <div style={{ textAlign: 'center', padding: '4rem 2rem' }}>
             <div style={{ fontSize: '4rem', marginBottom: '1rem', opacity: 0.5 }}>⚙️</div>
-            <h2 style={{ 
-              fontFamily: 'Didot, serif', 
-              fontSize: '2rem', 
+            <h2 style={{
+              fontFamily: 'Didot, serif',
+              fontSize: '2rem',
               color: '#333',
               marginBottom: '1rem',
               fontWeight: '400'
@@ -1705,7 +1780,7 @@ const AdminPanel = ({ onLogout }) => {
           border: '1px solid rgba(230, 227, 212, 0.5)'
         }}>
           <div style={{ fontSize: '4rem', marginBottom: '1rem', opacity: 0.5 }}>🔒</div>
-          <h2 style={{ 
+          <h2 style={{
             fontFamily: 'Didot, serif',
             color: '#dc3545',
             marginBottom: '1rem',
@@ -1717,7 +1792,7 @@ const AdminPanel = ({ onLogout }) => {
           <p style={{ color: '#666', fontSize: '1.1rem', marginBottom: '2rem' }}>
             {error}
           </p>
-          <button 
+          <button
             onClick={() => window.location.href = '/admin'}
             style={{
               background: 'linear-gradient(135deg, #d4af37 0%, #c19b26 100%)',
@@ -1764,7 +1839,7 @@ const AdminPanel = ({ onLogout }) => {
             animation: 'spin 1s linear infinite',
             margin: '0 auto 2rem'
           }}></div>
-          <h2 style={{ 
+          <h2 style={{
             fontFamily: 'Didot, serif',
             color: '#333',
             marginBottom: '1rem',
@@ -1828,7 +1903,7 @@ const AdminPanel = ({ onLogout }) => {
                 key={section.id}
                 onClick={() => setActiveSection(section.id)}
                 style={{
-                  background: activeSection === section.id 
+                  background: activeSection === section.id
                     ? 'linear-gradient(135deg, #d4af37 0%, #c19b26 100%)'
                     : 'transparent',
                   color: activeSection === section.id ? 'white' : '#333',
@@ -1845,14 +1920,14 @@ const AdminPanel = ({ onLogout }) => {
                   fontFamily: 'Montserrat, sans-serif',
                   textTransform: 'uppercase',
                   letterSpacing: '0.5px',
-                  boxShadow: activeSection === section.id 
-                    ? '0 4px 15px rgba(212, 175, 55, 0.3)' 
+                  boxShadow: activeSection === section.id
+                    ? '0 4px 15px rgba(212, 175, 55, 0.3)'
                     : 'none'
                 }}
               >
                 <span style={{ fontSize: '1.1rem' }}>{section.icon}</span>
-                <span className="nav-text" style={{ 
-                  display: window.innerWidth > 768 ? 'inline' : 'none' 
+                <span className="nav-text" style={{
+                  display: window.innerWidth > 768 ? 'inline' : 'none'
                 }}>
                   {section.name}
                 </span>
@@ -1970,7 +2045,7 @@ const AdminPanel = ({ onLogout }) => {
                     setMobileMenuOpen(false);
                   }}
                   style={{
-                    background: activeSection === section.id 
+                    background: activeSection === section.id
                       ? 'linear-gradient(135deg, #d4af37 0%, #c19b26 100%)'
                       : 'transparent',
                     color: activeSection === section.id ? 'white' : '#333',
@@ -2020,7 +2095,7 @@ const AdminPanel = ({ onLogout }) => {
             gap: '1rem'
           }}>
             <p style={{ margin: 0 }}>{error}</p>
-            <button 
+            <button
               onClick={() => setError(null)}
               style={{
                 background: 'linear-gradient(135deg, #dc3545 0%, #c82333 100%)',

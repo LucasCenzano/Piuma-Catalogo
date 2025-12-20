@@ -1,0 +1,73 @@
+/* AdminPanelResponsive.css - Estilos específicos para la vista móvil */
+
+/* Por defecto (Desktop) */
+.mobile-view {
+    display: none !important;
+}
+
+.desktop-view {
+    display: block !important;
+}
+
+/* Vista Móvil (< 768px) */
+@media (max-width: 768px) {
+    .mobile-view {
+        display: flex !important;
+        flex-direction: column;
+        gap: 1.5rem;
+    }
+
+    .desktop-view {
+        display: none !important;
+    }
+
+    /* Ajustes generales del layout móvil */
+    .admin-panel {
+        padding: 0.5rem !important;
+        /* Menos padding en los bordes */
+    }
+
+    main {
+        padding: 1rem !important;
+    }
+
+    /* Ajustes de tipografía para móviles */
+    h1 {
+        font-size: 1.5rem !important;
+    }
+
+    h2 {
+        font-size: 1.4rem !important;
+    }
+
+    h3 {
+        font-size: 1.1rem !important;
+    }
+
+    /* Ajustes de formularios en móvil */
+    .product-form {
+        padding: 1.5rem !important;
+        margin: 1rem 0 !important;
+    }
+
+    /* Forzar que los grids de formularios sean de 1 columna */
+    form div[style*="grid-template-columns"] {
+        grid-template-columns: 1fr !important;
+        gap: 1rem !important;
+    }
+
+    /* Botones full width en móvil */
+    .form-actions {
+        flex-direction: column;
+    }
+
+    .form-actions button {
+        width: 100%;
+        margin-bottom: 0.5rem;
+    }
+
+    /* Ajuste de filtros / dashboard */
+    .stats-grid {
+        grid-template-columns: 1fr !important;
+    }
+}
