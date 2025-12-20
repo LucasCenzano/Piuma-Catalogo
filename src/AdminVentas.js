@@ -1945,4 +1945,84 @@ const AdminVentas = () => {
   );
 };
 
+// Subcomponente simple para listar clientes
+const CustomersListAPI = ({ authService, API_BASE_URL, formatCurrency, formatDate }) => {
+  const [customers, setCustomers] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [search, setSearch] = useState('');
+
+  const loadCustomers = async (searchTerm = '') => {
+    setLoading(true);
+    try {
+      const url = searchTerm
+        ? `${API_BASE_URL}/api/customers?search=${searchTerm}`
+        : `${API_BASE_URL}/api/customers`;
+      const res = await authService.authenticatedFetch(url);
+      if (res.ok) {
+        const data = await res.json();
+        setCustomers(data);
+      }
+    } catch (e) { console.error(e); }
+    finally { setLoading(false); }
+  };
+
+  useEffect(() => { loadCustomers(); }, []);
+
+  return (
+    <div style={{
+      background: 'white',
+      borderRadius: '16px',
+      padding: '2rem',
+      boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1)',
+      minHeight: '400px'
+    }}>
+      <h3 style={{ textAlign: 'center', marginBottom: '2rem', fontFamily: 'Didot, serif', fontSize: '1.8rem' }}>👥 Lista de Clientes</h3>
+
+      <div style={{ marginBottom: '2rem', display: 'flex', gap: '1rem' }}>
+        <input
+          type="text"
+          placeholder="Buscar cliente..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          style={{ flex: 1, padding: '0.8rem', borderRadius: '8px', border: '1px solid #ddd' }}
+        />
+        <button
+          onClick={() => loadCustomers(search)}
+          style={{
+            background: '#333', color: 'white', border: 'none',
+            padding: '0.8rem 1.5rem', borderRadius: '8px', cursor: 'pointer'
+          }}>
+          Buscar
+        </button>
+      </div>
+
+      {loading ? <div style={{ textAlign: 'center' }}>Cargando...</div> : (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '1rem' }}>
+          {customers.map(c => (
+            <div key={c.id} style={{
+              padding: '1.5rem', border: '1px solid #eee', borderRadius: '12px',
+              background: '#f9f9f9', display: 'flex', flexDirection: 'column', gap: '0.5rem'
+            }}>
+              <div style={{ fontWeight: 'bold', fontSize: '1.1rem' }}>{c.first_name} {c.last_name}</div>
+              <div style={{ fontSize: '0.9rem', color: '#666' }}>📞 {c.phone || '-'}</div>
+              <div style={{ fontSize: '0.9rem', color: '#666' }}>✉️ {c.email || '-'}</div>
+              <div style={{
+                marginTop: '1rem', paddingTop: '1rem', borderTop: '1px solid #ddd',
+                display: 'flex', justifyContent: 'space-between', alignItems: 'center'
+              }}>
+                <span style={{ fontSize: '0.9rem', background: '#e9ecef', padding: '0.3rem 0.8rem', borderRadius: '12px' }}>
+                  🛒 {c.total_purchases} ventas
+                </span>
+                <span style={{ fontWeight: 'bold', color: '#28a745' }}>
+                  {formatCurrency(c.total_spent)}
+                </span>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
 export default AdminVentas;
