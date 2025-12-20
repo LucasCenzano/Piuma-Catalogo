@@ -23,6 +23,11 @@ const securityConfig = {
         return callback(null, true);
       }
 
+      // ✅ Allow any Vercel deployment
+      if (origin && origin.endsWith('.vercel.app')) {
+        return callback(null, true);
+      }
+
       // Default: Block but log for debugging
       console.log('Blocked by CORS:', origin);
       callback(new Error('Not allowed by CORS'));
