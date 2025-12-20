@@ -146,6 +146,27 @@ function Catalog({ bags, openModal, selectedCategory }) {
   const [currentImageIndexes, setCurrentImageIndexes] = useState({});
   const { preloadProgress } = useImagePreloader(bags);
   const [sortOrder, setSortOrder] = useState('default');
+  const [showScrollTop, setShowScrollTop] = useState(false);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      if (window.scrollY > 300) {
+        setShowScrollTop(true);
+      } else {
+        setShowScrollTop(false);
+      }
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  const scrollToTop = () => {
+    window.scrollTo({
+      top: 0,
+      behavior: 'smooth'
+    });
+  };
 
   const sortedAndFilteredBags = useMemo(() => {
     const filtered = bags.filter(bag => selectedCategory === 'Todos' || bag.category === selectedCategory);
@@ -320,6 +341,34 @@ function Catalog({ bags, openModal, selectedCategory }) {
                     100% { background-position: calc(200px + 100%) 0; }
                 }
             `}</style>
+      <button
+        onClick={scrollToTop}
+        style={{
+          position: 'fixed',
+          bottom: '2rem',
+          right: '2rem',
+          backgroundColor: '#333',
+          color: 'white',
+          width: '50px',
+          height: '50px',
+          borderRadius: '50%',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          fontSize: '1.5rem',
+          border: 'none',
+          boxShadow: '0 4px 15px rgba(0,0,0,0.3)',
+          cursor: 'pointer',
+          zIndex: 1000,
+          opacity: showScrollTop ? 1 : 0,
+          pointerEvents: showScrollTop ? 'all' : 'none',
+          transform: showScrollTop ? 'translateY(0)' : 'translateY(20px)',
+          transition: 'all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)'
+        }}
+        aria-label="Volver arriba"
+      >
+        ↑
+      </button>
     </div>
   );
 }

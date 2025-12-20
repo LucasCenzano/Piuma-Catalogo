@@ -5,7 +5,7 @@ import ImageModal from './ImageModal';
 import './styles.css';
 import dataService from './dataService';
 import Footer from './Footer';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'; 
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faSearch } from '@fortawesome/free-solid-svg-icons';
 import Pagination from './Pagination';
 import ContactBanner from './ContactBanner';
@@ -17,12 +17,12 @@ function MainApp() {
     const [searchTerm, setSearchTerm] = useState('');
     const [searchResults, setSearchResults] = useState([]);
     const [showSuggestions, setShowSuggestions] = useState(false);
-    
+
     // Estados para manejar datos de la DB
     const [bagsData, setBagsData] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
-    
+
     const [currentPage, setCurrentPage] = useState(1);
     const itemsPerPage = 9; // Muestra 9 productos por página
     // ✅ Estado para el progreso de carga
@@ -57,7 +57,7 @@ function MainApp() {
             const transformedProducts = products.map(product => {
                 // Log para debugging
                 console.log(`Producto ${product.name}: in_stock = ${product.in_stock}`);
-                
+
                 return {
                     ...product,
                     images: product.images_url || [],     // Crear 'images' desde 'images_url'
@@ -70,7 +70,7 @@ function MainApp() {
             setLoadingProgress(100);
 
             console.log('✅ Productos cargados y transformados exitosamente');
-            
+
             // Log para verificar transformación
             console.log('🔍 Verificación de stock:');
             transformedProducts.forEach(p => {
@@ -91,6 +91,11 @@ function MainApp() {
     useEffect(() => {
         setCurrentPage(1);
     }, [selectedCategory, searchTerm]);
+
+    // Scroll al cambiar de página
+    useEffect(() => {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }, [currentPage]);
 
     useEffect(() => {
         const handleClickOutside = (event) => {
@@ -118,7 +123,7 @@ function MainApp() {
                 const nameMatch = bag.name.toLowerCase().includes(lowercasedValue);
                 const categoryMatch = bag.category.toLowerCase().includes(lowercasedValue);
                 const descriptionMatch = bag.description && bag.description.toLowerCase().includes(lowercasedValue);
-                
+
                 if (nameMatch || categoryMatch || descriptionMatch) {
                     uniqueResults.add(JSON.stringify(bag));
                 }
@@ -127,11 +132,11 @@ function MainApp() {
             // Añadir sugerencias de categorías
             categories.forEach(category => {
                 if (category !== 'Todos' && category.toLowerCase().includes(lowercasedValue)) {
-                    uniqueResults.add(JSON.stringify({ 
-                        id: category, 
-                        name: category + " (Categoría)", 
-                        isCategory: true, 
-                        category: category 
+                    uniqueResults.add(JSON.stringify({
+                        id: category,
+                        name: category + " (Categoría)",
+                        isCategory: true,
+                        category: category
                     }));
                 }
             });
@@ -205,8 +210,8 @@ function MainApp() {
                 <header className="App-header">
                     <h1>Piuma</h1>
                 </header>
-                <div style={{ 
-                    padding: '3rem', 
+                <div style={{
+                    padding: '3rem',
                     textAlign: 'center',
                     display: 'flex',
                     flexDirection: 'column',
@@ -224,16 +229,16 @@ function MainApp() {
                         animation: 'spin 1s linear infinite',
                         marginBottom: '2rem'
                     }}></div>
-                    
-                    <p style={{ 
-                        fontSize: '1.3rem', 
+
+                    <p style={{
+                        fontSize: '1.3rem',
                         color: '#333',
                         marginBottom: '1rem',
                         fontWeight: '600'
                     }}>
                         Cargando productos...
                     </p>
-                    
+
                     {/* ✅ Barra de progreso */}
                     <div style={{
                         width: '300px',
@@ -251,9 +256,9 @@ function MainApp() {
                             borderRadius: '4px'
                         }} />
                     </div>
-                    
-                    <p style={{ 
-                        fontSize: '1rem', 
+
+                    <p style={{
+                        fontSize: '1rem',
                         color: '#666',
                         margin: 0
                     }}>
@@ -262,7 +267,7 @@ function MainApp() {
                         {loadingProgress >= 60 && loadingProgress < 80 && 'Procesando imágenes...'}
                         {loadingProgress >= 80 && 'Finalizando...'}
                     </p>
-                    
+
                     <style>
                         {`
                             @keyframes spin {
@@ -281,11 +286,11 @@ function MainApp() {
             <header className="App-header">
                 <h1>Piuma</h1>
             </header>
-            
+
             <nav className="main-nav">
                 <div className="nav-content">
-                    <button 
-                        className="hamburger-menu-btn" 
+                    <button
+                        className="hamburger-menu-btn"
                         onClick={() => setIsMenuOpen(!isMenuOpen)}
                     >
                         <div className="bar"></div>
@@ -318,28 +323,28 @@ function MainApp() {
                         <span className="search-icon">
                             <FontAwesomeIcon icon={faSearch} />
                         </span>
-                        
+
                         {showSuggestions && searchResults.length > 0 && (
                             <ul className="suggestions-list">
                                 {searchResults.slice(0, 8).map(item => (
-                                    <li 
-                                        key={item.id} 
+                                    <li
+                                        key={item.id}
                                         onClick={() => handleSuggestionClick(item)}
                                         className={`suggestion-item ${item.isCategory ? 'suggestion-category' : ''}`}
                                     >
                                         <div>
                                             <strong>{item.name}</strong>
                                             {item.description && !item.isCategory && (
-                                                <div style={{ 
-                                                    fontSize: '0.8rem', 
+                                                <div style={{
+                                                    fontSize: '0.8rem',
                                                     color: '#666',
                                                     marginTop: '0.25rem',
                                                     overflow: 'hidden',
                                                     textOverflow: 'ellipsis',
                                                     whiteSpace: 'nowrap'
                                                 }}>
-                                                    {item.description.length > 60 
-                                                        ? item.description.substring(0, 60) + '...' 
+                                                    {item.description.length > 60
+                                                        ? item.description.substring(0, 60) + '...'
                                                         : item.description}
                                                 </div>
                                             )}
@@ -353,10 +358,10 @@ function MainApp() {
             </nav>
 
             {error && (
-                <div style={{ 
-                    backgroundColor: '#fff3cd', 
-                    color: '#856404', 
-                    padding: '1rem', 
+                <div style={{
+                    backgroundColor: '#fff3cd',
+                    color: '#856404',
+                    padding: '1rem',
                     margin: '1rem',
                     border: '1px solid #ffeaa7',
                     borderRadius: '8px',
@@ -364,11 +369,11 @@ function MainApp() {
                     boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
                 }}>
                     <strong>⚠️ {error}</strong>
-                    <button 
+                    <button
                         onClick={handleRefresh}
-                        style={{ 
-                            marginLeft: '1rem', 
-                            padding: '0.5rem 1rem', 
+                        style={{
+                            marginLeft: '1rem',
+                            padding: '0.5rem 1rem',
                             backgroundColor: '#f39c12',
                             color: 'white',
                             border: 'none',
@@ -382,26 +387,26 @@ function MainApp() {
                 </div>
             )}
 
-            
+
 
             <main>
-                 <Catalog
+                <Catalog
                     bags={currentItemsOnPage} // ✅ PASO 5: PASAR SOLO LOS ITEMS DE LA PÁGINA ACTUAL
                     openModal={openModal}
                     selectedCategory={selectedCategory}
                 />
-                
+
                 {/* ✅ PASO 6: AÑADIR EL COMPONENTE DE PAGINACIÓN */}
                 <Pagination
                     currentPage={currentPage}
                     totalPages={totalPages}
                     onPageChange={(page) => setCurrentPage(page)}
                 />
-                 <ContactBanner />
+                <ContactBanner />
             </main>
-            
+
             {modalImage && <ImageModal src={modalImage.src} alt={modalImage.alt} closeModal={closeModal} />}
-            
+
             <Footer />
         </div>
     );

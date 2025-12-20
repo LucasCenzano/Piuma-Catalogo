@@ -1667,7 +1667,89 @@ const AdminPanel = ({ onLogout }) => {
                               </div>
                               <textarea value={editDescription} onChange={(e) => setEditDescription(e.target.value)} placeholder="Descripción" rows={3} style={{ padding: '0.8rem', border: '1px solid #ddd', borderRadius: '8px', width: '100%', fontSize: '16px' }} />
 
-                              <div style={{ display: 'flex', gap: '0.5rem', marginTop: '1rem' }}>
+                              {/* Sección de Imágenes en Móvil */}
+                              <div style={{ background: '#f8f9fa', padding: '1rem', borderRadius: '8px', border: '1px solid #e9ecef' }}>
+                                <h5 style={{ margin: '0 0 0.8rem 0', fontSize: '0.95rem', color: '#666' }}>🖼️ Imágenes ({editImages.length})</h5>
+
+                                <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem' }}>
+                                  <input
+                                    type="url"
+                                    placeholder="URL de imagen..."
+                                    value={editImageUrl}
+                                    onChange={(e) => setEditImageUrl(e.target.value)}
+                                    style={{ flex: 1, padding: '0.8rem', border: '1px solid #ddd', borderRadius: '8px', fontSize: '16px' }}
+                                  />
+                                  <button
+                                    type="button"
+                                    onClick={addEditImage}
+                                    disabled={!editImageUrl}
+                                    style={{
+                                      background: editImageUrl ? '#28a745' : '#ccc',
+                                      color: 'white',
+                                      border: 'none',
+                                      borderRadius: '8px',
+                                      width: '50px',
+                                      fontSize: '1.2rem',
+                                      display: 'flex',
+                                      alignItems: 'center',
+                                      justifyContent: 'center'
+                                    }}
+                                  >
+                                    +
+                                  </button>
+                                </div>
+
+                                {editImages.length > 0 ? (
+                                  <div style={{
+                                    display: 'grid',
+                                    gridTemplateColumns: 'repeat(auto-fill, minmax(60px, 1fr))',
+                                    gap: '0.8rem'
+                                  }}>
+                                    {editImages.map((url, i) => (
+                                      <div key={i} style={{ position: 'relative', aspectRatio: '1' }}>
+                                        <SafeImage
+                                          src={url}
+                                          alt={`Img ${i}`}
+                                          style={{
+                                            width: '100%',
+                                            height: '100%',
+                                            objectFit: 'cover',
+                                            borderRadius: '8px',
+                                            border: '1px solid #dee2e6'
+                                          }}
+                                        />
+                                        <button
+                                          type="button"
+                                          onClick={() => removeEditImage(i)}
+                                          style={{
+                                            position: 'absolute',
+                                            top: '-5px',
+                                            right: '-5px',
+                                            background: '#dc3545',
+                                            color: 'white',
+                                            border: 'none',
+                                            borderRadius: '50%',
+                                            width: '22px',
+                                            height: '22px',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            fontSize: '14px',
+                                            fontWeight: 'bold',
+                                            boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
+                                          }}
+                                        >
+                                          ×
+                                        </button>
+                                      </div>
+                                    ))}
+                                  </div>
+                                ) : (
+                                  <p style={{ fontSize: '0.85rem', color: '#999', textAlign: 'center', fontStyle: 'italic', margin: 0 }}>Sin imágenes</p>
+                                )}
+                              </div>
+
+                              <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.5rem' }}>
                                 <button type="submit" disabled={loading} style={{ flex: 1, padding: '1rem', background: '#28a745', color: 'white', border: 'none', borderRadius: '8px', fontWeight: 'bold' }}>Guardar</button>
                                 <button type="button" onClick={cancelEditing} style={{ flex: 1, padding: '1rem', background: '#666', color: 'white', border: 'none', borderRadius: '8px', fontWeight: 'bold' }}>Cancelar</button>
                               </div>
