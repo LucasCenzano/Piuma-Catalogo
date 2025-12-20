@@ -336,6 +336,37 @@ function Catalog({ bags, openModal, selectedCategory }) {
                     </span>
                   </div>
                   <p className="product-category" style={{ marginTop: '10px' }}>{bag.category}</p>
+
+                  {/* Variantes / Colores */}
+                  {bag.variants && bag.variants.length > 0 && (
+                    <div className="product-variants" style={{ marginTop: '10px', width: '100%' }}>
+                      <span style={{ fontSize: '0.8rem', fontWeight: 'bold', color: '#666', display: 'block', marginBottom: '5px' }}>Colores:</span>
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '5px' }}>
+                        {bag.variants.map((variant, vIdx) => (
+                          <span key={vIdx} style={{
+                            fontSize: '0.75rem',
+                            padding: '2px 8px',
+                            borderRadius: '12px',
+                            border: '1px solid',
+                            borderColor: variant.in_stock ? '#28a745' : '#dc3545',
+                            color: variant.in_stock ? '#28a745' : '#dc3545',
+                            backgroundColor: variant.in_stock ? 'rgba(40, 167, 69, 0.1)' : 'rgba(220, 53, 69, 0.1)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '4px'
+                          }}>
+                            <span style={{
+                              width: '6px',
+                              height: '6px',
+                              borderRadius: '50%',
+                              backgroundColor: variant.in_stock ? '#28a745' : '#dc3545'
+                            }}></span>
+                            {variant.color_name}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
             );

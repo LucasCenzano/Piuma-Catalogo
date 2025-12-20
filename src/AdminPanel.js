@@ -1800,6 +1800,65 @@ const AdminPanel = ({ onLogout }) => {
                                         </div>
                                       </div>
 
+                                      {/* Sección de Variantes (Colores) - EDICIÓN (DESKTOP) */}
+                                      <div style={{
+                                        background: '#f8f9fa',
+                                        padding: '1.5rem',
+                                        borderRadius: '12px',
+                                        marginBottom: '1.5rem',
+                                        border: '1px solid #e9ecef'
+                                      }}>
+                                        <h5 style={{ margin: '0 0 1rem 0', color: '#333', fontSize: '1rem', fontWeight: '600' }}>
+                                          🎨 Gestión de Colores / Variantes ({editVariants.length})
+                                        </h5>
+
+                                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.8rem', marginBottom: '1.5rem' }}>
+                                          {editVariants.map((variant, idx) => (
+                                            <div key={idx} style={{
+                                              display: 'flex', alignItems: 'center', gap: '0.5rem',
+                                              padding: '0.5rem 1rem', background: 'white', border: '1px solid #dee2e6', borderRadius: '20px', fontSize: '0.9rem',
+                                              boxShadow: '0 2px 5px rgba(0,0,0,0.05)'
+                                            }}>
+                                              <span style={{
+                                                width: '12px', height: '12px', borderRadius: '50%',
+                                                background: variant.in_stock ? '#28a745' : '#dc3545'
+                                              }}></span>
+                                              <span style={{ fontWeight: '500' }}>{variant.color_name}</span>
+                                              <button type="button" onClick={() => removeEditVariant(idx)} style={{ border: 'none', background: 'none', cursor: 'pointer', color: '#666', padding: '0 0 0 5px' }}>✕</button>
+                                            </div>
+                                          ))}
+                                          {editVariants.length === 0 && <span style={{ fontStyle: 'italic', color: '#999' }}>No hay variantes asignadas.</span>}
+                                        </div>
+
+                                        <div style={{ display: 'flex', gap: '1rem', alignItems: 'center', background: 'white', padding: '0.8rem', borderRadius: '8px', border: '1px solid #dee2e6' }}>
+                                          <input
+                                            type="text"
+                                            placeholder="Nombre del color (ej: Rojo)"
+                                            value={tempEditVariantName}
+                                            onChange={(e) => setTempEditVariantName(e.target.value)}
+                                            style={{ flex: 1, padding: '0.8rem', borderRadius: '6px', border: '1px solid #ced4da', fontSize: '0.95rem' }}
+                                          />
+                                          <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.9rem', cursor: 'pointer', userSelect: 'none' }}>
+                                            <input
+                                              type="checkbox"
+                                              checked={tempEditVariantStock}
+                                              onChange={(e) => setTempEditVariantStock(e.target.checked)}
+                                              style={{ width: '18px', height: '18px', accentColor: '#28a745' }}
+                                            />
+                                            <span style={{ fontWeight: '500' }}>En Stock</span>
+                                          </label>
+                                          <button
+                                            type="button"
+                                            onClick={addEditVariant}
+                                            style={{
+                                              padding: '0.8rem 1.5rem', background: '#333', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '0.9rem', fontWeight: '600'
+                                            }}
+                                          >
+                                            + Agregar Color
+                                          </button>
+                                        </div>
+                                      </div>
+
                                       <div style={{
                                         display: 'flex',
                                         gap: '1rem',
