@@ -1,9 +1,13 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import './styles.css';
 
 function ImageModal({ src, images, initialIndex = 0, alt, closeModal }) {
     // Si pasamos una lista de imágenes, usamos esa. Si no, usamos 'src' como única imagen.
-    const imageList = images && images.length > 0 ? images : [src];
+    // Usamos useMemo para evitar advertencias de dependencias en useEffect
+    const imageList = useMemo(() => {
+        return images && images.length > 0 ? images : [src];
+    }, [images, src]);
+
     const [currentIndex, setCurrentIndex] = useState(initialIndex);
 
     // Si cambia el array de imágenes o el índice inicial (por ejemplo al abrir otro modal), reseteamos/actualizamos

@@ -1,5 +1,6 @@
 import React from 'react';
 import { FaInstagram, FaTiktok } from 'react-icons/fa';
+import { Link } from 'react-router-dom';
 import './styles.css';
 
 function Footer() {
@@ -7,7 +8,7 @@ function Footer() {
     <footer className="footer">
       <div className="footer-content">
         <p>
-          &copy; 2025 Creado por Lucas Cenzano
+          &copy; 2025 Creado por <Link to="/admin" style={{ color: 'inherit', textDecoration: 'none', cursor: 'default' }}>Lucas Cenzano</Link>
         </p>
         <div className="social-links">
           {/* eslint-disable-next-line jsx-a11y/anchor-is-valid */}
