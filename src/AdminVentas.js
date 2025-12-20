@@ -109,6 +109,42 @@ const AdminVentas = () => {
   }, [activeTab, loadSales, loadStats]);
 
   // ===== FUNCIONES DE MANEJO DE ESTADO =====
+  // ===== ESTADO DEL MODAL DE EDICIÓN =====
+  const [editingSale, setEditingSale] = useState(null);
+  const [showEditModal, setShowEditModal] = useState(false);
+
+  // Funciones para Editar Venta
+  const startEditingSale = (sale) => {
+    setEditingSale({ ...sale });
+    setShowEditModal(true);
+  };
+
+  const handleEditSaleChange = (field, value) => {
+    setEditingSale(prev => ({ ...prev, [field]: value }));
+  };
+
+  const handleUpdateSale = async (e) => {
+    e.preventDefault();
+    try {
+      setLoading(true);
+
+      const response = await authService.authenticatedFetch(`${API_BASE_URL}/api/sales`, {
+        method: 'PUT',
+        body: JSON.stringify(editingSale)
+      });
+
+      if (!response.ok) throw new Error('Error actualizando venta');
+
+      setSuccessMessage('Venta actualizada correctamente');
+      setShowEditModal(false);
+      loadSales(); // Recargar lista
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleFilterChange = (e) => {
     const { name, value } = e.target;
     setSalesFilter(prev => ({
@@ -582,6 +618,7 @@ const AdminVentas = () => {
                 outline: 'none',
                 transition: 'border-color 0.3s ease',
                 gridColumn: '1 / -1',
+                gridColumn: '1 / -1',
                 width: '100%',
                 boxSizing: 'border-box'
               }}
@@ -1050,7 +1087,26 @@ const AdminVentas = () => {
                 </div>
 
                 {/* Acciones */}
-                <div style={{ paddingTop: '1rem', borderTop: '1px solid #eee', display: 'flex', justifyContent: 'flex-end' }}>
+                <div style={{ paddingTop: '1rem', borderTop: '1px solid #eee', display: 'flex', justifyContent: 'flex-end', gap: '0.5rem' }}>
+                  <button
+                    onClick={() => startEditingSale(sale)}
+                    style={{
+                      background: 'none',
+                      color: '#007bff',
+                      border: '1px solid #007bff',
+                      padding: '0.5rem 1rem',
+                      borderRadius: '6px',
+                      cursor: 'pointer',
+                      fontSize: '0.9rem',
+                      fontWeight: '600',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.5rem'
+                    }}
+                  >
+                    ✏️ Editar
+                  </button>
+
                   <button
                     onClick={() => handleDeleteSale(sale.id)}
                     style={{
@@ -1064,8 +1120,7 @@ const AdminVentas = () => {
                       fontWeight: '600',
                       display: 'flex',
                       alignItems: 'center',
-                      gap: '0.5rem',
-                      transition: 'all 0.2s'
+                      gap: '0.5rem'
                     }}
                   >
                     🗑️ Eliminar
@@ -1140,7 +1195,37 @@ const AdminVentas = () => {
               <div style={{ fontSize: '2rem', fontWeight: '700', marginBottom: '0.5rem' }}>
                 {formatCurrency(stats.general?.total_revenue || 0)}
               </div>
-              <div style={{ fontSize: '1rem', opacity: 0.9 }}>Ingresos Totales</div>
+              <div style={{ fontSize: '1rem', opacity: 0.9 }}>Total Vendido</div>
+            </div>
+
+            <div style={{
+              background: 'linear-gradient(135deg, #28a745 0%, #20c997 100%)',
+              color: 'white',
+              padding: '2rem',
+              borderRadius: '16px',
+              textAlign: 'center',
+              boxShadow: '0 8px 32px rgba(40, 167, 69, 0.3)'
+            }}>
+              <div style={{ fontSize: '3rem', marginBottom: '0.5rem' }}>✅</div>
+              <div style={{ fontSize: '2rem', fontWeight: '700', marginBottom: '0.5rem' }}>
+                {formatCurrency(stats.general?.total_collected || 0)}
+              </div>
+              <div style={{ fontSize: '1rem', opacity: 0.9 }}>Total Cobrado</div>
+            </div>
+
+            <div style={{
+              background: 'linear-gradient(135deg, #dc3545 0%, #c82333 100%)',
+              color: 'white',
+              padding: '2rem',
+              borderRadius: '16px',
+              textAlign: 'center',
+              boxShadow: '0 8px 32px rgba(220, 53, 69, 0.3)'
+            }}>
+              <div style={{ fontSize: '3rem', marginBottom: '0.5rem' }}>⏳</div>
+              <div style={{ fontSize: '2rem', fontWeight: '700', marginBottom: '0.5rem' }}>
+                {formatCurrency(stats.general?.total_pending || 0)}
+              </div>
+              <div style={{ fontSize: '1rem', opacity: 0.9 }}>Total Por Cobrar</div>
             </div>
 
             <div style={{
@@ -1560,6 +1645,141 @@ const AdminVentas = () => {
         {activeTab === 'sales-list' && renderSalesList()}
         {activeTab === 'statistics' && renderStatistics()}
       </main>
+
+      {/* Modal de Edición de Venta */}
+      {showEditModal && editingSale && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'rgba(0,0,0,0.5)',
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          zIndex: 2000,
+          padding: '1rem'
+        }}>
+          <div style={{
+            background: 'white',
+            borderRadius: '16px',
+            padding: '2rem',
+            maxWidth: '500px',
+            width: '100%',
+            maxHeight: '90vh',
+            overflowY: 'auto'
+          }}>
+            <h3 style={{ marginTop: 0, marginBottom: '1.5rem', textAlign: 'center' }}>✏️ Editar Venta #{editingSale.id}</h3>
+
+            <form onSubmit={handleUpdateSale}>
+              <div style={{ marginBottom: '1.5rem' }}>
+                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold' }}>Nombre Cliente</label>
+                <div style={{ padding: '0.8rem', background: '#f8f9fa', borderRadius: '8px' }}>
+                  {editingSale.customer_name} {editingSale.customer_lastname}
+                </div>
+              </div>
+
+              <div style={{ marginBottom: '1.5rem' }}>
+                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold' }}>Total Venta</label>
+                <div style={{ padding: '0.8rem', background: '#f8f9fa', borderRadius: '8px', fontWeight: 'bold', fontSize: '1.1rem' }}>
+                  {formatCurrency(editingSale.total_amount)}
+                </div>
+              </div>
+
+              <div style={{ marginBottom: '1.5rem' }}>
+                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold' }}>Estado del Pago</label>
+                <select
+                  value={editingSale.status}
+                  onChange={(e) => handleEditSaleChange('status', e.target.value)}
+                  style={{
+                    width: '100%',
+                    padding: '0.8rem',
+                    borderRadius: '8px',
+                    border: '1px solid #ced4da',
+                    fontSize: '1rem'
+                  }}
+                >
+                  <option value="pending">⏳ Pendiente</option>
+                  <option value="paid">✅ Pagado</option>
+                </select>
+              </div>
+
+              <div style={{ marginBottom: '1.5rem' }}>
+                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold' }}>Monto Abonado ($)</label>
+                <input
+                  type="number"
+                  value={editingSale.amount_paid}
+                  onChange={(e) => handleEditSaleChange('amount_paid', e.target.value)}
+                  style={{
+                    width: '100%',
+                    padding: '0.8rem',
+                    borderRadius: '8px',
+                    border: '1px solid #ced4da',
+                    fontSize: '1rem',
+                    boxSizing: 'border-box'
+                  }}
+                />
+
+                {editingSale.status === 'pending' && (
+                  <div style={{ marginTop: '0.5rem', color: '#dc3545', fontWeight: 'bold', fontSize: '0.9rem' }}>
+                    Debe: {formatCurrency(editingSale.total_amount - (parseFloat(editingSale.amount_paid) || 0))}
+                  </div>
+                )}
+              </div>
+
+              <div style={{ marginBottom: '1.5rem' }}>
+                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold' }}>Notas</label>
+                <textarea
+                  value={editingSale.notes || ''}
+                  onChange={(e) => handleEditSaleChange('notes', e.target.value)}
+                  rows="3"
+                  style={{
+                    width: '100%',
+                    padding: '0.8rem',
+                    borderRadius: '8px',
+                    border: '1px solid #ced4da',
+                    fontSize: '1rem',
+                    boxSizing: 'border-box'
+                  }}
+                />
+              </div>
+
+              <div style={{ display: 'flex', gap: '1rem', justifyContent: 'flex-end' }}>
+                <button
+                  type="button"
+                  onClick={() => setShowEditModal(false)}
+                  style={{
+                    padding: '0.8rem 1.5rem',
+                    background: '#6c757d',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '8px',
+                    cursor: 'pointer'
+                  }}
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  disabled={loading}
+                  style={{
+                    padding: '0.8rem 2rem',
+                    background: 'linear-gradient(135deg, #d4af37 0%, #c19b26 100%)',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '8px',
+                    cursor: 'pointer',
+                    fontWeight: 'bold'
+                  }}
+                >
+                  {loading ? 'Guardando...' : 'Guardar Cambios'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       {/* Loading overlay */}
       {loading && (
