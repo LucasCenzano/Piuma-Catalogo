@@ -1975,6 +1975,7 @@ const AdminVentas = () => {
 const CustomersListAPI = ({ authService, API_BASE_URL, formatCurrency, formatDate }) => {
   const [customers, setCustomers] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
   const [search, setSearch] = useState('');
 
   const [sortBy, setSortBy] = useState('spent');
@@ -1989,10 +1990,15 @@ const CustomersListAPI = ({ authService, API_BASE_URL, formatCurrency, formatDat
       const res = await authService.authenticatedFetch(url);
       if (res.ok) {
         const data = await res.json();
-        setCustomers(data);
+        setCustomers(Array.isArray(data) ? data : []);
+        setError(null);
+      } else {
+        setError('Error cargando clientes');
       }
-    } catch (e) { console.error(e); }
-    finally { setLoading(false); }
+    } catch (e) {
+      console.error(e);
+      setError('Error de conexión');
+    } finally { setLoading(false); }
   }, [authService, API_BASE_URL]);
 
   useEffect(() => { loadCustomers(search, sortBy, sortOrder); }, [loadCustomers, sortBy, sortOrder, search]); // Auto-reload on filters change
@@ -2051,7 +2057,22 @@ const CustomersListAPI = ({ authService, API_BASE_URL, formatCurrency, formatDat
         </div>
       </div>
 
-      {loading ? <div style={{ textAlign: 'center' }}>Cargando...</div> : (
+      {loading ? (
+        <div style={{ textAlign: 'center', padding: '2rem', color: '#666' }}>
+          <span style={{ fontSize: '2rem' }}>⏳</span>
+          <div>Cargando clientes...</div>
+        </div>
+      ) : error ? (
+        <div style={{ textAlign: 'center', color: '#dc3545', padding: '2rem' }}>
+          {error}
+        </div>
+      ) : customers.length === 0 ? (
+        <div style={{ textAlign: 'center', padding: '3rem', color: '#999', background: '#f8f9fa', borderRadius: '12px' }}>
+          <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>📭</div>
+          <h3>No se encontraron clientes</h3>
+          <p>Intenta ajustar la búsqueda o registra una venta nueva.</p>
+        </div>
+      ) : (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '1rem' }}>
           {customers.map(c => (
             <div key={c.id} style={{
