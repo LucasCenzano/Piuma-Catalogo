@@ -1987,6 +1987,63 @@ const AdminPanel = ({ onLogout }) => {
                                 )}
                               </div>
 
+
+
+                              {/* Sección de Variantes (Colores) - EDICIÓN */}
+                              <div style={{
+                                background: '#f8f9fa',
+                                padding: '1rem',
+                                borderRadius: '8px',
+                                marginBottom: '1rem',
+                                border: '1px solid #e9ecef'
+                              }}>
+                                <h5 style={{ margin: '0 0 0.8rem 0', fontSize: '0.95rem', color: '#666' }}>🎨 Colores / Variantes ({editVariants.length})</h5>
+
+                                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', marginBottom: '1rem' }}>
+                                  {editVariants.map((variant, idx) => (
+                                    <div key={idx} style={{
+                                      display: 'flex', alignItems: 'center', gap: '0.5rem',
+                                      padding: '0.4rem 0.8rem', background: 'white', border: '1px solid #dee2e6', borderRadius: '20px', fontSize: '0.85rem'
+                                    }}>
+                                      <span style={{
+                                        width: '10px', height: '10px', borderRadius: '50%',
+                                        background: variant.in_stock ? '#28a745' : '#dc3545'
+                                      }}></span>
+                                      <span style={{ fontWeight: '500' }}>{variant.color_name}</span>
+                                      <button type="button" onClick={() => removeEditVariant(idx)} style={{ border: 'none', background: 'none', cursor: 'pointer', color: '#999', padding: '0 0 0 5px' }}>✕</button>
+                                    </div>
+                                  ))}
+                                  {editVariants.length === 0 && <span style={{ fontStyle: 'italic', color: '#999', fontSize: '0.8rem' }}>Sin variantes</span>}
+                                </div>
+
+                                <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                                  <input
+                                    type="text"
+                                    placeholder="Color (ej: Rojo)"
+                                    value={tempEditVariantName}
+                                    onChange={(e) => setTempEditVariantName(e.target.value)}
+                                    style={{ flex: 1, padding: '0.5rem', borderRadius: '6px', border: '1px solid #ced4da', fontSize: '0.9rem' }}
+                                  />
+                                  <label style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', fontSize: '0.8rem', cursor: 'pointer' }}>
+                                    <input
+                                      type="checkbox"
+                                      checked={tempEditVariantStock}
+                                      onChange={(e) => setTempEditVariantStock(e.target.checked)}
+                                    />
+                                    Stock
+                                  </label>
+                                  <button
+                                    type="button"
+                                    onClick={addEditVariant}
+                                    style={{
+                                      padding: '0.5rem 1rem', background: '#333', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '0.9rem'
+                                    }}
+                                  >
+                                    +
+                                  </button>
+                                </div>
+                              </div>
+
                               <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.5rem' }}>
                                 <button type="submit" disabled={loading} style={{ flex: 1, padding: '1rem', background: '#28a745', color: 'white', border: 'none', borderRadius: '8px', fontWeight: 'bold' }}>Guardar</button>
                                 <button type="button" onClick={cancelEditing} style={{ flex: 1, padding: '1rem', background: '#666', color: 'white', border: 'none', borderRadius: '8px', fontWeight: 'bold' }}>Cancelar</button>
@@ -2032,7 +2089,7 @@ const AdminPanel = ({ onLogout }) => {
                 </div>
               </>
             )}
-          </div>
+          </div >
         );
 
       case 'reports':
