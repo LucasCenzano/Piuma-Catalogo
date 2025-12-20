@@ -82,7 +82,7 @@ const SafeProductImage = ({ src, alt, className, style, onClick, onError, ...pro
         onClick={onClick}
         onLoad={handleImageLoad}
         onError={handleImageError}
-        loading="eager"
+        loading={props.loading || "lazy"}
         decoding="async"
         {...props}
       />
@@ -90,61 +90,13 @@ const SafeProductImage = ({ src, alt, className, style, onClick, onError, ...pro
   );
 };
 
-// Hook personalizado para precargar todas las imágenes
-const useImagePreloader = (bags) => {
-  const [preloadProgress, setPreloadProgress] = useState(0);
 
-  useEffect(() => {
-    const preloadAllImages = async () => {
-      const allImageUrls = new Set();
-      bags.forEach(bag => {
-        if (bag.images && Array.isArray(bag.images)) {
-          bag.images.forEach(url => {
-            if (url && url.trim().length > 0) {
-              allImageUrls.add(url.trim());
-            }
-          });
-        }
-      });
-
-      const urlsArray = Array.from(allImageUrls);
-      if (urlsArray.length === 0) {
-        setPreloadProgress(100);
-        return;
-      }
-
-      let loadedCount = 0;
-      setPreloadProgress(0);
-      const promises = urlsArray.map((url) => {
-        return new Promise((resolve) => {
-          const img = new Image();
-          const handleComplete = () => {
-            loadedCount++;
-            setPreloadProgress((loadedCount / urlsArray.length) * 100);
-            resolve();
-          };
-          img.onload = handleComplete;
-          img.onerror = handleComplete;
-          img.src = url;
-        });
-      });
-
-      await Promise.all(promises);
-    };
-
-    if (bags && bags.length > 0) {
-      preloadAllImages();
-    }
-  }, [bags]);
-
-  return { preloadProgress };
-};
 
 
 // --- Componente Catalog ---
 function Catalog({ bags, openModal, selectedCategory }) {
   const [currentImageIndexes, setCurrentImageIndexes] = useState({});
-  const { preloadProgress } = useImagePreloader(bags);
+  /* const { preloadProgress } = useImagePreloader(bags); - Removed for performance */
   const [sortOrder, setSortOrder] = useState('default');
   const [showScrollTop, setShowScrollTop] = useState(false);
 
@@ -278,16 +230,7 @@ function Catalog({ bags, openModal, selectedCategory }) {
         </div>
       </div>
 
-      {preloadProgress < 100 && preloadProgress > 0 && (
-        <div style={{ margin: '0 auto 2rem', maxWidth: '400px' }}>
-          <p style={{ fontSize: '0.9rem', color: '#666', marginBottom: '0.5rem', textAlign: 'center' }}>
-            📸 Cargando imágenes... {Math.round(preloadProgress)}%
-          </p>
-          <div style={{ width: '100%', height: '4px', backgroundColor: '#e0e0e0', borderRadius: '2px', overflow: 'hidden' }}>
-            <div style={{ width: `${preloadProgress}%`, height: '100%', backgroundColor: '#007bff', transition: 'width 0.3s ease' }} />
-          </div>
-        </div>
-      )}
+
 
       {sortedAndFilteredBags.length === 0 ? (
         <div style={{ textAlign: 'center', padding: '3rem', color: '#666', fontSize: '1.2rem' }}>
@@ -296,7 +239,7 @@ function Catalog({ bags, openModal, selectedCategory }) {
         </div>
       ) : (
         <div className="catalog-grid">
-          {sortedAndFilteredBags.map((bag) => {
+          {sortedAndFilteredBags.map((bag, index) => {
             const allImages = getAllImages(bag);
             const currentImage = getProductImage(bag);
             const currentIndex = getCurrentImageIndex(bag.id);
@@ -309,7 +252,8 @@ function Catalog({ bags, openModal, selectedCategory }) {
                     src={currentImage}
                     alt={bag.name}
                     className="product-image"
-                    onClick={() => currentImage && openModal(currentImage, bag.name)}
+                    loading={index < 4 ? "eager" : "lazy"}
+                    onClick={() => currentImage && openModal(currentImage, bag.name, allImages, currentIndex)}
                   />
                   {allImages.length > 1 && (
                     <>

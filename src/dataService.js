@@ -4,11 +4,11 @@ class DataService {
   constructor() {
     const baseURL = process.env.REACT_APP_API_URL || '';
     this.apiUrl = `${baseURL}/api/products`;
-    
+
     this.cache = null;
     this.cacheTime = null;
     this.cacheDuration = 10 * 60 * 1000; // ✅ Aumentado a 10 minutos para mejor rendimiento
-    
+
     // ✅ Cache de imágenes precargadas
     this.imageCache = new Map();
     this.preloadInProgress = false;
@@ -17,7 +17,7 @@ class DataService {
   // Verificar si el cache es válido
   isCacheValid() {
     return this.cache && this.cacheTime &&
-           (Date.now() - this.cacheTime) < this.cacheDuration;
+      (Date.now() - this.cacheTime) < this.cacheDuration;
   }
 
   // ✅ Precargar una imagen específica
@@ -28,12 +28,12 @@ class DataService {
 
     return new Promise((resolve) => {
       const img = new Image();
-      
+
       // Configurar para carga optimizada
       img.loading = 'eager';
       img.decoding = 'async';
       img.crossOrigin = 'anonymous'; // Para evitar problemas de CORS
-      
+
       const handleComplete = (success = true) => {
         this.imageCache.set(url, { loaded: success, timestamp: Date.now() });
         resolve();
@@ -79,7 +79,7 @@ class DataService {
       // ✅ Precargar en lotes para no saturar la red
       const batchSize = 5; // Cargar 5 imágenes simultáneamente
       const batches = [];
-      
+
       for (let i = 0; i < urlsArray.length; i += batchSize) {
         batches.push(urlsArray.slice(i, i + batchSize));
       }
@@ -100,18 +100,18 @@ class DataService {
   async getAllProducts() {
     if (this.isCacheValid()) {
       console.log('📦 Usando productos del cache');
-      
+
       // ✅ Precargar imágenes en segundo plano si no se ha hecho
       if (!this.preloadInProgress && this.imageCache.size === 0) {
         setTimeout(() => this.preloadAllImages(this.cache), 100);
       }
-      
+
       return this.cache;
     }
 
     try {
       console.log('🚀 Obteniendo productos de la base de datos...');
-      
+
       // ✅ Configurar fetch para mejor rendimiento
       const response = await fetch(this.apiUrl, {
         method: 'GET',
@@ -154,7 +154,7 @@ class DataService {
   getPreloadStats() {
     const total = this.imageCache.size;
     const loaded = Array.from(this.imageCache.values()).filter(item => item.loaded).length;
-    
+
     return {
       total,
       loaded,
@@ -270,7 +270,7 @@ class DataService {
         stats.byCategory[product.category] = 0;
       }
       stats.byCategory[product.category]++;
-      
+
       // Contar imágenes
       if (product.images_url && Array.isArray(product.images_url)) {
         stats.totalImages += product.images_url.length;
@@ -283,18 +283,18 @@ class DataService {
   // ✅ Método para optimizar el rendimiento general
   async optimizePerformance() {
     console.log('⚡ Optimizando rendimiento...');
-    
+
     try {
       // 1. Precargar productos si no están en cache
       if (!this.isCacheValid()) {
         await this.getAllProducts();
       }
-      
+
       // 2. Iniciar precarga de imágenes si no está en progreso
       if (!this.preloadInProgress && this.cache) {
         await this.preloadAllImages(this.cache);
       }
-      
+
       // 3. Limpiar cache antiguo de imágenes (más de 1 hora)
       const oneHourAgo = Date.now() - (60 * 60 * 1000);
       for (const [url, data] of this.imageCache.entries()) {
@@ -302,10 +302,10 @@ class DataService {
           this.imageCache.delete(url);
         }
       }
-      
+
       console.log('✅ Optimización completada');
       return this.getPreloadStats();
-      
+
     } catch (error) {
       console.error('❌ Error en optimización:', error);
       throw error;
@@ -327,14 +327,8 @@ class DataService {
 
 const dataService = new DataService();
 
-// ✅ Optimizar automáticamente cuando se carga el módulo
-if (typeof window !== 'undefined') {
-  // Solo en el navegador
-  window.addEventListener('load', () => {
-    setTimeout(() => {
-      dataService.optimizePerformance().catch(console.error);
-    }, 1000); // Esperar 1 segundo después de la carga inicial
-  });
-}
+// ✅ Optimizar automáticamente cuando se carga el módulo - CORREGIDO: Eliminada precarga agresiva
+// La precarga agresiva de TODAS las imágenes consumía mucho ancho de banda inicial.
+// Ahora confiamos más en el cache del navegador y la carga diferida (lazy loading).
 
 export default dataService;

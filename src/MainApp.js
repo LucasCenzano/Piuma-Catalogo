@@ -171,8 +171,8 @@ function MainApp() {
         setShowSuggestions(false);
     };
 
-    const openModal = (imageSrc, altText) => {
-        setModalImage({ src: imageSrc, alt: altText });
+    const openModal = (imageSrc, altText, images = [], index = 0) => {
+        setModalImage({ src: imageSrc, alt: altText, images, index });
     };
 
     const closeModal = () => {
@@ -405,7 +405,7 @@ function MainApp() {
                 <ContactBanner />
             </main>
 
-            {modalImage && <ImageModal src={modalImage.src} alt={modalImage.alt} closeModal={closeModal} />}
+            {modalImage && <ImageModal src={modalImage.src} alt={modalImage.alt} images={modalImage.images} initialIndex={modalImage.index} closeModal={closeModal} />}
 
             <Footer />
         </div>
