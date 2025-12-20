@@ -139,6 +139,40 @@ const AdminVentas = () => {
     });
   };
 
+  // ===== BÚSQUEDA DE CLIENTES =====
+  const [customerSearchTerm, setCustomerSearchTerm] = useState('');
+  const [customerResults, setCustomerResults] = useState([]);
+  const [showCustomerResults, setShowCustomerResults] = useState(false);
+
+  const searchCustomers = async (term) => {
+    if (term.length < 2) {
+      setCustomerResults([]);
+      return;
+    }
+    try {
+      const response = await authService.authenticatedFetch(`${API_BASE_URL}/api/customers?search=${term}`);
+      if (response.ok) {
+        const data = await response.json();
+        setCustomerResults(data);
+        setShowCustomerResults(true);
+      }
+    } catch (err) {
+      console.error("Error buscando clientes", err);
+    }
+  };
+
+  const selectCustomer = (customer) => {
+    setNewSale(prev => ({
+      ...prev,
+      customer_id: customer.id,
+      customer_fullname: `${customer.first_name} ${customer.last_name}`,
+      customer_phone: customer.phone || '',
+      customer_email: customer.email || ''
+    }));
+    setCustomerSearchTerm('');
+    setShowCustomerResults(false);
+  };
+
   const handleUpdateSale = async (e) => {
     e.preventDefault();
     try {
@@ -405,7 +439,8 @@ const AdminVentas = () => {
       {[
         { key: 'new-sale', label: 'Nueva Venta', icon: '📝' },
         { key: 'sales-list', label: 'Lista de Ventas', icon: '📊' },
-        { key: 'statistics', label: 'Estadísticas', icon: '📈' }
+        { key: 'statistics', label: 'Estadísticas', icon: '📈' },
+        { key: 'customers', label: 'Clientes', icon: '👥' }
       ].map(tab => (
         <button
           key={tab.key}
@@ -480,12 +515,15 @@ const AdminVentas = () => {
             flexWrap: 'wrap',
             gap: '1.5rem'
           }}>
-            <div style={{ flex: '1 1 300px' }}>
+            <div style={{ flex: '1 1 300px', position: 'relative' }}>
               <input
                 type="text"
-                placeholder="Nombre Completo *"
+                placeholder="Buscar o Ingresar Nombre Cliente *"
                 value={newSale.customer_fullname}
-                onChange={(e) => handleNewSaleChange('customer_fullname', e.target.value)}
+                onChange={(e) => {
+                  handleNewSaleChange('customer_fullname', e.target.value);
+                  searchCustomers(e.target.value);
+                }}
                 required
                 style={{
                   width: '100%',
@@ -498,8 +536,52 @@ const AdminVentas = () => {
                   boxSizing: 'border-box'
                 }}
                 onFocus={(e) => e.target.style.borderColor = '#d4af37'}
-                onBlur={(e) => e.target.style.borderColor = '#e9ecef'}
+                onBlur={(e) => {
+                  e.target.style.borderColor = '#e9ecef';
+                  // Delay hiding results to allow click
+                  setTimeout(() => setShowCustomerResults(false), 200);
+                }}
               />
+              {showCustomerResults && customerResults.length > 0 && (
+                <div style={{
+                  position: 'absolute',
+                  top: '100%',
+                  left: 0,
+                  right: 0,
+                  background: 'white',
+                  border: '1px solid #ddd',
+                  borderRadius: '8px',
+                  boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
+                  zIndex: 10,
+                  maxHeight: '200px',
+                  overflowY: 'auto'
+                }}>
+                  {customerResults.map(c => (
+                    <div
+                      key={c.id}
+                      onClick={() => selectCustomer(c)}
+                      style={{
+                        padding: '0.8rem',
+                        borderBottom: '1px solid #eee',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center'
+                      }}
+                      onMouseEnter={(e) => e.target.style.background = '#f8f9fa'}
+                      onMouseLeave={(e) => e.target.style.background = 'white'}
+                    >
+                      <div>
+                        <div style={{ fontWeight: 'bold' }}>{c.first_name} {c.last_name}</div>
+                        <div style={{ fontSize: '0.8rem', color: '#666' }}>{c.phone}</div>
+                      </div>
+                      <div style={{ fontSize: '0.8rem', color: '#28a745', fontWeight: 'bold' }}>
+                        {c.total_purchases} compras
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
 
             <div style={{ flex: '1 1 200px' }}>
@@ -1659,6 +1741,7 @@ const AdminVentas = () => {
         {activeTab === 'new-sale' && renderNewSaleForm()}
         {activeTab === 'sales-list' && renderSalesList()}
         {activeTab === 'statistics' && renderStatistics()}
+        {activeTab === 'customers' && <CustomersListAPI authService={authService} API_BASE_URL={API_BASE_URL} formatCurrency={formatCurrency} formatDate={formatDate} />}
       </main>
 
       {/* Modal de Edición de Venta */}
