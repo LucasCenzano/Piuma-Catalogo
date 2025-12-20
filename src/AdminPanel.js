@@ -2201,31 +2201,7 @@ const AdminPanel = ({ onLogout }) => {
             }}></div>
           </button>
 
-          {/* Botón especial para Ventas */}
-          <button
-            onClick={() => window.location.href = '/admin/ventas'}
-            style={{
-              background: 'linear-gradient(135deg, #28a745 0%, #20c997 100%)',
-              color: 'white',
-              border: 'none',
-              padding: '0.75rem 1.5rem',
-              borderRadius: '12px',
-              cursor: 'pointer',
-              fontSize: '0.9rem',
-              fontWeight: '500',
-              transition: 'all 0.3s ease',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.5rem',
-              fontFamily: 'Montserrat, sans-serif',
-              textTransform: 'uppercase',
-              letterSpacing: '0.5px',
-              boxShadow: '0 4px 15px rgba(40, 167, 69, 0.3)'
-            }}
-          >
-            <span style={{ fontSize: '1.1rem' }}>💰</span>
-            <span>Ventas</span>
-          </button>
+
 
           {/* Botón logout */}
           <button
