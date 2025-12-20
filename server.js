@@ -11,7 +11,6 @@ const { authenticate, requireRole } = require('./middleware/auth');
 const { loginLimiter, apiLimiter } = require('./middleware/rateLimiter');
 const { loginValidation, productValidation } = require('./utils/validators');
 const { generateAccessToken, generateRefreshToken } = require('./utils/tokenService');
-const { generateAccessToken, generateRefreshToken } = require('./utils/tokenService');
 const { validationResult } = require('express-validator');
 
 // Import handlers for serverless-like structure
