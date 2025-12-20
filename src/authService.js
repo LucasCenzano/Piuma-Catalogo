@@ -88,7 +88,8 @@ class AuthService {
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || `HTTP error! status: ${response.status}`);
+        console.error('❌ Error API Login:', data); // Log full error object
+        throw new Error(data.details || data.error || `HTTP error! status: ${response.status}`);
       }
 
       if (data.success && data.token && data.user) {

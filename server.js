@@ -50,7 +50,7 @@ if (process.env.NODE_ENV === 'development') {
 // ========== RUTAS DE AUTENTICACIÓN ==========
 
 // Login
-app.post('/api/auth', loginLimiter, loginValidation, async (req, res) => {
+app.post('/api/auth', /* loginLimiter, */ loginValidation, async (req, res) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
     return res.status(400).json({
