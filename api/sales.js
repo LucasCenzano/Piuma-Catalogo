@@ -264,12 +264,29 @@ module.exports = async function handler(req, res) {
 
             // ACTUALIZAR STOCK
             if (item.variant_id) {
-              // Update variant stock
+              // 1. Update variant stock to false (out of stock)
               await client.query(`
                  UPDATE product_variants
                  SET in_stock = false
                  WHERE id = $1
                `, [parseInt(item.variant_id)]);
+
+              // 2. Check if ANY variant remains in stock for this product
+              const checkVariants = await client.query(`
+                 SELECT COUNT(*) as active_variants 
+                 FROM product_variants 
+                 WHERE product_id = $1 AND in_stock = true
+               `, [parseInt(item.product_id)]);
+
+              // 3. If NO variants are left in stock, set main product in_stock = false
+              if (parseInt(checkVariants.rows[0].active_variants) === 0) {
+                await client.query(`
+                   UPDATE products
+                   SET in_stock = false, updated_at = CURRENT_TIMESTAMP
+                   WHERE id = $1
+                 `, [parseInt(item.product_id)]);
+              }
+
             } else {
               // Legacy behavior: Update main product stock
               await client.query(`
