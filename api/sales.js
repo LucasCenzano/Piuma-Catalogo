@@ -246,15 +246,43 @@ module.exports = async function handler(req, res) {
         try {
           await client.query('BEGIN');
 
+          // 1. Manejo de CLIENTE (Crear o Vincular)
+          let customerIdToUse = req.body.customer_id;
+
+          // Si no vino ID pero vinieron datos texto, buscamos o creamos el cliente
+          if (!customerIdToUse) {
+            const { customer_name, customer_lastname, customer_phone, customer_email } = req.body;
+
+            // Intentar buscar por nombre+apellido+telefono para evitar duplicados obvios
+            const existingCustomer = await client.query(`
+               SELECT id FROM customers 
+               WHERE first_name = $1 AND last_name = $2 
+               AND (phone = $3 OR ($3 IS NULL AND phone IS NULL))
+             `, [customer_name.trim(), customer_lastname.trim(), customer_phone?.trim() || null]);
+
+            if (existingCustomer.rows.length > 0) {
+              customerIdToUse = existingCustomer.rows[0].id;
+            } else {
+              // Crear nuevo cliente automático
+              const newCustomer = await client.query(`
+                 INSERT INTO customers (first_name, last_name, phone, email, created_at)
+                 VALUES ($1, $2, $3, $4, CURRENT_TIMESTAMP)
+                 RETURNING id
+               `, [customer_name.trim(), customer_lastname.trim(), customer_phone?.trim() || null, customer_email?.trim() || null]);
+              customerIdToUse = newCustomer.rows[0].id;
+            }
+          }
+
           // Crear la venta
           const saleResult = await client.query(`
             INSERT INTO sales (
-              customer_name, customer_lastname, customer_phone, customer_email,
+              customer_id, customer_name, customer_lastname, customer_phone, customer_email,
               payment_method, total_amount, notes, status, amount_paid, created_at, updated_at
             )
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
             RETURNING *
           `, [
+            customerIdToUse,
             customer_name.trim(),
             customer_lastname.trim(),
             customer_phone?.trim() || null,
