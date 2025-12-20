@@ -172,8 +172,23 @@ module.exports = async function handler(req, res) {
       SELECT 
         COUNT(*) as total_sales,
         COALESCE(SUM(total_amount), 0) as total_revenue, -- Total vendido
-        COALESCE(SUM(COALESCE(amount_paid, CASE WHEN status = 'pending' THEN 0 ELSE total_amount END)), 0) as total_collected, -- ✅ Total cobrado real (robusto)
-        COALESCE(SUM(total_amount) - SUM(COALESCE(amount_paid, CASE WHEN status = 'pending' THEN 0 ELSE total_amount END)), 0) as total_pending, -- ✅ Deuda real
+        
+        -- ✅ Total cobrado (Estricto):
+        COALESCE(SUM(
+          CASE 
+            WHEN status = 'pending' THEN COALESCE(amount_paid, 0)
+            ELSE total_amount 
+          END
+        ), 0) as total_collected,
+
+        -- ✅ Total por cobrar (Estricto):
+        COALESCE(SUM(
+          CASE 
+            WHEN status = 'pending' THEN (total_amount - COALESCE(amount_paid, 0))
+            ELSE 0 
+          END
+        ), 0) as total_pending,
+
         COALESCE(AVG(total_amount), 0) as average_sale
       FROM sales s
       WHERE 1=1 ${whereClause}

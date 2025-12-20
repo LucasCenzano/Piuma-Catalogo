@@ -115,13 +115,46 @@ module.exports = async function handler(req, res) {
       SELECT 
         COUNT(*) as total_sales,
         COALESCE(SUM(total_amount), 0) as total_revenue, -- Total vendido
-        COALESCE(SUM(COALESCE(amount_paid, CASE WHEN status = 'pending' THEN 0 ELSE total_amount END)), 0) as total_collected, -- ✅ Total cobrado real (robusto para legacy)
-        COALESCE(SUM(total_amount) - SUM(COALESCE(amount_paid, CASE WHEN status = 'pending' THEN 0 ELSE total_amount END)), 0) as total_pending, -- ✅ Deuda real
+        
+        -- ✅ Total cobrado:
+        -- Si está PAGADO: Se asume cobrado el 100% (total_amount), ignorando amount_paid por si es legacy.
+        -- Si está PENDIENTE: Se suma lo que haya en amount_paid (o 0 si es nulo).
+        COALESCE(SUM(
+          CASE 
+            WHEN status = 'pending' THEN COALESCE(amount_paid, 0)
+            ELSE total_amount 
+          END
+        ), 0) as total_collected,
+
+        -- ✅ Total por cobrar (Deuda):
+        -- Solo suma la diferencia en ventas PENDIENTES. Las pagadas suman 0 deuda.
+        COALESCE(SUM(
+          CASE 
+            WHEN status = 'pending' THEN (total_amount - COALESCE(amount_paid, 0))
+            ELSE 0 
+          END
+        ), 0) as total_pending,
+
         COALESCE(AVG(total_amount), 0) as average_sale,
         COUNT(CASE WHEN payment_method = 'efectivo' THEN 1 END) as cash_sales,
         COUNT(CASE WHEN payment_method = 'transferencia' THEN 1 END) as transfer_sales,
-        COALESCE(SUM(CASE WHEN payment_method = 'efectivo' THEN COALESCE(amount_paid, CASE WHEN status = 'pending' THEN 0 ELSE total_amount END) ELSE 0 END), 0) as cash_revenue, -- ✅ Usar lo pagado real
-        COALESCE(SUM(CASE WHEN payment_method = 'transferencia' THEN COALESCE(amount_paid, CASE WHEN status = 'pending' THEN 0 ELSE total_amount END) ELSE 0 END), 0) as transfer_revenue -- ✅ Usar lo pagado real
+        
+        -- Ingresos por método (estimado segun lógica anterior)
+        COALESCE(SUM(
+          CASE 
+            WHEN payment_method = 'efectivo' THEN 
+              CASE WHEN status = 'pending' THEN COALESCE(amount_paid, 0) ELSE total_amount END
+            ELSE 0 
+          END
+        ), 0) as cash_revenue,
+        
+        COALESCE(SUM(
+          CASE 
+            WHEN payment_method = 'transferencia' THEN 
+              CASE WHEN status = 'pending' THEN COALESCE(amount_paid, 0) ELSE total_amount END
+            ELSE 0 
+          END
+        ), 0) as transfer_revenue
       FROM sales s
       WHERE 1=1 ${dateFilter}
     `, queryParams);
