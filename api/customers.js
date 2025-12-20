@@ -97,7 +97,11 @@ module.exports = async function handler(req, res) {
 
         // Sorting
         const sortBy = req.query.sortBy || 'spent'; // name, recent, spent, purchases
-        const sortOrder = req.query.sortOrder || 'desc';
+        let sortOrder = req.query.sortOrder || 'desc';
+        // Sanitize sortOrder to prevent SQL injection
+        if (sortOrder.toLowerCase() !== 'asc' && sortOrder.toLowerCase() !== 'desc') {
+          sortOrder = 'desc';
+        }
 
         queryText += ` GROUP BY c.id`;
 
