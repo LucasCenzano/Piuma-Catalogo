@@ -1,5 +1,5 @@
 // src/AdminVentas.js - Panel de Ventas completo e independiente
-import React, { useState, useEffect, useCallback } from 'react'; 
+import React, { useState, useEffect, useCallback } from 'react';
 import authService from './authService';
 const API_BASE_URL = process.env.REACT_APP_API_URL || '';
 
@@ -11,25 +11,27 @@ const AdminVentas = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [successMessage, setSuccessMessage] = useState('');
-  
+
   // Estados para nueva venta
   const [newSale, setNewSale] = useState({
-    customer_name: '',
-    customer_lastname: '',
+    customer_fullname: '',
     customer_phone: '',
     customer_email: '',
     payment_method: 'efectivo',
     notes: '',
     items: []
   });
-  
+
+  // Estado para búsqueda de productos
+  const [searchTerm, setSearchTerm] = useState('');
+
   // Estados para el formulario de item
   const [newItem, setNewItem] = useState({
     product_id: '',
     quantity: 1,
     unit_price: ''
   });
-  
+
   // Estados para filtros y estadísticas
   const [stats, setStats] = useState(null);
   const [salesFilter, setSalesFilter] = useState({
@@ -62,7 +64,7 @@ const AdminVentas = () => {
         `${salesFilter.end_date ? '&end_date=' + salesFilter.end_date : ''}` +
         `${salesFilter.payment_method ? '&payment_method=' + salesFilter.payment_method : ''}`
       );
-      
+
       if (response.ok) {
         const data = await response.json();
         setSales(data.sales || data);
@@ -81,7 +83,7 @@ const AdminVentas = () => {
     try {
       setLoading(true);
       const response = await authService.authenticatedFetch(`${API_BASE_URL}/api/sales-stats`); // 👈 Corregido
-      
+
       if (response.ok) {
         const statsData = await response.json();
         setStats(statsData);
@@ -103,7 +105,7 @@ const AdminVentas = () => {
     } else if (activeTab === 'statistics') {
       loadStats();
     }
-  },  [activeTab, loadSales, loadStats]);
+  }, [activeTab, loadSales, loadStats]);
 
   // ===== FUNCIONES DE MANEJO DE ESTADO =====
   const handleFilterChange = (e) => {
@@ -137,7 +139,7 @@ const AdminVentas = () => {
       ...prev,
       [field]: value
     }));
-    
+
     // Auto-completar precio cuando se selecciona un producto
     if (field === 'product_id' && value) {
       const selectedProduct = products.find(p => p.id === parseInt(value));
@@ -151,34 +153,54 @@ const AdminVentas = () => {
     }
   };
 
-  const addItemToSale = () => {
-    if (!newItem.product_id || !newItem.quantity || !newItem.unit_price) {
-      alert('Por favor completa todos los campos del producto');
-      return;
+  // Función simplificada para agregar desde el grid
+  const addProductToSale = (product) => {
+    if (!product) return;
+
+    // Verificar si ya existe para incrementar cantidad
+    const existingItemIndex = newSale.items.findIndex(item => item.product_id === product.id);
+
+    // Extraer precio numérico
+    let numericPrice = 0;
+    if (product.price) {
+      // Lógica corregida para precio argentino
+      let cleanPrice = product.price.toString().replace(/[^0-9,.-]/g, '');
+      cleanPrice = cleanPrice.replace(/\./g, '');
+      cleanPrice = cleanPrice.replace(',', '.');
+      numericPrice = parseFloat(cleanPrice) || 0;
     }
 
-    const product = products.find(p => p.id === parseInt(newItem.product_id));
-    const subtotal = parseInt(newItem.quantity) * parseFloat(newItem.unit_price);
+    if (existingItemIndex >= 0) {
+      // Incrementar cantidad
+      const updatedItems = [...newSale.items];
+      updatedItems[existingItemIndex].quantity += 1;
+      updatedItems[existingItemIndex].subtotal = updatedItems[existingItemIndex].quantity * numericPrice;
 
-    const item = {
-      product_id: parseInt(newItem.product_id),
-      product_name: product.name,
-      quantity: parseInt(newItem.quantity),
-      unit_price: parseFloat(newItem.unit_price),
-      subtotal: subtotal
-    };
+      setNewSale(prev => ({ ...prev, items: updatedItems }));
+    } else {
+      // Agregar nuevo item
+      const item = {
+        product_id: product.id,
+        product_name: product.name,
+        quantity: 1,
+        unit_price: numericPrice,
+        subtotal: numericPrice,
+        image_url: Array.isArray(product.images_url) ? product.images_url[0] : (typeof product.images_url === 'string' ? JSON.parse(product.images_url || '[]')[0] : null)
+      };
 
-    setNewSale(prev => ({
-      ...prev,
-      items: [...prev.items, item]
-    }));
+      setNewSale(prev => ({
+        ...prev,
+        items: [...prev.items, item]
+      }));
+    }
+  };
 
-    // Resetear formulario de item
-    setNewItem({
-      product_id: '',
-      quantity: 1,
-      unit_price: ''
-    });
+  const updateItemQuantity = (index, newQuantity) => {
+    if (newQuantity < 1) return;
+    const updatedItems = [...newSale.items];
+    updatedItems[index].quantity = parseInt(newQuantity);
+    updatedItems[index].subtotal = updatedItems[index].quantity * updatedItems[index].unit_price;
+    setNewSale(prev => ({ ...prev, items: updatedItems }));
   };
 
   const removeItemFromSale = (index) => {
@@ -194,16 +216,23 @@ const AdminVentas = () => {
 
   const handleSubmitSale = async (e) => {
     e.preventDefault();
-    
-    if (!newSale.customer_name || !newSale.customer_lastname || newSale.items.length === 0) {
-      alert('Por favor completa los datos del cliente y agrega al menos un producto');
+
+    if (!newSale.customer_fullname.trim() || newSale.items.length === 0) {
+      alert('Por favor completa el nombre del cliente y agrega al menos un producto');
       return;
     }
+
+    // Dividir nombre completo
+    const nameParts = newSale.customer_fullname.trim().split(' ');
+    const firstName = nameParts[0];
+    const lastName = nameParts.length > 1 ? nameParts.slice(1).join(' ') : '-';
 
     try {
       setLoading(true);
       const saleData = {
         ...newSale,
+        customer_name: firstName,
+        customer_lastname: lastName,
         total_amount: calculateTotal()
       };
 
@@ -213,20 +242,20 @@ const AdminVentas = () => {
       });
 
       if (response.ok) {
-        await response.json(); 
+        await response.json();
         setSuccessMessage('¡Venta registrada exitosamente!');
-        
+
         // Resetear formulario
         setNewSale({
-          customer_name: '',
-          customer_lastname: '',
+          customer_fullname: '',
           customer_phone: '',
           customer_email: '',
           payment_method: 'efectivo',
           notes: '',
           items: []
         });
-        
+        setSearchTerm('');
+
         // Cambiar a la pestaña de ventas
         setTimeout(() => {
           setActiveTab('sales-list');
@@ -243,33 +272,33 @@ const AdminVentas = () => {
       setLoading(false);
     }
   };
-  
-    // ✅ Función para eliminar venta
-    const handleDeleteSale = async (saleId) => {
+
+  // ✅ Función para eliminar venta
+  const handleDeleteSale = async (saleId) => {
     if (!window.confirm('¿Estás seguro de que quieres eliminar esta venta?')) {
-        return;
+      return;
     }
 
     try {
-        setLoading(true);
-        const response = await authService.authenticatedFetch(`${API_BASE_URL}/api/sales?id=${saleId}`, { // 👈 Corregido
+      setLoading(true);
+      const response = await authService.authenticatedFetch(`${API_BASE_URL}/api/sales?id=${saleId}`, { // 👈 Corregido
         method: 'DELETE'
-        });
+      });
 
-        if (response.ok) {
+      if (response.ok) {
         setSuccessMessage('Venta eliminada exitosamente');
         loadSales(); // Recargar la lista
-        } else {
+      } else {
         throw new Error('Error al eliminar venta');
-        }
+      }
     } catch (error) {
-        setError(error.message);
+      setError(error.message);
     } finally {
-        setLoading(false);
+      setLoading(false);
     }
-    };
+  };
 
-    
+
   const handleLogout = () => {
     authService.logout();
     window.location.href = '/admin';
@@ -327,7 +356,7 @@ const AdminVentas = () => {
             alignItems: 'center',
             gap: '0.5rem',
             transition: 'all 0.3s ease',
-            background: activeTab === tab.key 
+            background: activeTab === tab.key
               ? 'linear-gradient(135deg, #d4af37 0%, #c19b26 100%)'
               : 'transparent',
             color: activeTab === tab.key ? 'white' : '#333'
@@ -348,7 +377,7 @@ const AdminVentas = () => {
       boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1)',
       border: '1px solid rgba(230, 227, 212, 0.5)'
     }}>
-      <h3 style={{ 
+      <h3 style={{
         fontFamily: 'Didot, serif',
         fontSize: '1.8rem',
         color: '#333',
@@ -368,7 +397,7 @@ const AdminVentas = () => {
           marginBottom: '2rem',
           border: '1px solid rgba(230, 227, 212, 0.8)'
         }}>
-          <h4 style={{ 
+          <h4 style={{
             fontFamily: 'Montserrat, sans-serif',
             color: '#333',
             marginBottom: '1.5rem',
@@ -377,86 +406,80 @@ const AdminVentas = () => {
           }}>
             👤 Datos del Cliente
           </h4>
-          
-          <div style={{ 
-            display: 'grid', 
-            gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', 
-            gap: '1.5rem' 
+
+          <div style={{
+            display: 'flex',
+            flexWrap: 'wrap',
+            gap: '1.5rem'
           }}>
-            <input
-              type="text"
-              placeholder="Nombre *"
-              value={newSale.customer_name}
-              onChange={(e) => handleNewSaleChange('customer_name', e.target.value)}
-              required
-              style={{
-                padding: '1rem',
-                border: '2px solid #e9ecef',
-                borderRadius: '12px',
-                fontSize: '1rem',
-                outline: 'none',
-                transition: 'border-color 0.3s ease'
-              }}
-              onFocus={(e) => e.target.style.borderColor = '#d4af37'}
-              onBlur={(e) => e.target.style.borderColor = '#e9ecef'}
-            />
-            
-            <input
-              type="text"
-              placeholder="Apellido *"
-              value={newSale.customer_lastname}
-              onChange={(e) => handleNewSaleChange('customer_lastname', e.target.value)}
-              required
-              style={{
-                padding: '1rem',
-                border: '2px solid #e9ecef',
-                borderRadius: '12px',
-                fontSize: '1rem',
-                outline: 'none',
-                transition: 'border-color 0.3s ease'
-              }}
-              onFocus={(e) => e.target.style.borderColor = '#d4af37'}
-              onBlur={(e) => e.target.style.borderColor = '#e9ecef'}
-            />
-            
-            <input
-              type="tel"
-              placeholder="Teléfono (opcional)"
-              value={newSale.customer_phone}
-              onChange={(e) => handleNewSaleChange('customer_phone', e.target.value)}
-              style={{
-                padding: '1rem',
-                border: '2px solid #e9ecef',
-                borderRadius: '12px',
-                fontSize: '1rem',
-                outline: 'none',
-                transition: 'border-color 0.3s ease'
-              }}
-              onFocus={(e) => e.target.style.borderColor = '#d4af37'}
-              onBlur={(e) => e.target.style.borderColor = '#e9ecef'}
-            />
-            
-            <input
-              type="email"
-              placeholder="Email (opcional)"
-              value={newSale.customer_email}
-              onChange={(e) => handleNewSaleChange('customer_email', e.target.value)}
-              style={{
-                padding: '1rem',
-                border: '2px solid #e9ecef',
-                borderRadius: '12px',
-                fontSize: '1rem',
-                outline: 'none',
-                transition: 'border-color 0.3s ease'
-              }}
-              onFocus={(e) => e.target.style.borderColor = '#d4af37'}
-              onBlur={(e) => e.target.style.borderColor = '#e9ecef'}
-            />
+            <div style={{ flex: '1 1 300px' }}>
+              <input
+                type="text"
+                placeholder="Nombre Completo *"
+                value={newSale.customer_fullname}
+                onChange={(e) => handleNewSaleChange('customer_fullname', e.target.value)}
+                required
+                style={{
+                  width: '100%',
+                  padding: '1rem',
+                  border: '2px solid #e9ecef',
+                  borderRadius: '12px',
+                  fontSize: '1rem',
+                  outline: 'none',
+                  transition: 'border-color 0.3s ease',
+                  boxSizing: 'border-box'
+                }}
+                onFocus={(e) => e.target.style.borderColor = '#d4af37'}
+                onBlur={(e) => e.target.style.borderColor = '#e9ecef'}
+              />
+            </div>
+
+            <div style={{ flex: '1 1 200px' }}>
+              <input
+                type="tel"
+                placeholder="Teléfono (opcional)"
+                value={newSale.customer_phone}
+                onChange={(e) => handleNewSaleChange('customer_phone', e.target.value)}
+                style={{
+                  width: '100%',
+                  padding: '1rem',
+                  border: '2px solid #e9ecef',
+                  borderRadius: '12px',
+                  fontSize: '1rem',
+                  outline: 'none',
+                  transition: 'border-color 0.3s ease',
+                  boxSizing: 'border-box'
+                }}
+                onFocus={(e) => e.target.style.borderColor = '#d4af37'}
+                onBlur={(e) => e.target.style.borderColor = '#e9ecef'}
+              />
+            </div>
+
+            <div style={{ flex: '1 1 200px' }}>
+              <input
+                type="email"
+                placeholder="Email (opcional)"
+                value={newSale.customer_email}
+                onChange={(e) => handleNewSaleChange('customer_email', e.target.value)}
+                style={{
+                  width: '100%',
+                  padding: '1rem',
+                  border: '2px solid #e9ecef',
+                  borderRadius: '12px',
+                  fontSize: '1rem',
+                  outline: 'none',
+                  transition: 'border-color 0.3s ease',
+                  boxSizing: 'border-box'
+                }}
+                onFocus={(e) => e.target.style.borderColor = '#d4af37'}
+                onBlur={(e) => e.target.style.borderColor = '#e9ecef'}
+              />
+            </div>
           </div>
-          
-          <div style={{ 
-            display: 'grid', 
-            gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', 
+
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
             gap: '1.5rem',
             marginTop: '1.5rem'
           }}>
@@ -476,7 +499,7 @@ const AdminVentas = () => {
               <option value="efectivo">💵 Efectivo</option>
               <option value="transferencia">🏦 Transferencia</option>
             </select>
-            
+
             <textarea
               placeholder="Notas (opcional)"
               value={newSale.notes}
@@ -506,7 +529,7 @@ const AdminVentas = () => {
           marginBottom: '2rem',
           border: '1px solid rgba(59, 130, 246, 0.2)'
         }}>
-          <h4 style={{ 
+          <h4 style={{
             fontFamily: 'Montserrat, sans-serif',
             color: '#1e40af',
             marginBottom: '1.5rem',
@@ -515,86 +538,87 @@ const AdminVentas = () => {
           }}>
             🛍️ Agregar Productos
           </h4>
-          
-          <div style={{ 
-            display: 'grid', 
-            gridTemplateColumns: '2fr 1fr 1.5fr 1fr', 
+
+          {/* Búsqueda de Productos */}
+          <input
+            type="text"
+            placeholder="🔍 Buscar producto..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            style={{
+              width: '100%',
+              padding: '1rem',
+              border: '2px solid #d4af37',
+              borderRadius: '12px',
+              fontSize: '1rem',
+              marginBottom: '1.5rem',
+              boxSizing: 'border-box'
+            }}
+          />
+
+          {/* Grid de Productos */}
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))',
             gap: '1rem',
-            alignItems: 'end'
+            maxHeight: '400px',
+            overflowY: 'auto',
+            paddingRight: '0.5rem'
           }}>
-            <select
-              value={newItem.product_id}
-              onChange={(e) => handleNewItemChange('product_id', e.target.value)}
-              style={{
-                padding: '1rem',
-                border: '2px solid #e9ecef',
-                borderRadius: '12px',
-                fontSize: '1rem',
-                backgroundColor: 'white',
-                cursor: 'pointer',
-                outline: 'none'
-              }}
-            >
-              <option value="">Seleccionar producto</option>
-              {products.map(product => (
-                <option key={product.id} value={product.id}>
-                  {product.name} ({product.category}) - {product.price}
-                </option>
+            {products
+              .filter(p => !searchTerm || p.name.toLowerCase().includes(searchTerm.toLowerCase()) || p.category.toLowerCase().includes(searchTerm.toLowerCase()))
+              .map(product => (
+                <div
+                  key={product.id}
+                  onClick={() => addProductToSale(product)}
+                  style={{
+                    border: '1px solid #e9ecef',
+                    borderRadius: '12px',
+                    padding: '0.8rem',
+                    textAlign: 'center',
+                    cursor: 'pointer',
+                    background: 'white',
+                    transition: 'all 0.2s ease',
+                    boxShadow: '0 2px 5px rgba(0,0,0,0.05)',
+                    position: 'relative'
+                  }}
+                  onMouseOver={(e) => e.currentTarget.style.transform = 'translateY(-2px)'}
+                  onMouseOut={(e) => e.currentTarget.style.transform = 'translateY(0)'}
+                >
+                  <div style={{
+                    height: '80px',
+                    marginBottom: '0.5rem',
+                    background: '#f8f9fa',
+                    borderRadius: '8px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    overflow: 'hidden'
+                  }}>
+                    {/* Intento de mostrar imagen si existe */}
+                    <img
+                      src={Array.isArray(product.images_url) && product.images_url.length > 0 ? product.images_url[0] : (typeof product.images_url === 'string' && product.images_url.includes('[') ? JSON.parse(product.images_url)[0] : '')}
+                      alt={product.name}
+                      onError={(e) => { e.target.style.display = 'none'; }}
+                      style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                    />
+                    {!product.images_url || (Array.isArray(product.images_url) && product.images_url.length === 0) ? <span style={{ fontSize: '2rem' }}>📦</span> : null}
+                  </div>
+                  <h5 style={{ margin: '0 0 0.25rem 0', fontSize: '0.9rem', color: '#333' }}>{product.name}</h5>
+                  <p style={{ margin: 0, fontSize: '0.85rem', fontWeight: 'bold', color: '#007bff' }}>{product.price}</p>
+
+                  {/* Badge de stock */}
+                  <div style={{
+                    position: 'absolute',
+                    top: '5px',
+                    right: '5px',
+                    width: '10px',
+                    height: '10px',
+                    borderRadius: '50%',
+                    background: product.in_stock ? '#28a745' : '#dc3545'
+                  }} />
+                </div>
               ))}
-            </select>
-            
-            <input
-              type="number"
-              placeholder="Cantidad"
-              min="1"
-              value={newItem.quantity}
-              onChange={(e) => handleNewItemChange('quantity', e.target.value)}
-              style={{
-                padding: '1rem',
-                border: '2px solid #e9ecef',
-                borderRadius: '12px',
-                fontSize: '1rem',
-                outline: 'none'
-              }}
-            />
-            
-            <input
-              type="number"
-              placeholder="Precio unitario"
-              min="0"
-              step="0.01"
-              value={newItem.unit_price}
-              onChange={(e) => handleNewItemChange('unit_price', e.target.value)}
-              style={{
-                padding: '1rem',
-                border: '2px solid #e9ecef',
-                borderRadius: '12px',
-                fontSize: '1rem',
-                outline: 'none'
-              }}
-            />
-            
-            <button
-              type="button"
-              onClick={addItemToSale}
-              disabled={!newItem.product_id || !newItem.quantity || !newItem.unit_price}
-              style={{
-                padding: '1rem 2rem',
-                background: newItem.product_id && newItem.quantity && newItem.unit_price 
-                  ? 'linear-gradient(135deg, #28a745 0%, #20c997 100%)' 
-                  : '#6c757d',
-                color: 'white',
-                border: 'none',
-                borderRadius: '12px',
-                cursor: newItem.product_id && newItem.quantity && newItem.unit_price 
-                  ? 'pointer' 
-                  : 'not-allowed',
-                fontWeight: '600',
-                whiteSpace: 'nowrap'
-              }}
-            >
-              ➕ Agregar
-            </button>
           </div>
         </div>
 
@@ -607,7 +631,7 @@ const AdminVentas = () => {
             padding: '2rem',
             marginBottom: '2rem'
           }}>
-            <h4 style={{ 
+            <h4 style={{
               fontFamily: 'Montserrat, sans-serif',
               color: '#333',
               marginBottom: '1.5rem',
@@ -616,7 +640,7 @@ const AdminVentas = () => {
             }}>
               🛒 Productos Agregados ({newSale.items.length})
             </h4>
-            
+
             <div style={{ overflowX: 'auto' }}>
               <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                 <thead>
@@ -631,8 +655,19 @@ const AdminVentas = () => {
                 <tbody>
                   {newSale.items.map((item, index) => (
                     <tr key={index} style={{ borderBottom: '1px solid #dee2e6' }}>
-                      <td style={{ padding: '1rem' }}>{item.product_name}</td>
-                      <td style={{ padding: '1rem', textAlign: 'center' }}>{item.quantity}</td>
+                      <td style={{ padding: '1rem' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                          {item.image_url && <img src={item.image_url} alt="" style={{ width: '40px', height: '40px', objectFit: 'cover', borderRadius: '4px' }} />}
+                          <span>{item.product_name}</span>
+                        </div>
+                      </td>
+                      <td style={{ padding: '1rem', textAlign: 'center' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '5px' }}>
+                          <button type="button" onClick={() => updateItemQuantity(index, item.quantity - 1)} style={{ width: '24px', height: '24px', borderRadius: '50%', border: '1px solid #ccc', background: 'white' }}>-</button>
+                          <span>{item.quantity}</span>
+                          <button type="button" onClick={() => updateItemQuantity(index, item.quantity + 1)} style={{ width: '24px', height: '24px', borderRadius: '50%', border: '1px solid #ccc', background: 'white' }}>+</button>
+                        </div>
+                      </td>
                       <td style={{ padding: '1rem', textAlign: 'right' }}>
                         {formatCurrency(item.unit_price)}
                       </td>
@@ -662,7 +697,7 @@ const AdminVentas = () => {
                 </tbody>
               </table>
             </div>
-            
+
             <div style={{
               marginTop: '2rem',
               padding: '1.5rem',
@@ -671,10 +706,10 @@ const AdminVentas = () => {
               color: 'white',
               textAlign: 'right'
             }}>
-              <h3 style={{ 
-                margin: 0, 
-                fontSize: '1.5rem', 
-                fontWeight: '700' 
+              <h3 style={{
+                margin: 0,
+                fontSize: '1.5rem',
+                fontWeight: '700'
               }}>
                 💰 Total: {formatCurrency(calculateTotal())}
               </h3>
@@ -683,18 +718,18 @@ const AdminVentas = () => {
         )}
 
         {/* Botones de Acción */}
-        <div style={{ 
-          display: 'flex', 
-          gap: '1rem', 
+        <div style={{
+          display: 'flex',
+          gap: '1rem',
           justifyContent: 'center',
           paddingTop: '1rem'
         }}>
-          <button 
-            type="submit" 
+          <button
+            type="submit"
             disabled={loading || newSale.items.length === 0}
             style={{
-              background: loading || newSale.items.length === 0 
-                ? '#6c757d' 
+              background: loading || newSale.items.length === 0
+                ? '#6c757d'
                 : 'linear-gradient(135deg, #d4af37 0%, #c19b26 100%)',
               color: 'white',
               border: 'none',
@@ -702,8 +737,8 @@ const AdminVentas = () => {
               borderRadius: '12px',
               fontSize: '1rem',
               fontWeight: '600',
-              cursor: loading || newSale.items.length === 0 
-                ? 'not-allowed' 
+              cursor: loading || newSale.items.length === 0
+                ? 'not-allowed'
                 : 'pointer',
               transition: 'all 0.3s ease',
               textTransform: 'uppercase',
@@ -726,7 +761,7 @@ const AdminVentas = () => {
       boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1)',
       border: '1px solid rgba(230, 227, 212, 0.5)'
     }}>
-      <h3 style={{ 
+      <h3 style={{
         fontFamily: 'Didot, serif',
         fontSize: '1.8rem',
         color: '#333',
@@ -792,7 +827,7 @@ const AdminVentas = () => {
         <div style={{ textAlign: 'center', padding: '3rem', color: '#666' }}>
           <div style={{ fontSize: '3rem', marginBottom: '1rem', opacity: 0.5 }}>📊</div>
           <p>No hay ventas registradas</p>
-          <button 
+          <button
             onClick={() => setActiveTab('new-sale')}
             style={{
               background: 'linear-gradient(135deg, #d4af37 0%, #c19b26 100%)',
@@ -866,7 +901,7 @@ const AdminVentas = () => {
                       borderRadius: '20px',
                       fontSize: '0.8rem',
                       fontWeight: '600',
-                      background: sale.payment_method === 'efectivo' 
+                      background: sale.payment_method === 'efectivo'
                         ? 'linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%)'
                         : 'linear-gradient(135deg, #cce5ff 0%, #b3d9ff 100%)',
                       color: sale.payment_method === 'efectivo' ? '#155724' : '#004085'
@@ -874,8 +909,8 @@ const AdminVentas = () => {
                       {sale.payment_method === 'efectivo' ? '💵 Efectivo' : '🏦 Transferencia'}
                     </span>
                   </td>
-                  <td style={{ 
-                    padding: '1rem', 
+                  <td style={{
+                    padding: '1rem',
                     textAlign: 'center',
                     fontSize: '0.9rem',
                     color: '#666'
@@ -899,7 +934,7 @@ const AdminVentas = () => {
       boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1)',
       border: '1px solid rgba(230, 227, 212, 0.5)'
     }}>
-      <h3 style={{ 
+      <h3 style={{
         fontFamily: 'Didot, serif',
         fontSize: '1.8rem',
         color: '#333',
@@ -954,7 +989,7 @@ const AdminVentas = () => {
               </div>
               <div style={{ fontSize: '1rem', opacity: 0.9 }}>Ingresos Totales</div>
             </div>
-            
+
             <div style={{
               background: 'linear-gradient(135deg, #28a745 0%, #20c997 100%)',
               color: 'white',
@@ -969,7 +1004,7 @@ const AdminVentas = () => {
               </div>
               <div style={{ fontSize: '1rem', opacity: 0.9 }}>Total de Ventas</div>
             </div>
-            
+
             <div style={{
               background: 'linear-gradient(135deg, #007bff 0%, #0056b3 100%)',
               color: 'white',
@@ -984,7 +1019,7 @@ const AdminVentas = () => {
               </div>
               <div style={{ fontSize: '1rem', opacity: 0.9 }}>Venta Promedio</div>
             </div>
-            
+
             <div style={{
               background: 'linear-gradient(135deg, #6f42c1 0%, #5a3a9a 100%)',
               color: 'white',
@@ -1020,7 +1055,7 @@ const AdminVentas = () => {
               }}>
                 💳 Ventas por Método de Pago
               </h4>
-              
+
               <div style={{
                 display: 'grid',
                 gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
@@ -1088,7 +1123,7 @@ const AdminVentas = () => {
               }}>
                 🏆 Productos Más Vendidos
               </h4>
-              
+
               <div style={{ overflowX: 'auto' }}>
                 <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                   <thead>
@@ -1101,9 +1136,9 @@ const AdminVentas = () => {
                   </thead>
                   <tbody>
                     {stats.top_products.slice(0, 5).map((product, index) => (
-                      <tr key={index} style={{ 
-                        background: 'white', 
-                        borderBottom: '1px solid rgba(255, 152, 0, 0.1)' 
+                      <tr key={index} style={{
+                        background: 'white',
+                        borderBottom: '1px solid rgba(255, 152, 0, 0.1)'
                       }}>
                         <td style={{ padding: '1rem', textAlign: 'center', fontSize: '1.2rem' }}>
                           {index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : `#${index + 1}`}
@@ -1148,7 +1183,7 @@ const AdminVentas = () => {
               }}>
                 📅 Ventas por Día (Últimos 7 días)
               </h4>
-              
+
               <div style={{
                 display: 'grid',
                 gap: '1rem'
@@ -1230,7 +1265,7 @@ const AdminVentas = () => {
               }}
               title="Volver al Panel Principal"
             >
-              ← 
+              ←
             </button>
             <h1 style={{
               fontFamily: 'Didot, serif',
@@ -1266,7 +1301,7 @@ const AdminVentas = () => {
               <span>🏠</span>
               <span>Panel Principal</span>
             </button>
-            
+
             <button
               onClick={handleLogout}
               style={{
@@ -1373,7 +1408,7 @@ const AdminVentas = () => {
         {activeTab === 'statistics' && renderStatistics()}
       </main>
 
-        {/* Loading overlay */}
+      {/* Loading overlay */}
       {loading && (
         <div style={{
           position: 'fixed',
