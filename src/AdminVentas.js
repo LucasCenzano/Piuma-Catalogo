@@ -618,7 +618,6 @@ const AdminVentas = () => {
                 outline: 'none',
                 transition: 'border-color 0.3s ease',
                 gridColumn: '1 / -1',
-                gridColumn: '1 / -1',
                 width: '100%',
                 boxSizing: 'border-box'
               }}
