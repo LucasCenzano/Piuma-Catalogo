@@ -120,7 +120,23 @@ const AdminVentas = () => {
   };
 
   const handleEditSaleChange = (field, value) => {
-    setEditingSale(prev => ({ ...prev, [field]: value }));
+    setEditingSale(prev => {
+      const updates = { ...prev, [field]: value };
+
+      // Auto-fill amount if status becomes 'paid'
+      if (field === 'status' && value === 'paid') {
+        updates.amount_paid = prev.total_amount;
+      }
+
+      // Sanitize numeric input for amount_paid if typed manually
+      if (field === 'amount_paid') {
+        // Remove non-numeric chars except dot/comma, but simplify to clean numbers
+        const cleanValue = value.replace(/[^0-9]/g, '');
+        updates.amount_paid = cleanValue;
+      }
+
+      return updates;
+    });
   };
 
   const handleUpdateSale = async (e) => {
@@ -1705,9 +1721,10 @@ const AdminVentas = () => {
               </div>
 
               <div style={{ marginBottom: '1.5rem' }}>
-                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold' }}>Monto Abonado ($)</label>
+                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold' }}>Monto Total Abonado ($)</label>
                 <input
-                  type="number"
+                  type="text"
+                  inputMode="numeric"
                   value={editingSale.amount_paid}
                   onChange={(e) => handleEditSaleChange('amount_paid', e.target.value)}
                   style={{
