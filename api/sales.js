@@ -251,22 +251,33 @@ module.exports = async function handler(req, res) {
             const subtotal = parseFloat(item.quantity) * parseFloat(item.unit_price);
 
             await client.query(`
-              INSERT INTO sale_items (sale_id, product_id, quantity, unit_price, subtotal)
-              VALUES ($1, $2, $3, $4, $5)
+              INSERT INTO sale_items (sale_id, product_id, variant_id, quantity, unit_price, subtotal)
+              VALUES ($1, $2, $3, $4, $5, $6)
             `, [
               saleId,
               parseInt(item.product_id),
+              item.variant_id ? parseInt(item.variant_id) : null,
               parseInt(item.quantity),
               parseFloat(item.unit_price),
               subtotal
             ]);
 
-            // ACTUALIZAR STOCK: Marcar como agotado (in_stock = false)
-            await client.query(`
-              UPDATE products 
-              SET in_stock = false, updated_at = CURRENT_TIMESTAMP
-              WHERE id = $1
-            `, [parseInt(item.product_id)]);
+            // ACTUALIZAR STOCK
+            if (item.variant_id) {
+              // Update variant stock
+              await client.query(`
+                 UPDATE product_variants
+                 SET in_stock = false
+                 WHERE id = $1
+               `, [parseInt(item.variant_id)]);
+            } else {
+              // Legacy behavior: Update main product stock
+              await client.query(`
+                 UPDATE products 
+                 SET in_stock = false, updated_at = CURRENT_TIMESTAMP
+                 WHERE id = $1
+               `, [parseInt(item.product_id)]);
+            }
           }
 
           await client.query('COMMIT');

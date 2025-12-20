@@ -40,6 +40,9 @@ const AdminVentas = () => {
     payment_method: ''
   });
 
+  // Variant Modal State
+  const [showVariantModal, setShowVariantModal] = useState(false);
+  const [selectedProductForVariant, setSelectedProductForVariant] = useState(null);
 
   // ===== FUNCIONES DE CARGA DE DATOS =====
 
@@ -136,9 +139,17 @@ const AdminVentas = () => {
   const addProductToSale = (product) => {
     if (!product) return;
 
-    // Verificar si ya existe para incrementar cantidad
-    const existingItemIndex = newSale.items.findIndex(item => item.product_id === product.id);
+    // Check for variants
+    if (product.variants && product.variants.length > 0) {
+      setSelectedProductForVariant(product);
+      setShowVariantModal(true);
+      return;
+    }
 
+    addToCart(product, null);
+  };
+
+  const addToCart = (product, variant) => {
     // Extraer precio numérico
     let numericPrice = 0;
     if (product.price) {
@@ -149,6 +160,11 @@ const AdminVentas = () => {
       numericPrice = parseFloat(cleanPrice) || 0;
     }
 
+    const existingItemIndex = newSale.items.findIndex(item =>
+      item.product_id === product.id &&
+      (variant ? item.variant_id === variant.id : !item.variant_id)
+    );
+
     if (existingItemIndex >= 0) {
       // Incrementar cantidad
       const updatedItems = [...newSale.items];
@@ -158,20 +174,26 @@ const AdminVentas = () => {
       setNewSale(prev => ({ ...prev, items: updatedItems }));
     } else {
       // Agregar nuevo item
-      const item = {
+      const newItem = {
         product_id: product.id,
         product_name: product.name,
-        quantity: 1,
+        variant_id: variant ? variant.id : null,
+        variant_name: variant ? variant.color_name : null,
+        image_url: Array.isArray(product.images_url) && product.images_url.length > 0 ? product.images_url[0] : (typeof product.images_url === 'string' ? JSON.parse(product.images_url || '[]')[0] : null),
         unit_price: numericPrice,
-        subtotal: numericPrice,
-        image_url: Array.isArray(product.images_url) ? product.images_url[0] : (typeof product.images_url === 'string' ? JSON.parse(product.images_url || '[]')[0] : null)
+        quantity: 1,
+        subtotal: numericPrice
       };
 
       setNewSale(prev => ({
         ...prev,
-        items: [...prev.items, item]
+        items: [...prev.items, newItem]
       }));
     }
+
+    // Close modal if open
+    setShowVariantModal(false);
+    setSelectedProductForVariant(null);
   };
 
   const updateItemQuantity = (index, newQuantity) => {
@@ -604,6 +626,59 @@ const AdminVentas = () => {
             }}
           />
 
+          {/* Modal de Selección de Variante */}
+          {showVariantModal && selectedProductForVariant && (
+            <div style={{
+              position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+              background: 'rgba(0,0,0,0.5)', zIndex: 10000,
+              display: 'flex', justifyContent: 'center', alignItems: 'center'
+            }} onClick={() => setShowVariantModal(false)}>
+              <div style={{
+                background: 'white', padding: '2rem', borderRadius: '16px',
+                width: '90%', maxWidth: '400px',
+                boxShadow: '0 10px 30px rgba(0,0,0,0.2)'
+              }} onClick={e => e.stopPropagation()}>
+                <h4 style={{ margin: '0 0 1.5rem 0', textAlign: 'center' }}>Selecciona un Color</h4>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1rem', justifyContent: 'center' }}>
+                  {selectedProductForVariant.variants.map((variant, idx) => (
+                    <button
+                      key={idx}
+                      onClick={() => addToCart(selectedProductForVariant, variant)}
+                      disabled={!variant.in_stock}
+                      style={{
+                        padding: '1rem 1.5rem',
+                        border: '2px solid',
+                        borderColor: variant.in_stock ? '#28a745' : '#dc3545',
+                        borderRadius: '12px',
+                        background: 'white',
+                        color: variant.in_stock ? '#333' : '#999',
+                        cursor: variant.in_stock ? 'pointer' : 'not-allowed',
+                        opacity: variant.in_stock ? 1 : 0.6,
+                        display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem'
+                      }}
+                    >
+                      <span style={{
+                        width: '20px', height: '20px', borderRadius: '50%',
+                        background: variant.in_stock ? '#28a745' : '#dc3545'
+                      }}></span>
+                      <span style={{ fontWeight: '600' }}>{variant.color_name}</span>
+                      <span style={{ fontSize: '0.8rem' }}>{variant.in_stock ? 'En Stock' : 'Agotado'}</span>
+                    </button>
+                  ))}
+                </div>
+                <button
+                  onClick={() => setShowVariantModal(false)}
+                  style={{
+                    width: '100%', marginTop: '2rem', padding: '1rem',
+                    background: '#6c757d', color: 'white', border: 'none', borderRadius: '8px'
+                  }}
+                >
+                  Cancelar
+                </button>
+              </div>
+            </div>
+          )}
+
           {/* Grid de Productos */}
           <div style={{
             display: 'grid',
@@ -706,7 +781,12 @@ const AdminVentas = () => {
                       <td style={{ padding: '1rem' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                           {item.image_url && <img src={item.image_url} alt="" style={{ width: '40px', height: '40px', objectFit: 'cover', borderRadius: '4px' }} />}
-                          <span>{item.product_name}</span>
+                          <div>
+                            <div>{item.product_name}</div>
+                            {item.variant_name && (
+                              <div style={{ fontSize: '0.8rem', color: '#666' }}>Color: {item.variant_name}</div>
+                            )}
+                          </div>
                         </div>
                       </td>
                       <td style={{ padding: '1rem', textAlign: 'center' }}>

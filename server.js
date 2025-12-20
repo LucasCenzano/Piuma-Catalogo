@@ -208,9 +208,24 @@ app.get('/api/products', async (req, res) => {
     }
 
     // UPDATE: Order by is_new DESC, then is_featured DESC, then category, then name
-    const result = await query(
-      'SELECT * FROM products WHERE is_active = true ORDER BY is_new DESC, is_featured DESC, category, name'
-    );
+    const result = await query(`
+      SELECT p.*, 
+             COALESCE(
+               json_agg(
+                 json_build_object(
+                   'id', pv.id,
+                   'color_name', pv.color_name,
+                   'in_stock', pv.in_stock
+                 )
+               ) FILTER (WHERE pv.id IS NOT NULL), 
+               '[]'
+             ) as variants
+      FROM products p
+      LEFT JOIN product_variants pv ON p.id = pv.product_id
+      WHERE p.is_active = true 
+      GROUP BY p.id
+      ORDER BY p.is_new DESC, p.is_featured DESC, p.category, p.name
+    `);
 
     const products = result.rows.map(p => {
       if (typeof p.images_url === 'string') {
@@ -240,10 +255,25 @@ app.get('/api/admin/products',
   requireRole('admin'),
   async (req, res) => {
     try {
-      // UPDATE: Same sort order for admin
-      const result = await query(
-        'SELECT * FROM products WHERE is_active = true ORDER BY is_new DESC, is_featured DESC, category, name'
-      );
+      // UPDATE: Include variants using json_agg, filtering only active variants if needed (but admin sees all usually)
+      const result = await query(`
+        SELECT p.*, 
+               COALESCE(
+                 json_agg(
+                   json_build_object(
+                     'id', pv.id,
+                     'color_name', pv.color_name,
+                     'in_stock', pv.in_stock
+                   )
+                 ) FILTER (WHERE pv.id IS NOT NULL), 
+                 '[]'
+               ) as variants
+        FROM products p
+        LEFT JOIN product_variants pv ON p.id = pv.product_id
+        WHERE p.is_active = true 
+        GROUP BY p.id
+        ORDER BY p.is_new DESC, p.is_featured DESC, p.category, p.name
+      `);
 
       const products = result.rows.map(p => {
         if (typeof p.images_url === 'string') {
@@ -328,16 +358,22 @@ app.post('/api/admin/products',
 );
 
 // Actualizar producto
+// Actualizar producto
 app.put('/api/admin/products/:id',
   authenticate,
   requireRole('admin'),
   async (req, res) => {
+    const client = await pool.connect();
     try {
+      await client.query('BEGIN');
       const { id } = req.params;
       const updates = req.body;
+      const { variants } = updates; // Extract variants
+
       console.log('📝 Actualizando producto:', id);
       console.log('📦 Datos recibidos:', JSON.stringify(updates, null, 2));
 
+      // 1. Update Product Fields
       const fields = [];
       const values = [];
       let paramCount = 1;
@@ -369,25 +405,60 @@ app.put('/api/admin/products/:id',
         }
       }
 
-      if (fields.length === 0) {
-        return res.status(400).json({ error: 'No hay campos para actualizar' });
+      if (fields.length > 0) {
+        fields.push('updated_at = CURRENT_TIMESTAMP');
+        values.push(parseInt(id));
+
+        const result = await client.query(`
+          UPDATE products 
+          SET ${fields.join(', ')}
+          WHERE id = $${paramCount}
+          RETURNING *
+        `, values);
+
+        if (result.rows.length === 0) {
+          throw new Error('Producto no encontrado');
+        }
       }
 
-      fields.push('updated_at = CURRENT_TIMESTAMP');
-      values.push(parseInt(id));
+      // 2. Handle Variants (if provided)
+      if (variants && Array.isArray(variants)) {
+        // Delete existing variants
+        await client.query('DELETE FROM product_variants WHERE product_id = $1', [parseInt(id)]);
 
-      const result = await query(`
-        UPDATE products 
-        SET ${fields.join(', ')}
-        WHERE id = $${paramCount}
-        RETURNING *
-      `, values);
-
-      if (result.rows.length === 0) {
-        return res.status(404).json({ error: 'Producto no encontrado' });
+        // Insert new variants
+        for (const variant of variants) {
+          if (variant.color_name && variant.color_name.trim()) {
+            await client.query(`
+              INSERT INTO product_variants (product_id, color_name, in_stock)
+              VALUES ($1, $2, $3)
+            `, [parseInt(id), variant.color_name.trim(), variant.in_stock !== false]);
+          }
+        }
       }
 
-      const product = result.rows[0];
+      await client.query('COMMIT');
+
+      // Fetch updated product with variants
+      const finalResult = await client.query(`
+        SELECT p.*, 
+             COALESCE(
+               json_agg(
+                 json_build_object(
+                   'id', pv.id,
+                   'color_name', pv.color_name,
+                   'in_stock', pv.in_stock
+                 )
+               ) FILTER (WHERE pv.id IS NOT NULL), 
+               '[]'
+             ) as variants
+        FROM products p
+        LEFT JOIN product_variants pv ON p.id = pv.product_id
+        WHERE p.id = $1
+        GROUP BY p.id
+      `, [parseInt(id)]);
+
+      const product = finalResult.rows[0];
       if (typeof product.images_url === 'string') {
         product.images_url = JSON.parse(product.images_url);
       }
@@ -398,8 +469,11 @@ app.put('/api/admin/products/:id',
       });
 
     } catch (error) {
+      await client.query('ROLLBACK');
       console.error('Error actualizando producto:', error);
-      res.status(500).json({ error: 'Error interno del servidor' });
+      res.status(500).json({ error: error.message || 'Error interno del servidor' });
+    } finally {
+      client.release();
     }
   }
 );

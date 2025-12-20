@@ -156,6 +156,11 @@ const AdminPanel = ({ onLogout }) => {
   const [newIsNew, setNewIsNew] = useState(false);
   const [newDiscountPercentage, setNewDiscountPercentage] = useState(0);
 
+  // Estados para variantes (colores) - Creación
+  const [newVariants, setNewVariants] = useState([]); // [{color_name, in_stock}]
+  const [tempVariantName, setTempVariantName] = useState('');
+  const [tempVariantStock, setTempVariantStock] = useState(true);
+
   // Estados para edición
   const [editName, setEditName] = useState('');
   const [editPrice, setEditPrice] = useState('');
@@ -167,6 +172,11 @@ const AdminPanel = ({ onLogout }) => {
   const [editIsFeatured, setEditIsFeatured] = useState(false);
   const [editIsNew, setEditIsNew] = useState(false);
   const [editDiscountPercentage, setEditDiscountPercentage] = useState(0);
+
+  // Estados para variantes (colores) - Edición
+  const [editVariants, setEditVariants] = useState([]); // [{id, color_name, in_stock}]
+  const [tempEditVariantName, setTempEditVariantName] = useState('');
+  const [tempEditVariantStock, setTempEditVariantStock] = useState(true);
 
   // ✅ 2. FUNCIÓN PARA ORDENAR (corregida)
   const requestSort = (key) => {
@@ -270,7 +280,8 @@ const AdminPanel = ({ onLogout }) => {
         imagesUrl: newImages,
         isFeatured: newIsFeatured,
         isNew: newIsNew,
-        discountPercentage: parseInt(newDiscountPercentage) || 0
+        discountPercentage: parseInt(newDiscountPercentage) || 0,
+        variants: newVariants // Enviar variantes
       });
 
       // Limpiar formulario
@@ -284,6 +295,9 @@ const AdminPanel = ({ onLogout }) => {
       setNewIsFeatured(false);
       setNewIsNew(false);
       setNewDiscountPercentage(0);
+      setNewVariants([]); // Reset variants
+      setTempVariantName('');
+      setTempVariantStock(true);
       setShowAddForm(false);
 
       await loadProducts();
@@ -321,8 +335,10 @@ const AdminPanel = ({ onLogout }) => {
         inStock: editInStock,
         imagesUrl: editImages,
         isFeatured: editIsFeatured,
+        isFeatured: editIsFeatured,
         isNew: editIsNew,
-        discountPercentage: parseInt(editDiscountPercentage) || 0
+        discountPercentage: parseInt(editDiscountPercentage) || 0,
+        variants: editVariants // Enviar variantes actualizadas
       });
 
       cancelEditing();
@@ -378,7 +394,9 @@ const AdminPanel = ({ onLogout }) => {
     setEditImageUrl('');
     setEditIsFeatured(product.is_featured || false);
     setEditIsNew(product.is_new || false);
+    setEditIsNew(product.is_new || false);
     setEditDiscountPercentage(product.discount_percentage || 0);
+    setEditVariants(product.variants || []);
   };
 
   const cancelEditing = () => {
@@ -392,7 +410,11 @@ const AdminPanel = ({ onLogout }) => {
     setEditImageUrl('');
     setEditIsFeatured(false);
     setEditIsNew(false);
+    setEditIsNew(false);
     setEditDiscountPercentage(0);
+    setEditVariants([]);
+    setTempEditVariantName('');
+    setTempEditVariantStock(true);
   };
 
   const addNewImage = () => {
@@ -433,6 +455,32 @@ const AdminPanel = ({ onLogout }) => {
     } else {
       window.location.reload();
     }
+  };
+
+  // Funciones para gestionar variantes (Create)
+  const addVariant = () => {
+    if (tempVariantName.trim()) {
+      setNewVariants([...newVariants, { color_name: tempVariantName.trim(), in_stock: tempVariantStock }]);
+      setTempVariantName('');
+      setTempVariantStock(true);
+    }
+  };
+
+  const removeVariant = (index) => {
+    setNewVariants(newVariants.filter((_, i) => i !== index));
+  };
+
+  // Funciones para gestionar variantes (Edit)
+  const addEditVariant = () => {
+    if (tempEditVariantName.trim()) {
+      setEditVariants([...editVariants, { color_name: tempEditVariantName.trim(), in_stock: tempEditVariantStock }]);
+      setTempEditVariantName('');
+      setTempEditVariantStock(true);
+    }
+  };
+
+  const removeEditVariant = (index) => {
+    setEditVariants(editVariants.filter((_, i) => i !== index));
   };
 
   // Renderizar contenido según la sección activa
@@ -963,6 +1011,60 @@ const AdminPanel = ({ onLogout }) => {
                       outline: 'none'
                     }}
                   />
+
+                  {/* Sección de Variantes (Colores) */}
+                  <div style={{
+                    background: '#f8f9fa',
+                    padding: '1.5rem',
+                    borderRadius: '12px',
+                    marginBottom: '1.5rem',
+                    border: '1px solid #e9ecef'
+                  }}>
+                    <h4 style={{ margin: '0 0 1rem 0', color: '#333', fontSize: '1.1rem' }}>🎨 Colores / Variantes</h4>
+
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', marginBottom: '1rem' }}>
+                      {newVariants.map((variant, idx) => (
+                        <div key={idx} style={{
+                          display: 'flex', alignItems: 'center', gap: '0.5rem',
+                          padding: '0.5rem 1rem', background: 'white', border: '1px solid #dee2e6', borderRadius: '20px'
+                        }}>
+                          <span style={{
+                            width: '12px', height: '12px', borderRadius: '50%',
+                            background: variant.in_stock ? '#28a745' : '#dc3545'
+                          }}></span>
+                          <span style={{ fontWeight: '500' }}>{variant.color_name}</span>
+                          <button type="button" onClick={() => removeVariant(idx)} style={{ border: 'none', background: 'none', cursor: 'pointer', color: '#666' }}>✕</button>
+                        </div>
+                      ))}
+                    </div>
+
+                    <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+                      <input
+                        type="text"
+                        placeholder="Nombre del color (ej: Rojo)"
+                        value={tempVariantName}
+                        onChange={(e) => setTempVariantName(e.target.value)}
+                        style={{ flex: 1, padding: '0.75rem', borderRadius: '8px', border: '1px solid #ced4da' }}
+                      />
+                      <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.9rem', cursor: 'pointer' }}>
+                        <input
+                          type="checkbox"
+                          checked={tempVariantStock}
+                          onChange={(e) => setTempVariantStock(e.target.checked)}
+                        />
+                        En Stock
+                      </label>
+                      <button
+                        type="button"
+                        onClick={addVariant}
+                        style={{
+                          padding: '0.75rem 1.5rem', background: '#333', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer'
+                        }}
+                      >
+                        + Agregar
+                      </button>
+                    </div>
+                  </div>
 
                   {/* Sección de imágenes */}
                   <div style={{
