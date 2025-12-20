@@ -140,7 +140,6 @@ const AdminVentas = () => {
   };
 
   // ===== BÚSQUEDA DE CLIENTES =====
-  const [customerSearchTerm, setCustomerSearchTerm] = useState('');
   const [customerResults, setCustomerResults] = useState([]);
   const [showCustomerResults, setShowCustomerResults] = useState(false);
 
@@ -1951,7 +1950,7 @@ const CustomersListAPI = ({ authService, API_BASE_URL, formatCurrency, formatDat
   const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState('');
 
-  const loadCustomers = async (searchTerm = '') => {
+  const loadCustomers = useCallback(async (searchTerm = '') => {
     setLoading(true);
     try {
       const url = searchTerm
@@ -1964,9 +1963,9 @@ const CustomersListAPI = ({ authService, API_BASE_URL, formatCurrency, formatDat
       }
     } catch (e) { console.error(e); }
     finally { setLoading(false); }
-  };
+  }, [authService, API_BASE_URL]);
 
-  useEffect(() => { loadCustomers(); }, []);
+  useEffect(() => { loadCustomers(); }, [loadCustomers]);
 
   return (
     <div style={{
