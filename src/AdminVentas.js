@@ -202,10 +202,23 @@ const AdminVentas = () => {
   };
 
   const handleNewSaleChange = (field, value) => {
-    setNewSale(prev => ({
-      ...prev,
-      [field]: value
-    }));
+    setNewSale(prev => {
+      const updates = { ...prev, [field]: value };
+
+      // Limpieza de monto abonado igual que en edición
+      if (field === 'amount_paid') {
+        const cleanValue = value.replace(/[^0-9]/g, '');
+        updates.amount_paid = cleanValue;
+      }
+
+      // Si el usuario cambia el nombre manualmente, reseteamos el ID del cliente seleccionado
+      // para evitar asociar un nombre nuevo con un ID viejo por error
+      if (field === 'customer_fullname' && prev.customer_id) {
+        updates.customer_id = null;
+      }
+
+      return updates;
+    });
   };
 
   const clearFilters = () => {
@@ -514,72 +527,86 @@ const AdminVentas = () => {
             gap: '1.5rem'
           }}>
             <div style={{ flex: '1 1 300px', position: 'relative' }}>
-              <input
-                type="text"
-                placeholder="Buscar o Ingresar Nombre Cliente *"
-                value={newSale.customer_fullname}
-                onChange={(e) => {
-                  handleNewSaleChange('customer_fullname', e.target.value);
-                  searchCustomers(e.target.value);
-                }}
-                required
-                style={{
-                  width: '100%',
-                  padding: '1rem',
-                  border: '2px solid #e9ecef',
-                  borderRadius: '12px',
-                  fontSize: '1rem',
-                  outline: 'none',
-                  transition: 'border-color 0.3s ease',
-                  boxSizing: 'border-box'
-                }}
-                onFocus={(e) => e.target.style.borderColor = '#d4af37'}
-                onBlur={(e) => {
-                  e.target.style.borderColor = '#e9ecef';
-                  // Delay hiding results to allow click
-                  setTimeout(() => setShowCustomerResults(false), 200);
-                }}
-              />
-              {showCustomerResults && customerResults.length > 0 && (
-                <div style={{
-                  position: 'absolute',
-                  top: '100%',
-                  left: 0,
-                  right: 0,
-                  background: 'white',
-                  border: '1px solid #ddd',
-                  borderRadius: '8px',
-                  boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
-                  zIndex: 10,
-                  maxHeight: '200px',
-                  overflowY: 'auto'
-                }}>
-                  {customerResults.map(c => (
-                    <div
-                      key={c.id}
-                      onClick={() => selectCustomer(c)}
-                      style={{
-                        padding: '0.8rem',
-                        borderBottom: '1px solid #eee',
-                        cursor: 'pointer',
-                        display: 'flex',
-                        justifyContent: 'space-between',
-                        alignItems: 'center'
-                      }}
-                      onMouseEnter={(e) => e.target.style.background = '#f8f9fa'}
-                      onMouseLeave={(e) => e.target.style.background = 'white'}
-                    >
-                      <div>
-                        <div style={{ fontWeight: 'bold' }}>{c.first_name} {c.last_name}</div>
-                        <div style={{ fontSize: '0.8rem', color: '#666' }}>{c.phone}</div>
+              <div style={{ position: 'relative' }}>
+                <input
+                  type="text"
+                  placeholder="Buscar o Ingresar Nombre Cliente *"
+                  value={newSale.customer_fullname}
+                  onChange={(e) => {
+                    handleNewSaleChange('customer_fullname', e.target.value);
+                    searchCustomers(e.target.value);
+                  }}
+                  required
+                  style={{
+                    width: '100%',
+                    padding: '1rem',
+                    paddingRight: newSale.customer_id ? '2.5rem' : '1rem', // Espacio para el icono
+                    border: newSale.customer_id ? '2px solid #28a745' : '2px solid #e9ecef', // Borde verde si está seleccionado
+                    borderRadius: '12px',
+                    fontSize: '1rem',
+                    outline: 'none',
+                    transition: 'all 0.3s ease',
+                    boxSizing: 'border-box'
+                  }}
+                  onFocus={(e) => e.target.style.borderColor = newSale.customer_id ? '#28a745' : '#d4af37'}
+                  onBlur={(e) => {
+                    e.target.style.borderColor = newSale.customer_id ? '#28a745' : '#e9ecef';
+                    setTimeout(() => setShowCustomerResults(false), 200);
+                  }}
+                />
+                {newSale.customer_id && (
+                  <span style={{
+                    position: 'absolute',
+                    right: '10px',
+                    top: '50%',
+                    transform: 'translateY(-50%)',
+                    color: '#28a745',
+                    fontWeight: 'bold',
+                    fontSize: '1.2rem',
+                    pointerEvents: 'none'
+                  }}>✓</span>
+                )}
+                {showCustomerResults && customerResults.length > 0 && (
+                  <div style={{
+                    position: 'absolute',
+                    top: '100%',
+                    left: 0,
+                    right: 0,
+                    background: 'white',
+                    border: '1px solid #ddd',
+                    borderRadius: '8px',
+                    boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
+                    zIndex: 10,
+                    maxHeight: '200px',
+                    overflowY: 'auto'
+                  }}>
+                    {customerResults.map(c => (
+                      <div
+                        key={c.id}
+                        onClick={() => selectCustomer(c)}
+                        style={{
+                          padding: '0.8rem',
+                          borderBottom: '1px solid #eee',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          alignItems: 'center'
+                        }}
+                        onMouseEnter={(e) => e.target.style.background = '#f8f9fa'}
+                        onMouseLeave={(e) => e.target.style.background = 'white'}
+                      >
+                        <div>
+                          <div style={{ fontWeight: 'bold' }}>{c.first_name} {c.last_name}</div>
+                          <div style={{ fontSize: '0.8rem', color: '#666' }}>{c.phone}</div>
+                        </div>
+                        <div style={{ fontSize: '0.8rem', color: '#28a745', fontWeight: 'bold' }}>
+                          {c.total_purchases} compras
+                        </div>
                       </div>
-                      <div style={{ fontSize: '0.8rem', color: '#28a745', fontWeight: 'bold' }}>
-                        {c.total_purchases} compras
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
 
             <div style={{ flex: '1 1 200px' }}>
@@ -676,9 +703,10 @@ const AdminVentas = () => {
             {/* Monto Abonado (solo si es pendiente) */}
             {newSale.payment_status === 'pending' && (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                <label style={{ fontSize: '0.85rem', fontWeight: 'bold', color: '#666' }}>Abonó</label>
+                <label style={{ fontSize: '0.85rem', fontWeight: 'bold', color: '#666' }}>Monto Total Abonado ($)</label>
                 <input
-                  type="number"
+                  type="text"
+                  inputMode="numeric"
                   placeholder="Monto abonado ($)"
                   value={newSale.amount_paid}
                   onChange={(e) => handleNewSaleChange('amount_paid', e.target.value)}
