@@ -157,54 +157,65 @@ module.exports = async function handler(req, res) {
           queryParams.push(limit, offset);
 
           const salesResult = await query(`
-            SELECT s.*, 
-                   COUNT(si.id) as items_count,
-                   COALESCE(SUM(si.quantity), 0) as total_items
+            SELECT s.*,
+            COUNT(si.id) as items_count,
+            COALESCE(SUM(si.quantity), 0) as total_items,
+            json_agg(
+              json_build_object(
+                'product_name', p.name,
+                'variant_name', v.color_name,
+                'quantity', si.quantity,
+                'unit_price', si.unit_price,
+                'subtotal', si.subtotal
+              )
+            ) as items
             FROM sales s
             LEFT JOIN sale_items si ON s.id = si.sale_id
-            WHERE 1=1 ${whereClause}
+            LEFT JOIN products p ON si.product_id = p.id
+            LEFT JOIN product_variants v ON si.variant_id = v.id
+            WHERE 1 = 1 ${whereClause}
             GROUP BY s.id
-            ORDER BY 
-              CASE 
-                WHEN s.status = 'pending' OR (s.total_amount > COALESCE(s.amount_paid, 0)) THEN 0 
+            ORDER BY
+          CASE 
+                WHEN s.status = 'pending' OR(s.total_amount > COALESCE(s.amount_paid, 0)) THEN 0 
                 ELSE 1 
               END ASC,
-              s.created_at DESC
+            s.created_at DESC
             LIMIT $${paramCount} OFFSET $${paramCount + 1}
           `, queryParams);
 
           const generalStats = await query(`
       SELECT 
         COUNT(*) as total_sales,
-        COALESCE(SUM(total_amount), 0) as total_revenue, -- Total vendido
+            COALESCE(SUM(total_amount), 0) as total_revenue, --Total vendido
         
-        -- ✅ Total cobrado (Estricto):
-        COALESCE(SUM(
-          CASE 
+        -- ✅ Total cobrado(Estricto):
+            COALESCE(SUM(
+              CASE 
             WHEN status = 'pending' THEN COALESCE(amount_paid, 0)
             ELSE total_amount 
           END
-        ), 0) as total_collected,
+            ), 0) as total_collected,
 
-        -- ✅ Total por cobrar (Estricto):
-        COALESCE(SUM(
-          CASE 
-            WHEN status = 'pending' THEN (total_amount - COALESCE(amount_paid, 0))
+            -- ✅ Total por cobrar(Estricto):
+            COALESCE(SUM(
+              CASE 
+            WHEN status = 'pending' THEN(total_amount - COALESCE(amount_paid, 0))
             ELSE 0 
           END
-        ), 0) as total_pending,
+            ), 0) as total_pending,
 
-        COALESCE(AVG(total_amount), 0) as average_sale
+            COALESCE(AVG(total_amount), 0) as average_sale
       FROM sales s
-      WHERE 1=1 ${whereClause}
-    `, queryParams.slice(0, -2));
+      WHERE 1 = 1 ${whereClause}
+            `, queryParams.slice(0, -2));
 
           // Contar total de ventas para paginación
           const countResult = await query(`
             SELECT COUNT(DISTINCT s.id) as total
             FROM sales s
-            WHERE 1=1 ${whereClause}
-          `, queryParams.slice(0, -2));
+            WHERE 1 = 1 ${whereClause}
+            `, queryParams.slice(0, -2));
 
           return res.status(200).json({
             sales: salesResult.rows,
@@ -254,39 +265,56 @@ module.exports = async function handler(req, res) {
           // 1. Manejo de CLIENTE (Crear o Vincular)
           let customerIdToUse = req.body.customer_id;
 
-          // Si no vino ID pero vinieron datos texto, buscamos o creamos el cliente
-          if (!customerIdToUse) {
+          if (customerIdToUse) {
+            // Si ya existe el ID, actualizamos sus datos si vienen nuevos y antes estaban vacíos (o se actualizaron)
+            const { customer_phone, customer_email } = req.body;
+            if (customer_phone || customer_email) {
+              await client.query(`
+                 UPDATE customers 
+                 SET phone = COALESCE($1, phone), 
+                     email = COALESCE($2, email),
+                     updated_at = CURRENT_TIMESTAMP
+                 WHERE id = $3
+               `, [customer_phone || null, customer_email || null, customerIdToUse]);
+            }
+
+          } else {
+            // Si no vino ID pero vinieron datos texto, buscamos o creamos el cliente
             const { customer_name, customer_lastname, customer_phone, customer_email } = req.body;
 
             // Intentar buscar por nombre+apellido+telefono para evitar duplicados obvios
             const existingCustomer = await client.query(`
                SELECT id FROM customers 
                WHERE first_name ILIKE $1 AND last_name ILIKE $2 
-               AND (phone = $3 OR ($3 IS NULL AND phone IS NULL))
-             `, [customer_name.trim(), customer_lastname.trim(), customer_phone?.trim() || null]);
+               AND(phone = $3 OR($3 IS NULL AND phone IS NULL))
+              `, [customer_name.trim(), customer_lastname.trim(), customer_phone?.trim() || null]);
 
             if (existingCustomer.rows.length > 0) {
               customerIdToUse = existingCustomer.rows[0].id;
+              // También actualizar aquí por si acaso faltaba email
+              if (customer_email) {
+                await client.query('UPDATE customers SET email = $1 WHERE id = $2', [customer_email, customerIdToUse]);
+              }
             } else {
               // Crear nuevo cliente automático
               const newCustomer = await client.query(`
-                 INSERT INTO customers (first_name, last_name, phone, email, created_at)
-                 VALUES ($1, $2, $3, $4, CURRENT_TIMESTAMP)
+                 INSERT INTO customers(first_name, last_name, phone, email, created_at, updated_at)
+                 VALUES($1, $2, $3, $4, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
                  RETURNING id
-               `, [customer_name.trim(), customer_lastname.trim(), customer_phone?.trim() || null, customer_email?.trim() || null]);
+            `, [customer_name.trim(), customer_lastname.trim(), customer_phone?.trim() || null, customer_email?.trim() || null]);
               customerIdToUse = newCustomer.rows[0].id;
             }
           }
 
           // Crear la venta
           const saleResult = await client.query(`
-            INSERT INTO sales (
+            INSERT INTO sales(
               customer_id, customer_name, customer_lastname, customer_phone, customer_email,
               payment_method, total_amount, notes, status, amount_paid, created_at, updated_at
             )
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+            VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
             RETURNING *
-          `, [
+            `, [
             customerIdToUse,
             customer_name.trim(),
             customer_lastname.trim(),
@@ -310,9 +338,9 @@ module.exports = async function handler(req, res) {
             const subtotal = parseFloat(item.quantity) * parseFloat(item.unit_price);
 
             await client.query(`
-              INSERT INTO sale_items (sale_id, product_id, variant_id, quantity, unit_price, subtotal)
-              VALUES ($1, $2, $3, $4, $5, $6)
-            `, [
+              INSERT INTO sale_items(sale_id, product_id, variant_id, quantity, unit_price, subtotal)
+              VALUES($1, $2, $3, $4, $5, $6)
+              `, [
               saleId,
               parseInt(item.product_id),
               item.variant_id ? parseInt(item.variant_id) : null,
@@ -321,38 +349,55 @@ module.exports = async function handler(req, res) {
               subtotal
             ]);
 
-            // ACTUALIZAR STOCK
+            // ACTUALIZAR STOCK (Con lógica avanzada de variantes y cantidades)
             if (item.variant_id) {
-              // 1. Update variant stock to false (out of stock)
+              const variantId = parseInt(item.variant_id);
+              const quantityToDeduct = parseInt(item.quantity);
+
+              // 1. Decrementar cantidad de la variante
               await client.query(`
                  UPDATE product_variants
-                 SET in_stock = false
-                 WHERE id = $1
-               `, [parseInt(item.variant_id)]);
+                 SET quantity = GREATEST(0, quantity - $1),
+            in_stock = (quantity - $1) > 0
+                 WHERE id = $2
+            `, [quantityToDeduct, variantId]);
 
-              // 2. Check if ANY variant remains in stock for this product
-              const checkVariants = await client.query(`
-                 SELECT COUNT(*) as active_variants 
+              // 2. Verificar estado global del producto (si todas las variantes están sin stock, el producto también)
+              const variantStats = await client.query(`
+                 SELECT COALESCE(SUM(quantity), 0) as total_quantity
                  FROM product_variants 
-                 WHERE product_id = $1 AND in_stock = true
-               `, [parseInt(item.product_id)]);
+                 WHERE product_id = $1
+            `, [parseInt(item.product_id)]);
 
-              // 3. If NO variants are left in stock, set main product in_stock = false
-              if (parseInt(checkVariants.rows[0].active_variants) === 0) {
-                await client.query(`
-                   UPDATE products
-                   SET in_stock = false, updated_at = CURRENT_TIMESTAMP
-                   WHERE id = $1
-                 `, [parseInt(item.product_id)]);
-              }
+              const totalQuantity = parseInt(variantStats.rows[0].total_quantity);
+
+              // 3. Actualizar producto padre basado en el total de variantes
+              await client.query(`
+                 UPDATE products
+                 SET in_stock = ($2 > 0),
+            updated_at = CURRENT_TIMESTAMP
+                 WHERE id = $1
+            `, [parseInt(item.product_id), totalQuantity]);
 
             } else {
-              // Legacy behavior: Update main product stock
+              // Comportamiento Legacy (Sin variantes):
+              // Si el producto no tiene variantes, asumimos gestión simple (On/Off) por ahora,
+              // o podríamos implementar un campo 'quantity' en products más adelante.
+              // Por ahora mantenemos la lógica de ponerlo sin stock si es venta única, 
+              // PERO lo ideal sería solo descontar si tuviéramos campo quantity en products.
+              // Como no lo tenemos (o no se usa así en legacy), lo dejamos como before (solo apagar si se vende).
+              // IMPORTANTE: Si quisieras soportar cantidad en productos sin variante, requeriría migración.
+
+              // Para mantener compatibilidad: Solo marcar como agotado si se vende (lógica antigua simple).
+              // Opcional: Podríamos no hacer nada si el usuario maneja stock manual.
+
+              // Mantenemos la lógica de "Venta = Agotado" para productos simples para no romper flujo actual,
+              // salvo que el usuario especifique lo contrario explícitamente.
               await client.query(`
                  UPDATE products 
                  SET in_stock = false, updated_at = CURRENT_TIMESTAMP
                  WHERE id = $1
-               `, [parseInt(item.product_id)]);
+            `, [parseInt(item.product_id)]);
             }
           }
 
@@ -393,7 +438,7 @@ module.exports = async function handler(req, res) {
 
         updatableFields.forEach(field => {
           if (updateData[field] !== undefined) {
-            updates.push(`${field} = $${paramCount++}`);
+            updates.push(`${field} = $${paramCount++} `);
             values.push(updateData[field]);
           }
         });
@@ -409,14 +454,14 @@ module.exports = async function handler(req, res) {
           UPDATE sales 
           SET ${updates.join(', ')}
           WHERE id = $${paramCount}
-          RETURNING *
-        `, values);
+        RETURNING *
+          `, values);
 
         if (updateResult.rows.length === 0) {
           return res.status(404).json({ error: 'Venta no encontrada' });
         }
 
-        console.log(`✅ Venta actualizada por ${tokenValidation.user.username}: #${updateData.id}`);
+        console.log(`✅ Venta actualizada por ${tokenValidation.user.username}: #${updateData.id} `);
 
         return res.status(200).json({
           message: 'Venta actualizada exitosamente',
@@ -451,7 +496,7 @@ module.exports = async function handler(req, res) {
 
           await client2.query('COMMIT');
 
-          console.log(`🗑️ Venta eliminada por ${tokenValidation.user.username}: #${id}`);
+          console.log(`🗑️ Venta eliminada por ${tokenValidation.user.username}: #${id} `);
 
           return res.status(200).json({
             message: 'Venta eliminada exitosamente',

@@ -173,6 +173,7 @@ module.exports = async function handler(req, res) {
     }
 
     // 2. Ventas por día (últimos días)
+    // 2. Ventas por día (últimos días) - Periodo actual
     const dailySales = await query(`
       SELECT 
         DATE(s.created_at) as date,
@@ -184,6 +185,39 @@ module.exports = async function handler(req, res) {
       ORDER BY date DESC
       LIMIT 30
     `, queryParams);
+
+    // 2b. Ventas por día - Periodo ANTERIOR (para comparación)
+    // Calculamos el filtro de fecha para el periodo anterior
+    // NOTA: Esto asume el uso de "param $1 y $2" si vienen fechas específicas, o intervalo si es dinámico.
+    // Para simplificar, si se usa "periodo dinámico" (default), calculamos el anterior facilmente
+    let previousDateFilter = '';
+    const previousQueryParams = [];
+
+    if (startDate && endDate) {
+      // Si hay fechas fijas, calculamos el diff y restamos
+      // (Esta lógica es compleja de hacer 100% en SQL sin más contexto, 
+      //  así que para este caso simplificado usaremos un intervalo fijo si no hay start/end explícito, 
+      //  o simplemente no comparamos si es custom range muy complejo).
+      // Por ahora, soportaremos la comparación principalmente para el filtro "period=N".
+    } else {
+      // Periodo dinámico: Last N days vs Prev N days
+      // Current: >= CURRENT_DATE - period
+      // Previous: BETWEEN (CURRENT_DATE - 2*period) AND (CURRENT_DATE - period)
+      previousDateFilter = `AND s.created_at BETWEEN CURRENT_DATE - INTERVAL '${parseInt(period) * 2} days' AND CURRENT_DATE - INTERVAL '${period} days'`;
+    }
+
+    let previousPeriodSales = { rows: [] };
+    if (!startDate) { // Solo si es periodo dinámico por ahora
+      previousPeriodSales = await query(`
+        SELECT 
+          DATE(s.created_at) as date,
+          COALESCE(SUM(s.total_amount), 0) as daily_revenue
+        FROM sales s
+        WHERE 1=1 ${previousDateFilter}
+        GROUP BY DATE(s.created_at)
+        ORDER BY date DESC
+      `, []);
+    }
 
     // 3. Productos más vendidos
     const topProducts = await query(`
@@ -271,6 +305,7 @@ module.exports = async function handler(req, res) {
       },
       general: generalStats.rows[0],
       daily_sales: dailySales.rows,
+      comparison_sales: previousPeriodSales.rows,
       top_products: topProducts.rows,
       category_stats: categoryStats.rows,
       top_customers: topCustomers.rows,

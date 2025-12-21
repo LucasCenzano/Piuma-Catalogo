@@ -147,6 +147,28 @@ module.exports = async function handler(req, res) {
 
         return res.status(201).json(newCustomer.rows[0]);
 
+      case 'PUT':
+        // Actualizar cliente existente
+        const { id, first_name: uName, last_name: uLast, phone: uPhone, email: uEmail, notes: uNotes } = req.body;
+
+        if (!id) return res.status(400).json({ error: 'ID requerido' });
+
+        const updateCustomer = await query(`
+          UPDATE customers 
+          SET first_name = COALESCE($1, first_name),
+              last_name = COALESCE($2, last_name),
+              phone = COALESCE($3, phone),
+              email = COALESCE($4, email),
+              notes = COALESCE($5, notes),
+              updated_at = CURRENT_TIMESTAMP
+          WHERE id = $6
+          RETURNING *
+        `, [uName?.trim(), uLast?.trim(), uPhone?.trim(), uEmail?.trim(), uNotes?.trim(), id]);
+
+        if (updateCustomer.rowCount === 0) return res.status(404).json({ error: 'Cliente no encontrado' });
+
+        return res.status(200).json(updateCustomer.rows[0]);
+
       default:
         return res.status(405).json({ error: 'Método no permitido' });
     }

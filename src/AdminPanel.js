@@ -161,9 +161,10 @@ const AdminPanel = ({ onLogout }) => {
   const [newTags, setNewTags] = useState([]); // Array of strings
 
   // Estados para variantes (colores) - Creación
-  const [newVariants, setNewVariants] = useState([]); // [{color_name, in_stock}]
+  const [newVariants, setNewVariants] = useState([]); // [{color_name, in_stock, quantity}]
   const [tempVariantName, setTempVariantName] = useState('');
   const [tempVariantStock, setTempVariantStock] = useState(true);
+  const [tempVariantQuantity, setTempVariantQuantity] = useState(0);
 
   // Estados para edición
   const [editName, setEditName] = useState('');
@@ -179,9 +180,10 @@ const AdminPanel = ({ onLogout }) => {
   const [editTags, setEditTags] = useState([]); // Array of strings
 
   // Estados para variantes (colores) - Edición
-  const [editVariants, setEditVariants] = useState([]); // [{id, color_name, in_stock}]
+  const [editVariants, setEditVariants] = useState([]); // [{id, color_name, in_stock, quantity}]
   const [tempEditVariantName, setTempEditVariantName] = useState('');
   const [tempEditVariantStock, setTempEditVariantStock] = useState(true);
+  const [tempEditVariantQuantity, setTempEditVariantQuantity] = useState(0);
 
   // ✅ 2. FUNCIÓN PARA ORDENAR (corregida)
   const requestSort = (key) => {
@@ -576,22 +578,33 @@ const AdminPanel = ({ onLogout }) => {
   // Funciones para gestionar variantes (Create)
   const addVariant = () => {
     if (tempVariantName.trim()) {
-      setNewVariants([...newVariants, { color_name: tempVariantName.trim(), in_stock: tempVariantStock }]);
+      setNewVariants([...newVariants, {
+        color_name: tempVariantName.trim(),
+        in_stock: tempVariantStock,
+        quantity: parseInt(tempVariantQuantity) || 0
+      }]);
       setTempVariantName('');
       setTempVariantStock(true);
+      setTempVariantQuantity(0);
     }
   };
 
   const removeVariant = (index) => {
-    setNewVariants(newVariants.filter((_, i) => i !== index));
+    const updated = [...newVariants];
+    updated.splice(index, 1);
+    setNewVariants(updated);
   };
 
-  // Funciones para gestionar variantes (Edit)
   const addEditVariant = () => {
     if (tempEditVariantName.trim()) {
-      setEditVariants([...editVariants, { color_name: tempEditVariantName.trim(), in_stock: tempEditVariantStock }]);
+      setEditVariants([...editVariants, {
+        color_name: tempEditVariantName.trim(),
+        in_stock: parseInt(tempEditVariantQuantity) > 0, // Auto logic
+        quantity: parseInt(tempEditVariantQuantity) || 0
+      }]);
       setTempEditVariantName('');
       setTempEditVariantStock(true);
+      setTempEditVariantQuantity(0);
     }
   };
 
@@ -1162,7 +1175,14 @@ const AdminPanel = ({ onLogout }) => {
                         onChange={(e) => setTempVariantName(e.target.value)}
                         style={{ flex: 1, padding: '0.75rem', borderRadius: '8px', border: '1px solid #ced4da' }}
                       />
-                      <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.9rem', cursor: 'pointer' }}>
+                      <input
+                        type="number"
+                        placeholder="Cant."
+                        value={tempVariantQuantity}
+                        onChange={(e) => setTempVariantQuantity(e.target.value)}
+                        style={{ width: '80px', padding: '0.75rem', borderRadius: '8px', border: '1px solid #ced4da' }}
+                      />
+                      <label style={{ display: 'none' }}>
                         <input
                           type="checkbox"
                           checked={tempVariantStock}
@@ -1558,30 +1578,44 @@ const AdminPanel = ({ onLogout }) => {
                                 color: '#666',
                                 fontSize: '0.9rem'
                               }}>{product.category}</td>
-                              <td style={{ padding: '1.25rem 1rem' }}>
-                                <button
-                                  onClick={() => handleToggleStock(product)}
-                                  disabled={loading}
-                                  style={{
-                                    padding: '0.6rem 1.2rem',
-                                    borderRadius: '20px',
-                                    fontSize: '0.8rem',
-                                    fontWeight: '500',
-                                    cursor: loading ? 'not-allowed' : 'pointer',
-                                    transition: 'all 0.3s ease',
-                                    minWidth: '120px',
-                                    textTransform: 'uppercase',
-                                    letterSpacing: '0.5px',
-                                    background: product.in_stock
-                                      ? 'linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%)'
-                                      : 'linear-gradient(135deg, #f8d7da 0%, #f5c6cb 100%)',
-                                    color: product.in_stock ? '#155724' : '#721c24',
-                                    border: `1px solid ${product.in_stock ? 'rgba(21, 87, 36, 0.2)' : 'rgba(114, 28, 36, 0.2)'}`,
-                                    opacity: loading ? 0.5 : 1
-                                  }}
-                                >
-                                  {product.in_stock ? '✅ En Stock' : '❌ Sin Stock'}
-                                </button>
+                              <td style={{
+                                padding: '1.25rem 1rem',
+                                borderBottom: '1px solid rgba(230, 227, 212, 0.5)'
+                              }}>
+                                {product.variants && product.variants.length > 0 ? (
+                                  <div style={{ fontSize: '0.85rem' }}>
+                                    {product.variants.map((v, i) => (
+                                      <div key={i} style={{ marginBottom: '2px', display: 'flex', justifyContent: 'space-between' }}>
+                                        <span style={{ color: '#333', fontWeight: '500' }}>{v.color_name}:</span>
+                                        <span style={{ color: v.quantity > 0 ? '#28a745' : '#dc3545' }}>{v.quantity}</span>
+                                      </div>
+                                    ))}
+                                  </div>
+                                ) : (
+                                  <button
+                                    onClick={() => handleToggleStock(product)}
+                                    disabled={loading}
+                                    style={{
+                                      padding: '0.6rem 1.2rem',
+                                      borderRadius: '20px',
+                                      fontSize: '0.8rem',
+                                      fontWeight: '500',
+                                      cursor: loading ? 'not-allowed' : 'pointer',
+                                      transition: 'all 0.3s ease',
+                                      minWidth: '120px',
+                                      textTransform: 'uppercase',
+                                      letterSpacing: '0.5px',
+                                      background: product.in_stock
+                                        ? 'linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%)'
+                                        : 'linear-gradient(135deg, #f8d7da 0%, #f5c6cb 100%)',
+                                      color: product.in_stock ? '#155724' : '#721c24',
+                                      border: `1px solid ${product.in_stock ? 'rgba(21, 87, 36, 0.2)' : 'rgba(114, 28, 36, 0.2)'}`,
+                                      opacity: loading ? 0.5 : 1
+                                    }}
+                                  >
+                                    {product.in_stock ? 'En Stock' : 'Sin Stock'}
+                                  </button>
+                                )}
                               </td>
                               <td style={{ padding: '1.25rem 1rem' }}>
                                 <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
@@ -1942,7 +1976,7 @@ const AdminPanel = ({ onLogout }) => {
                                                 width: '12px', height: '12px', borderRadius: '50%',
                                                 background: variant.in_stock ? '#28a745' : '#dc3545'
                                               }}></span>
-                                              <span style={{ fontWeight: '500' }}>{variant.color_name}</span>
+                                              <span style={{ fontWeight: '500' }}>{variant.color_name} : {variant.quantity || 0}</span>
                                               <button type="button" onClick={() => removeEditVariant(idx)} style={{ border: 'none', background: 'none', cursor: 'pointer', color: '#666', padding: '0 0 0 5px' }}>✕</button>
                                             </div>
                                           ))}
@@ -1957,7 +1991,14 @@ const AdminPanel = ({ onLogout }) => {
                                             onChange={(e) => setTempEditVariantName(e.target.value)}
                                             style={{ flex: 1, padding: '0.8rem', borderRadius: '6px', border: '1px solid #ced4da', fontSize: '0.95rem' }}
                                           />
-                                          <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.9rem', cursor: 'pointer', userSelect: 'none' }}>
+                                          <input
+                                            type="number"
+                                            placeholder="Cant."
+                                            value={tempEditVariantQuantity}
+                                            onChange={(e) => setTempEditVariantQuantity(e.target.value)}
+                                            style={{ width: '80px', padding: '0.8rem', borderRadius: '6px', border: '1px solid #ced4da' }}
+                                          />
+                                          <label style={{ display: 'none' }}>
                                             <input
                                               type="checkbox"
                                               checked={tempEditVariantStock}
@@ -2202,13 +2243,20 @@ const AdminPanel = ({ onLogout }) => {
                                     onChange={(e) => setTempEditVariantName(e.target.value)}
                                     style={{ flex: 1, padding: '0.5rem', borderRadius: '6px', border: '1px solid #ced4da', fontSize: '0.9rem' }}
                                   />
-                                  <label style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', fontSize: '0.8rem', cursor: 'pointer' }}>
+                                  <input
+                                    type="number"
+                                    placeholder="Cant."
+                                    value={tempEditVariantQuantity}
+                                    onChange={(e) => setTempEditVariantQuantity(e.target.value)}
+                                    style={{ width: '80px', padding: '0.75rem', borderRadius: '8px', border: '1px solid #ced4da' }}
+                                  />
+                                  <label style={{ display: 'none' }}>
                                     <input
                                       type="checkbox"
                                       checked={tempEditVariantStock}
                                       onChange={(e) => setTempEditVariantStock(e.target.checked)}
                                     />
-                                    Stock
+                                    En Stock
                                   </label>
                                   <button
                                     type="button"

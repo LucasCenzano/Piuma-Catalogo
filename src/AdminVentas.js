@@ -1,7 +1,34 @@
 // src/AdminVentas.js - Panel de Ventas completo e independiente
 import React, { useState, useEffect, useCallback } from 'react';
 import authService from './authService';
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  Title,
+  Tooltip,
+  Legend,
+  ArcElement,
+  Filler
+} from 'chart.js';
+import { Line, Doughnut } from 'react-chartjs-2';
+
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  Title,
+  Tooltip,
+  Legend,
+  ArcElement,
+  Filler
+);
+
 const API_BASE_URL = process.env.REACT_APP_API_URL || '';
+
 
 
 const AdminVentas = () => {
@@ -264,6 +291,15 @@ const AdminVentas = () => {
 
     if (existingItemIndex >= 0) {
       // Incrementar cantidad
+      const currentItem = newSale.items[existingItemIndex];
+      const maxStock = currentItem.max_stock;
+
+      // Check stock limit for variants
+      if (maxStock !== undefined && currentItem.quantity >= maxStock) {
+        alert(`No puedes agregar más unidades. Stock disponible: ${maxStock}`);
+        return;
+      }
+
       const updatedItems = [...newSale.items];
       updatedItems[existingItemIndex].quantity += 1;
       updatedItems[existingItemIndex].subtotal = updatedItems[existingItemIndex].quantity * numericPrice;
@@ -279,7 +315,8 @@ const AdminVentas = () => {
         image_url: Array.isArray(product.images_url) && product.images_url.length > 0 ? product.images_url[0] : (typeof product.images_url === 'string' ? JSON.parse(product.images_url || '[]')[0] : null),
         unit_price: numericPrice,
         quantity: 1,
-        subtotal: numericPrice
+        subtotal: numericPrice,
+        max_stock: variant ? variant.quantity : undefined // Store max stock
       };
 
       setNewSale(prev => ({
@@ -293,8 +330,17 @@ const AdminVentas = () => {
     setSelectedProductForVariant(null);
   };
 
+  const handleAddVariantToCart = addToCart;
+
   const updateItemQuantity = (index, newQuantity) => {
     if (newQuantity < 1) return;
+
+    const item = newSale.items[index];
+    if (item.max_stock !== undefined && newQuantity > item.max_stock) {
+      alert(`La cantidad no puede superar el stock disponible (${item.max_stock})`);
+      return;
+    }
+
     const updatedItems = [...newSale.items];
     updatedItems[index].quantity = parseInt(newQuantity);
     updatedItems[index].subtotal = updatedItems[index].quantity * updatedItems[index].unit_price;
@@ -1184,6 +1230,51 @@ const AdminVentas = () => {
                   {sale.notes && <div style={{ marginTop: '0.5rem', fontStyle: 'italic' }}>💬 "{sale.notes}"</div>}
                 </div>
 
+                {/* Items Vendidos */}
+                {sale.items && sale.items.length > 0 && (
+                  <div style={{
+                    background: '#fff3cd',
+                    padding: '0.8rem',
+                    borderRadius: '8px',
+                    border: '1px solid #ffeeba'
+                  }}>
+                    <div style={{ fontSize: '0.85rem', fontWeight: 'bold', marginBottom: '0.5rem', color: '#856404' }}>
+                      📦 Productos ({sale.items_count || sale.items.length}):
+                    </div>
+                    {sale.items.map((item, idx) => (
+                      <div key={idx} style={{
+                        fontSize: '0.9rem',
+                        color: '#333',
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        marginBottom: '0.2rem',
+                        borderBottom: idx < sale.items.length - 1 ? '1px dashed rgba(0,0,0,0.1)' : 'none',
+                        paddingBottom: idx < sale.items.length - 1 ? '0.2rem' : '0'
+                      }}>
+                        <span style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                          <span style={{ fontWeight: 'bold' }}>{item.quantity}x</span>
+                          <span>
+                            {item.product_name}
+                            {item.variant_name && (
+                              <span style={{
+                                marginLeft: '0.5rem',
+                                background: 'white',
+                                padding: '0 0.4rem',
+                                borderRadius: '4px',
+                                border: '1px solid #ddd',
+                                fontSize: '0.8rem',
+                                color: '#666'
+                              }}>
+                                {item.variant_name}
+                              </span>
+                            )}
+                          </span>
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
                 {/* Métodos de Pago y Estado */}
                 <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
                   <span style={{
@@ -1257,521 +1348,467 @@ const AdminVentas = () => {
     </div>
   );
 
-  const renderStatistics = () => (
-    <div style={{
-      background: 'white',
-      borderRadius: '16px',
-      padding: '2.5rem',
-      boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1)',
-      border: '1px solid rgba(230, 227, 212, 0.5)'
-    }}>
-      <h3 style={{
-        fontFamily: 'Didot, serif',
-        fontSize: '1.8rem',
-        color: '#333',
-        textAlign: 'center',
-        marginBottom: '2rem',
-        fontWeight: '400'
+
+
+  const renderStatistics = () => {
+    // --- Chart Data Preparation ---
+
+    // 1. Line Chart: Sales Evolution (Last 30 days vs Previous)
+    // We expect stats.daily_sales (current) and stats.comparison_sales (previous)
+    // Both are ordered DESC (newest first). We need to reverse them for the chart (Time ->).
+
+    const currentSales = [...(stats?.daily_sales || [])].reverse();
+    const prevSales = [...(stats?.comparison_sales || [])].reverse();
+
+    // Align datasets: We'll use the indices 0..29
+    // If one array is shorter, we'll fill with 0 or null.
+    // Labels will be the dates of the *current* period.
+
+    const lineChartLabels = currentSales.map(d => {
+      const dateObj = new Date(d.date);
+      return `${dateObj.getDate()}/${dateObj.getMonth() + 1}`;
+    });
+
+    const currentDataPoints = currentSales.map(d => parseFloat(d.daily_revenue));
+
+    // For previous sales, we just want the values. If prevSales is shorter/longer, we slice/pad.
+    // Ideally we align dates, but for "Last 30 vs Prev 30" simple index alignment is standard for "Day 1 vs Day 1".
+    const prevDataPoints = prevSales.map(d => parseFloat(d.daily_revenue));
+
+    const lineChartData = {
+      labels: lineChartLabels,
+      datasets: [
+        {
+          label: 'Este Mes',
+          data: currentDataPoints,
+          borderColor: '#d4af37', // Gold
+          backgroundColor: 'rgba(212, 175, 55, 0.1)',
+          tension: 0.4,
+          fill: true,
+          pointRadius: 4,
+          pointHoverRadius: 6
+        },
+        {
+          label: 'Mes Anterior',
+          data: prevDataPoints,
+          borderColor: '#e0e0e0', // Light Gray
+          backgroundColor: 'transparent',
+          borderDash: [5, 5],
+          tension: 0.4,
+          pointRadius: 0,
+          pointHoverRadius: 0
+        }
+      ]
+    };
+
+    const lineChartOptions = {
+      responsive: true,
+      plugins: {
+        legend: { position: 'top' },
+        title: { display: false },
+        tooltip: {
+          callbacks: {
+            label: function (context) {
+              return context.dataset.label + ': ' + formatCurrency(context.raw);
+            }
+          }
+        }
+      },
+      scales: {
+        y: {
+          beginAtZero: true,
+          ticks: { callback: (value) => '$' + value }
+        }
+      }
+    };
+
+    // 2. Doughnut Chart: Categories
+    const categories = stats?.category_stats || [];
+    const doughLabels = categories.map(c => c.category || 'Sin Cat.');
+    const doughData = categories.map(c => parseInt(c.items_sold));
+
+    // Generate colors
+    const backgroundColors = [
+      '#d4af37', // Gold
+      '#333333', // Black
+      '#999999', // Gray
+      '#f0e68c', // Khaki
+      '#8b4513', // SaddleBrown
+      '#20c997', // Teal
+    ];
+
+    const doughnutChartData = {
+      labels: doughLabels,
+      datasets: [
+        {
+          data: doughData,
+          backgroundColor: backgroundColors.slice(0, doughLabels.length),
+          borderColor: '#ffffff',
+          borderWidth: 2,
+        },
+      ],
+    };
+
+    const doughnutOptions = {
+      responsive: true,
+      cutout: '60%',
+      plugins: {
+        legend: { position: 'right' }
+      }
+    };
+
+
+    return (
+      <div style={{
+        background: 'white',
+        borderRadius: '16px',
+        padding: '2.5rem',
+        boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1)',
+        border: '1px solid rgba(230, 227, 212, 0.5)'
       }}>
-        📈 Estadísticas de Ventas
-      </h3>
-
-      {loading ? (
-        <div style={{ textAlign: 'center', padding: '3rem', color: '#666' }}>
-          <div style={{
-            width: '40px',
-            height: '40px',
-            border: '4px solid #f3f3f3',
-            borderTop: '4px solid #d4af37',
-            borderRadius: '50%',
-            animation: 'spin 1s linear infinite',
-            margin: '0 auto 1rem'
-          }}></div>
-          Cargando estadísticas...
-        </div>
-      ) : !stats ? (
-        <div style={{ textAlign: 'center', padding: '3rem', color: '#666' }}>
-          <div style={{ fontSize: '3rem', marginBottom: '1rem', opacity: 0.5 }}>📈</div>
-          <p>No hay datos de estadísticas disponibles</p>
-          <p style={{ fontSize: '0.9rem', marginTop: '1rem' }}>
-            Las estadísticas aparecerán una vez que registres algunas ventas
-          </p>
-        </div>
-      ) : (
-        <div>
-          {/* Estadísticas Generales */}
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
-            gap: '1.5rem',
-            marginBottom: '3rem'
-          }}>
-            <div style={{
-              background: 'linear-gradient(135deg, #d4af37 0%, #c19b26 100%)',
-              color: 'white',
-              padding: '2rem',
-              borderRadius: '16px',
-              textAlign: 'center',
-              boxShadow: '0 8px 32px rgba(212, 175, 55, 0.3)'
-            }}>
-              <div style={{ fontSize: '3rem', marginBottom: '0.5rem' }}>💰</div>
-              <div style={{ fontSize: '2rem', fontWeight: '700', marginBottom: '0.5rem' }}>
-                {formatCurrency(stats.general?.total_revenue || 0)}
-              </div>
-              <div style={{ fontSize: '1rem', opacity: 0.9 }}>Total Vendido</div>
-            </div>
-
-            <div style={{
-              background: 'linear-gradient(135deg, #28a745 0%, #20c997 100%)',
-              color: 'white',
-              padding: '2rem',
-              borderRadius: '16px',
-              textAlign: 'center',
-              boxShadow: '0 8px 32px rgba(40, 167, 69, 0.3)'
-            }}>
-              <div style={{ fontSize: '3rem', marginBottom: '0.5rem' }}>✅</div>
-              <div style={{ fontSize: '2rem', fontWeight: '700', marginBottom: '0.5rem' }}>
-                {formatCurrency(stats.general?.total_collected || 0)}
-              </div>
-              <div style={{ fontSize: '1rem', opacity: 0.9 }}>Total Cobrado</div>
-            </div>
-
-            <div style={{
-              background: 'linear-gradient(135deg, #dc3545 0%, #c82333 100%)',
-              color: 'white',
-              padding: '2rem',
-              borderRadius: '16px',
-              textAlign: 'center',
-              boxShadow: '0 8px 32px rgba(220, 53, 69, 0.3)'
-            }}>
-              <div style={{ fontSize: '3rem', marginBottom: '0.5rem' }}>⏳</div>
-              <div style={{ fontSize: '2rem', fontWeight: '700', marginBottom: '0.5rem' }}>
-                {formatCurrency(stats.general?.total_pending || 0)}
-              </div>
-              <div style={{ fontSize: '1rem', opacity: 0.9 }}>Total Por Cobrar</div>
-            </div>
-
-            <div style={{
-              background: 'linear-gradient(135deg, #28a745 0%, #20c997 100%)',
-              color: 'white',
-              padding: '2rem',
-              borderRadius: '16px',
-              textAlign: 'center',
-              boxShadow: '0 8px 32px rgba(40, 167, 69, 0.3)'
-            }}>
-              <div style={{ fontSize: '3rem', marginBottom: '0.5rem' }}>📊</div>
-              <div style={{ fontSize: '2rem', fontWeight: '700', marginBottom: '0.5rem' }}>
-                {stats.general?.total_sales || 0}
-              </div>
-              <div style={{ fontSize: '1rem', opacity: 0.9 }}>Total de Ventas</div>
-            </div>
-
-            <div style={{
-              background: 'linear-gradient(135deg, #007bff 0%, #0056b3 100%)',
-              color: 'white',
-              padding: '2rem',
-              borderRadius: '16px',
-              textAlign: 'center',
-              boxShadow: '0 8px 32px rgba(0, 123, 255, 0.3)'
-            }}>
-              <div style={{ fontSize: '3rem', marginBottom: '0.5rem' }}>📈</div>
-              <div style={{ fontSize: '2rem', fontWeight: '700', marginBottom: '0.5rem' }}>
-                {formatCurrency(stats.general?.average_sale || 0)}
-              </div>
-              <div style={{ fontSize: '1rem', opacity: 0.9 }}>Venta Promedio</div>
-            </div>
-
-            <div style={{
-              background: 'linear-gradient(135deg, #6f42c1 0%, #5a3a9a 100%)',
-              color: 'white',
-              padding: '2rem',
-              borderRadius: '16px',
-              textAlign: 'center',
-              boxShadow: '0 8px 32px rgba(111, 66, 193, 0.3)'
-            }}>
-              <div style={{ fontSize: '3rem', marginBottom: '0.5rem' }}>🛍️</div>
-              <div style={{ fontSize: '2rem', fontWeight: '700', marginBottom: '0.5rem' }}>
-                {stats.general?.total_items_sold || 0}
-              </div>
-              <div style={{ fontSize: '1rem', opacity: 0.9 }}>Items Vendidos</div>
-            </div>
-          </div>
-
-          {/* Métodos de Pago */}
-          {stats.payment_methods && (
-            <div style={{
-              background: 'linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%)',
-              padding: '2rem',
-              borderRadius: '16px',
-              marginBottom: '2rem',
-              border: '1px solid rgba(230, 227, 212, 0.8)'
-            }}>
-              <h4 style={{
-                fontFamily: 'Montserrat, sans-serif',
-                color: '#333',
-                marginBottom: '1.5rem',
-                fontSize: '1.3rem',
-                fontWeight: '600',
-                textAlign: 'center'
-              }}>
-                💳 Ventas por Método de Pago
-              </h4>
-
-              <div style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
-                gap: '1.5rem'
-              }}>
-                {stats.payment_methods.map((method) => (
-                  <div key={method.payment_method} style={{
-                    background: 'white',
-                    padding: '2rem',
-                    borderRadius: '12px',
-                    textAlign: 'center',
-                    border: '1px solid #dee2e6',
-                    boxShadow: '0 4px 12px rgba(0, 0, 0, 0.05)'
-                  }}>
-                    <div style={{
-                      fontSize: '2rem',
-                      marginBottom: '1rem'
-                    }}>
-                      {method.payment_method === 'efectivo' ? '💵' : '🏦'}
-                    </div>
-                    <div style={{
-                      fontSize: '1.5rem',
-                      fontWeight: '700',
-                      color: method.payment_method === 'efectivo' ? '#28a745' : '#007bff',
-                      marginBottom: '0.5rem'
-                    }}>
-                      {formatCurrency(method.revenue || 0)}
-                    </div>
-                    <div style={{ color: '#666', fontSize: '1rem', marginBottom: '0.5rem' }}>
-                      {method.count || 0} ventas ({method.percentage || 0}%)
-                    </div>
-                    <div style={{
-                      padding: '0.5rem 1rem',
-                      borderRadius: '20px',
-                      fontSize: '0.9rem',
-                      fontWeight: '600',
-                      background: method.payment_method === 'efectivo' ? '#d4edda' : '#cce5ff',
-                      color: method.payment_method === 'efectivo' ? '#155724' : '#004085',
-                      display: 'inline-block'
-                    }}>
-                      {method.payment_method === 'efectivo' ? 'Efectivo' : 'Transferencia'}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Productos Más Vendidos */}
-          {stats.top_products && stats.top_products.length > 0 && (
-            <div style={{
-              background: 'linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%)',
-              padding: '2rem',
-              borderRadius: '16px',
-              marginBottom: '2rem',
-              border: '1px solid rgba(255, 152, 0, 0.2)'
-            }}>
-              <h4 style={{
-                fontFamily: 'Montserrat, sans-serif',
-                color: '#e65100',
-                marginBottom: '1.5rem',
-                fontSize: '1.3rem',
-                fontWeight: '600',
-                textAlign: 'center'
-              }}>
-                🏆 Productos Más Vendidos
-              </h4>
-
-              <div style={{ overflowX: 'auto' }}>
-                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                  <thead>
-                    <tr style={{ background: 'rgba(255, 152, 0, 0.1)' }}>
-                      <th style={{ padding: '1rem', textAlign: 'left', fontWeight: '600' }}>🏅</th>
-                      <th style={{ padding: '1rem', textAlign: 'left', fontWeight: '600' }}>Producto</th>
-                      <th style={{ padding: '1rem', textAlign: 'center', fontWeight: '600' }}>Cantidad Vendida</th>
-                      <th style={{ padding: '1rem', textAlign: 'right', fontWeight: '600' }}>Ingresos</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {stats.top_products.slice(0, 5).map((product, index) => (
-                      <tr key={index} style={{
-                        background: 'white',
-                        borderBottom: '1px solid rgba(255, 152, 0, 0.1)'
-                      }}>
-                        <td style={{ padding: '1rem', textAlign: 'center', fontSize: '1.2rem' }}>
-                          {index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : `#${index + 1}`}
-                        </td>
-                        <td style={{ padding: '1rem' }}>
-                          <div style={{ fontWeight: '600', fontSize: '1rem' }}>{product.name}</div>
-                          {product.category && (
-                            <div style={{ fontSize: '0.8rem', color: '#666', marginTop: '0.25rem' }}>
-                              📂 {product.category}
-                            </div>
-                          )}
-                        </td>
-                        <td style={{ padding: '1rem', textAlign: 'center', fontWeight: '600', fontSize: '1.1rem' }}>
-                          {product.total_quantity_sold || product.total_quantity || 0} unidades
-                        </td>
-                        <td style={{ padding: '1rem', textAlign: 'right', fontWeight: '600', color: '#e65100', fontSize: '1.1rem' }}>
-                          {formatCurrency(product.total_revenue || 0)}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          )}
-
-          {/* Ventas Recientes */}
-          {stats.daily_sales && stats.daily_sales.length > 0 && (
-            <div style={{
-              background: 'linear-gradient(135deg, #e8f5e8 0%, #f1f8e9 100%)',
-              padding: '2rem',
-              borderRadius: '16px',
-              border: '1px solid rgba(76, 175, 80, 0.2)'
-            }}>
-              <h4 style={{
-                fontFamily: 'Montserrat, sans-serif',
-                color: '#2e7d32',
-                marginBottom: '1.5rem',
-                fontSize: '1.3rem',
-                fontWeight: '600',
-                textAlign: 'center'
-              }}>
-                📅 Ventas por Día (Últimos 7 días)
-              </h4>
-
-              <div style={{
-                display: 'grid',
-                gap: '1rem'
-              }}>
-                {stats.daily_sales.slice(0, 7).map((day, index) => (
-                  <div key={index} style={{
-                    background: 'white',
-                    padding: '1.5rem',
-                    borderRadius: '12px',
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                    border: '1px solid rgba(76, 175, 80, 0.1)',
-                    boxShadow: '0 2px 8px rgba(76, 175, 80, 0.1)'
-                  }}>
-                    <div>
-                      <div style={{ fontWeight: '600', fontSize: '1rem', color: '#2e7d32' }}>
-                        📅 {formatDate(day.date)}
-                      </div>
-                      <div style={{ fontSize: '0.9rem', color: '#666', marginTop: '0.25rem' }}>
-                        {day.sales_count || 0} ventas realizadas
-                      </div>
-                    </div>
-                    <div style={{
-                      fontWeight: '700',
-                      color: '#2e7d32',
-                      fontSize: '1.3rem'
-                    }}>
-                      {formatCurrency(day.daily_revenue || 0)}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
-      )}
-    </div>
-  );
-
-  // ===== RENDER PRINCIPAL =====
-
-  return (
-    <div style={{
-      minHeight: '100vh',
-      background: 'linear-gradient(135deg, #f9f7f4 0%, #f5f3ee 100%)',
-      fontFamily: 'Montserrat, sans-serif'
-    }}>
-      {/* Header */}
-      <header style={{
-        background: 'linear-gradient(135deg, #e6e3d4 0%, #ddd8c7 100%)',
-        boxShadow: '0 4px 20px rgba(0, 0, 0, 0.08)',
-        position: 'sticky',
-        top: 0,
-        zIndex: 1000
-      }}>
-        <div style={{
-          maxWidth: '1400px',
-          margin: '0 auto',
-          padding: '1rem 2rem',
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          flexWrap: 'wrap',
-          gap: '1rem'
+        <h3 style={{
+          fontFamily: 'Didot, serif',
+          fontSize: '1.8rem',
+          color: '#333',
+          textAlign: 'center',
+          marginBottom: '2rem',
+          fontWeight: '400'
         }}>
-          {/* Logo y Título */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-            <button
-              onClick={() => window.location.href = '/admin'}
-              style={{
-                background: 'none',
-                border: 'none',
-                fontSize: '1.5rem',
-                cursor: 'pointer',
-                color: '#333',
-                display: 'flex',
-                alignItems: 'center'
-              }}
-              title="Volver al Panel Principal"
-            >
-              ←
-            </button>
-            <h1 style={{
-              fontFamily: 'Didot, serif',
-              fontSize: '2rem',
-              fontStyle: 'italic',
-              color: '#333',
-              margin: 0,
-              fontWeight: '400'
-            }}>
-              Piuma Ventas
-            </h1>
-          </div>
+          📈 Estadísticas de Ventas
+        </h3>
 
-          {/* Botones de Acción */}
-          <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
-            <button
-              onClick={() => window.location.href = '/admin'}
-              style={{
+        {loading ? (
+          <div style={{ textAlign: 'center', padding: '3rem', color: '#666' }}>
+            <div style={{
+              width: '40px',
+              height: '40px',
+              border: '4px solid #f3f3f3',
+              borderTop: '4px solid #d4af37',
+              borderRadius: '50%',
+              animation: 'spin 1s linear infinite',
+              margin: '0 auto 1rem'
+            }}></div>
+            Cargando estadísticas...
+          </div>
+        ) : !stats ? (
+          <div style={{ textAlign: 'center', padding: '3rem', color: '#666' }}>
+            <div style={{ fontSize: '3rem', marginBottom: '1rem', opacity: 0.5 }}>📈</div>
+            <p>No hay datos de estadísticas disponibles</p>
+            <p style={{ fontSize: '0.9rem', marginTop: '1rem' }}>
+              Las estadísticas aparecerán una vez que registres algunas ventas
+            </p>
+          </div>
+        ) : (
+          <div>
+            {/* Charts Section */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '2rem', marginBottom: '4rem' }}>
+              {/* Line Chart */}
+              <div style={{ background: '#fff', padding: '1.5rem', borderRadius: '16px', boxShadow: '0 4px 20px rgba(0,0,0,0.05)', border: '1px solid #eee' }}>
+                <h4 style={{ textAlign: 'center', marginBottom: '1.5rem', color: '#555' }}>Evolución de Ventas (30 días)</h4>
+                <div style={{ height: '300px' }}>
+                  <Line data={lineChartData} options={lineChartOptions} />
+                </div>
+              </div>
+
+              {/* Doughnut Chart */}
+              <div style={{ background: '#fff', padding: '1.5rem', borderRadius: '16px', boxShadow: '0 4px 20px rgba(0,0,0,0.05)', border: '1px solid #eee' }}>
+                <h4 style={{ textAlign: 'center', marginBottom: '1.5rem', color: '#555' }}>Ventas por Categoría</h4>
+                <div style={{ height: '300px', display: 'flex', justifyContent: 'center' }}>
+                  <Doughnut data={doughnutChartData} options={doughnutOptions} />
+                </div>
+              </div>
+            </div>
+
+            {/* Estadísticas Generales */}
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
+              gap: '1.5rem',
+              marginBottom: '3rem'
+            }}>
+              <div style={{
+                background: 'linear-gradient(135deg, #d4af37 0%, #c19b26 100%)',
+                color: 'white',
+                padding: '2rem',
+                borderRadius: '16px',
+                textAlign: 'center',
+                boxShadow: '0 8px 32px rgba(212, 175, 55, 0.3)'
+              }}>
+                <div style={{ fontSize: '3rem', marginBottom: '0.5rem' }}>💰</div>
+                <div style={{ fontSize: '2rem', fontWeight: '700', marginBottom: '0.5rem' }}>
+                  {formatCurrency(stats.general?.total_revenue || 0)}
+                </div>
+                <div style={{ fontSize: '1rem', opacity: 0.9 }}>Total Vendido</div>
+              </div>
+
+              <div style={{
+                background: 'linear-gradient(135deg, #28a745 0%, #20c997 100%)',
+                color: 'white',
+                padding: '2rem',
+                borderRadius: '16px',
+                textAlign: 'center',
+                boxShadow: '0 8px 32px rgba(40, 167, 69, 0.3)'
+              }}>
+                <div style={{ fontSize: '3rem', marginBottom: '0.5rem' }}>✅</div>
+                <div style={{ fontSize: '2rem', fontWeight: '700', marginBottom: '0.5rem' }}>
+                  {formatCurrency(stats.general?.total_collected || 0)}
+                </div>
+                <div style={{ fontSize: '1rem', opacity: 0.9 }}>Total Cobrado</div>
+              </div>
+
+              <div style={{
+                background: 'linear-gradient(135deg, #dc3545 0%, #c82333 100%)',
+                color: 'white',
+                padding: '2rem',
+                borderRadius: '16px',
+                textAlign: 'center',
+                boxShadow: '0 8px 32px rgba(220, 53, 69, 0.3)'
+              }}>
+                <div style={{ fontSize: '3rem', marginBottom: '0.5rem' }}>⏳</div>
+                <div style={{ fontSize: '2rem', fontWeight: '700', marginBottom: '0.5rem' }}>
+                  {formatCurrency(stats.general?.total_pending || 0)}
+                </div>
+                <div style={{ fontSize: '1rem', opacity: 0.9 }}>Total Por Cobrar</div>
+              </div>
+
+              <div style={{
+                background: 'linear-gradient(135deg, #28a745 0%, #20c997 100%)',
+                color: 'white',
+                padding: '2rem',
+                borderRadius: '16px',
+                textAlign: 'center',
+                boxShadow: '0 8px 32px rgba(40, 167, 69, 0.3)'
+              }}>
+                <div style={{ fontSize: '3rem', marginBottom: '0.5rem' }}>📊</div>
+                <div style={{ fontSize: '2rem', fontWeight: '700', marginBottom: '0.5rem' }}>
+                  {stats.general?.total_sales || 0}
+                </div>
+                <div style={{ fontSize: '1rem', opacity: 0.9 }}>Total de Ventas</div>
+              </div>
+
+              <div style={{
                 background: 'linear-gradient(135deg, #007bff 0%, #0056b3 100%)',
                 color: 'white',
-                border: 'none',
-                padding: '0.75rem 1.5rem',
-                borderRadius: '12px',
-                cursor: 'pointer',
-                fontSize: '0.9rem',
-                fontWeight: '500',
-                transition: 'all 0.3s ease',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.5rem'
-              }}
-            >
-              <span>🏠</span>
-              <span>Panel Principal</span>
-            </button>
+                padding: '2rem',
+                borderRadius: '16px',
+                textAlign: 'center',
+                boxShadow: '0 8px 32px rgba(0, 123, 255, 0.3)'
+              }}>
+                <div style={{ fontSize: '3rem', marginBottom: '0.5rem' }}>📈</div>
+                <div style={{ fontSize: '2rem', fontWeight: '700', marginBottom: '0.5rem' }}>
+                  {formatCurrency(stats.general?.average_sale || 0)}
+                </div>
+                <div style={{ fontSize: '1rem', opacity: 0.9 }}>Venta Promedio</div>
+              </div>
 
-            <button
-              onClick={handleLogout}
-              style={{
-                background: 'linear-gradient(135deg, #6c757d 0%, #5a6268 100%)',
+              <div style={{
+                background: 'linear-gradient(135deg, #6f42c1 0%, #5a3a9a 100%)',
                 color: 'white',
-                border: 'none',
-                padding: '0.75rem 1.5rem',
-                borderRadius: '12px',
-                cursor: 'pointer',
-                fontSize: '0.9rem',
-                fontWeight: '500',
-                transition: 'all 0.3s ease',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.5rem'
-              }}
-            >
-              <span>🚪</span>
-              <span>Salir</span>
-            </button>
-          </div>
-        </div>
-      </header>
-
-      {/* Contenido Principal */}
-      <main style={{
-        maxWidth: '1400px',
-        margin: '0 auto',
-        padding: '2rem'
-      }}>
-        {/* Mensajes de Estado */}
-        {error && (
-          <div style={{
-            background: 'linear-gradient(135deg, #f8d7da 0%, #f5c6cb 100%)',
-            color: '#721c24',
-            padding: '1rem 1.5rem',
-            borderRadius: '12px',
-            marginBottom: '2rem',
-            border: '1px solid #f1aeb5',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '0.5rem'
-          }}>
-            <span style={{ fontSize: '1.2rem' }}>⚠️</span>
-            <div>
-              <strong>Error:</strong> {error}
+                padding: '2rem',
+                borderRadius: '16px',
+                textAlign: 'center',
+                boxShadow: '0 8px 32px rgba(111, 66, 193, 0.3)'
+              }}>
+                <div style={{ fontSize: '3rem', marginBottom: '0.5rem' }}>🛍️</div>
+                <div style={{ fontSize: '2rem', fontWeight: '700', marginBottom: '0.5rem' }}>
+                  {stats.general?.total_items_sold || 0}
+                </div>
+                <div style={{ fontSize: '1rem', opacity: 0.9 }}>Items Vendidos</div>
+              </div>
             </div>
-            <button
-              onClick={() => setError(null)}
-              style={{
-                marginLeft: 'auto',
-                background: 'none',
-                border: 'none',
-                color: '#721c24',
-                cursor: 'pointer',
-                fontSize: '1.2rem',
-                padding: '0.25rem'
-              }}
-            >
-              ✕
-            </button>
+
+            {/* Métodos de Pago */}
+            {stats.payment_methods && (
+              <div style={{
+                background: 'linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%)',
+                padding: '2rem',
+                borderRadius: '16px',
+                marginBottom: '2rem',
+                border: '1px solid rgba(230, 227, 212, 0.8)'
+              }}>
+                <h4 style={{
+                  fontFamily: 'Montserrat, sans-serif',
+                  color: '#333',
+                  marginBottom: '1.5rem',
+                  fontSize: '1.3rem',
+                  fontWeight: '600',
+                  textAlign: 'center'
+                }}>
+                  💳 Ventas por Método de Pago
+                </h4>
+
+                <div style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
+                  gap: '1.5rem'
+                }}>
+                  {stats.payment_methods.map((method) => (
+                    <div key={method.payment_method} style={{
+                      background: 'white',
+                      padding: '2rem',
+                      borderRadius: '12px',
+                      textAlign: 'center',
+                      border: '1px solid #dee2e6',
+                      boxShadow: '0 4px 12px rgba(0, 0, 0, 0.05)'
+                    }}>
+                      <div style={{
+                        fontSize: '2rem',
+                        marginBottom: '1rem'
+                      }}>
+                        {method.payment_method === 'efectivo' ? '💵' : '🏦'}
+                      </div>
+                      <div style={{
+                        fontSize: '1.5rem',
+                        fontWeight: '700',
+                        color: method.payment_method === 'efectivo' ? '#28a745' : '#007bff',
+                        marginBottom: '0.5rem'
+                      }}>
+                        {formatCurrency(method.revenue || 0)}
+                      </div>
+                      <div style={{ color: '#666', fontSize: '1rem', marginBottom: '0.5rem' }}>
+                        {method.count || 0} ventas ({method.percentage || 0}%)
+                      </div>
+                      <div style={{
+                        padding: '0.5rem 1rem',
+                        borderRadius: '20px',
+                        fontSize: '0.9rem',
+                        fontWeight: '600',
+                        background: method.payment_method === 'efectivo' ? '#d4edda' : '#cce5ff',
+                        color: method.payment_method === 'efectivo' ? '#155724' : '#004085',
+                        display: 'inline-block'
+                      }}>
+                        {method.payment_method === 'efectivo' ? 'Efectivo' : method.payment_method}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Productos Más Vendidos */}
+            {stats.top_products && stats.top_products.length > 0 && (
+              <div style={{
+                background: 'linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%)',
+                padding: '2rem',
+                borderRadius: '16px',
+                marginBottom: '2rem',
+                border: '1px solid rgba(255, 152, 0, 0.2)'
+              }}>
+                <h4 style={{
+                  fontFamily: 'Montserrat, sans-serif',
+                  color: '#e65100',
+                  marginBottom: '1.5rem',
+                  fontSize: '1.3rem',
+                  fontWeight: '600',
+                  textAlign: 'center'
+                }}>
+                  🏆 Productos Más Vendidos
+                </h4>
+
+                <div style={{ overflowX: 'auto' }}>
+                  <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                    <thead>
+                      <tr style={{ background: 'rgba(255, 152, 0, 0.1)' }}>
+                        <th style={{ padding: '1rem', textAlign: 'left', fontWeight: '600' }}>🏅</th>
+                        <th style={{ padding: '1rem', textAlign: 'left', fontWeight: '600' }}>Producto</th>
+                        <th style={{ padding: '1rem', textAlign: 'center', fontWeight: '600' }}>Cantidad Vendida</th>
+                        <th style={{ padding: '1rem', textAlign: 'right', fontWeight: '600' }}>Ingresos</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {stats.top_products.slice(0, 5).map((product, index) => (
+                        <tr key={index} style={{
+                          background: 'white',
+                          borderBottom: '1px solid rgba(255, 152, 0, 0.1)'
+                        }}>
+                          <td style={{ padding: '1rem', textAlign: 'center', fontSize: '1.2rem' }}>
+                            {index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : `#${index + 1}`}
+                          </td>
+                          <td style={{ padding: '1rem' }}>
+                            <div style={{ fontWeight: '600', fontSize: '1rem' }}>{product.name}</div>
+                            {product.category && (
+                              <div style={{ fontSize: '0.8rem', color: '#666', marginTop: '0.25rem' }}>
+                                📂 {product.category}
+                              </div>
+                            )}
+                          </td>
+                          <td style={{ padding: '1rem', textAlign: 'center', fontWeight: '600', fontSize: '1.1rem' }}>
+                            {product.total_quantity_sold || product.total_quantity || 0} unidades
+                          </td>
+                          <td style={{ padding: '1rem', textAlign: 'right', fontWeight: '600', color: '#e65100', fontSize: '1.1rem' }}>
+                            {formatCurrency(product.total_revenue || 0)}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+
+            {/* Ventas Recientes */}
+            {stats.daily_sales && stats.daily_sales.length > 0 && (
+              <div style={{
+                background: 'linear-gradient(135deg, #e8f5e8 0%, #f1f8e9 100%)',
+                padding: '2rem',
+                borderRadius: '16px',
+                border: '1px solid rgba(76, 175, 80, 0.2)'
+              }}>
+                <h4 style={{
+                  fontFamily: 'Montserrat, sans-serif',
+                  color: '#2e7d32',
+                  marginBottom: '1.5rem',
+                  fontSize: '1.3rem',
+                  fontWeight: '600',
+                  textAlign: 'center'
+                }}>
+                  📅 Ventas por Día (Últimos 7 días)
+                </h4>
+
+                <div style={{
+                  display: 'grid',
+                  gap: '1rem'
+                }}>
+                  {stats.daily_sales.slice(0, 7).map((day, index) => (
+                    <div key={index} style={{
+                      background: 'white',
+                      padding: '1.5rem',
+                      borderRadius: '12px',
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      border: '1px solid rgba(76, 175, 80, 0.1)',
+                      boxShadow: '0 2px 8px rgba(76, 175, 80, 0.1)'
+                    }}>
+                      <div>
+                        <div style={{ fontWeight: '600', fontSize: '1rem', color: '#2e7d32' }}>
+                          📅 {formatDate(day.date)}
+                        </div>
+                        <div style={{ fontSize: '0.9rem', color: '#666', marginTop: '0.25rem' }}>
+                          {day.sales_count || 0} ventas realizadas
+                        </div>
+                      </div>
+                      <div style={{
+                        fontWeight: '700',
+                        color: '#2e7d32',
+                        fontSize: '1.3rem'
+                      }}>
+                        {formatCurrency(day.daily_revenue || 0)}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         )}
+      </div>
+    );
 
-        {successMessage && (
-          <div style={{
-            background: 'linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%)',
-            color: '#155724',
-            padding: '1rem 1.5rem',
-            borderRadius: '12px',
-            marginBottom: '2rem',
-            border: '1px solid #c6e2c7',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '0.5rem'
-          }}>
-            <span style={{ fontSize: '1.2rem' }}>✅</span>
-            <div>
-              <strong>Éxito:</strong> {successMessage}
-            </div>
-            <button
-              onClick={() => setSuccessMessage('')}
-              style={{
-                marginLeft: 'auto',
-                background: 'none',
-                border: 'none',
-                color: '#155724',
-                cursor: 'pointer',
-                fontSize: '1.2rem',
-                padding: '0.25rem'
-              }}
-            >
-              ✕
-            </button>
-          </div>
-        )}
+    const renderVariantModal = () => {
+      if (!showVariantModal || !selectedProductForVariant) return null;
 
-        {/* Navegación de Pestañas */}
-        {renderTabNavigation()}
-
-        {/* Contenido de la Pestaña Activa */}
-        {activeTab === 'new-sale' && renderNewSaleForm()}
-        {activeTab === 'sales-list' && renderSalesList()}
-        {activeTab === 'statistics' && renderStatistics()}
-        {activeTab === 'customers' && <CustomersListAPI authService={authService} API_BASE_URL={API_BASE_URL} formatCurrency={formatCurrency} formatDate={formatDate} />}
-      </main>
-
-      {/* Modal de Edición de Venta */}
-      {showEditModal && editingSale && (
+      return (
         <div style={{
           position: 'fixed',
           top: 0,
@@ -1780,177 +1817,446 @@ const AdminVentas = () => {
           bottom: 0,
           background: 'rgba(0,0,0,0.5)',
           display: 'flex',
-          justifyContent: 'center',
           alignItems: 'center',
-          zIndex: 2000,
-          padding: '1rem'
+          justifyContent: 'center',
+          zIndex: 1000
         }}>
           <div style={{
             background: 'white',
-            borderRadius: '16px',
             padding: '2rem',
+            borderRadius: '16px',
+            width: '90%',
             maxWidth: '500px',
-            width: '100%',
-            maxHeight: '90vh',
-            overflowY: 'auto'
+            position: 'relative',
+            boxShadow: '0 4px 20px rgba(0,0,0,0.2)'
           }}>
-            <h3 style={{ marginTop: 0, marginBottom: '1.5rem', textAlign: 'center' }}>✏️ Editar Venta #{editingSale.id}</h3>
+            <h3 style={{ textAlign: 'center', marginBottom: '1.5rem', fontFamily: 'Montserrat, sans-serif' }}>Seleccionar Color</h3>
 
-            <form onSubmit={handleUpdateSale}>
-              <div style={{ marginBottom: '1.5rem' }}>
-                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold' }}>Nombre Cliente</label>
-                <div style={{ padding: '0.8rem', background: '#f8f9fa', borderRadius: '8px' }}>
-                  {editingSale.customer_name} {editingSale.customer_lastname}
-                </div>
-              </div>
-
-              <div style={{ marginBottom: '1.5rem' }}>
-                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold' }}>Total Venta</label>
-                <div style={{ padding: '0.8rem', background: '#f8f9fa', borderRadius: '8px', fontWeight: 'bold', fontSize: '1.1rem' }}>
-                  {formatCurrency(editingSale.total_amount)}
-                </div>
-              </div>
-
-              <div style={{ marginBottom: '1.5rem' }}>
-                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold' }}>Estado del Pago</label>
-                <select
-                  value={editingSale.status}
-                  onChange={(e) => handleEditSaleChange('status', e.target.value)}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(120px, 1fr))', gap: '1rem' }}>
+              {selectedProductForVariant.variants.map(variant => (
+                <button
+                  key={variant.id}
+                  onClick={() => addToCart(selectedProductForVariant, variant)}
+                  disabled={!variant.in_stock && variant.quantity <= 0}
                   style={{
-                    width: '100%',
-                    padding: '0.8rem',
-                    borderRadius: '8px',
-                    border: '1px solid #ced4da',
-                    fontSize: '1rem'
+                    padding: '1rem',
+                    border: '1px solid #ddd',
+                    borderRadius: '12px',
+                    background: (variant.quantity > 0 || variant.in_stock) ? 'white' : '#f8f9fa',
+                    cursor: (variant.quantity > 0 || variant.in_stock) ? 'pointer' : 'not-allowed',
+                    opacity: (variant.quantity > 0 || variant.in_stock) ? 1 : 0.6,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    gap: '0.5rem',
+                    transition: 'transform 0.2s',
+                    boxShadow: '0 2px 4px rgba(0,0,0,0.05)'
                   }}
+                  onMouseEnter={(e) => { if (variant.quantity > 0 || variant.in_stock) e.currentTarget.style.transform = 'translateY(-2px)' }}
+                  onMouseLeave={(e) => { e.currentTarget.style.transform = 'translateY(0)' }}
                 >
-                  <option value="pending">⏳ Pendiente</option>
-                  <option value="paid">✅ Pagado</option>
-                </select>
-              </div>
-
-              <div style={{ marginBottom: '1.5rem' }}>
-                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold' }}>Monto Total Abonado ($)</label>
-                <input
-                  type="text"
-                  inputMode="numeric"
-                  value={editingSale.amount_paid}
-                  onChange={(e) => handleEditSaleChange('amount_paid', e.target.value)}
-                  style={{
-                    width: '100%',
-                    padding: '0.8rem',
-                    borderRadius: '8px',
-                    border: '1px solid #ced4da',
-                    fontSize: '1rem',
-                    boxSizing: 'border-box'
-                  }}
-                />
-
-                {editingSale.status === 'pending' && (
-                  <div style={{ marginTop: '0.5rem', color: '#dc3545', fontWeight: 'bold', fontSize: '0.9rem' }}>
-                    Debe: {formatCurrency(editingSale.total_amount - (parseFloat(editingSale.amount_paid) || 0))}
+                  <div style={{ fontWeight: 'bold' }}>{variant.color_name}</div>
+                  <div style={{
+                    fontSize: '0.9rem',
+                    color: (variant.quantity > 0 || variant.in_stock) ? '#28a745' : '#dc3545',
+                    fontWeight: '500'
+                  }}>
+                    {variant.quantity > 0 ? `${variant.quantity} unid.` : (variant.in_stock ? 'En Stock' : 'Sin Stock')}
                   </div>
-                )}
-              </div>
-
-              <div style={{ marginBottom: '1.5rem' }}>
-                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold' }}>Notas</label>
-                <textarea
-                  value={editingSale.notes || ''}
-                  onChange={(e) => handleEditSaleChange('notes', e.target.value)}
-                  rows="3"
-                  style={{
-                    width: '100%',
-                    padding: '0.8rem',
-                    borderRadius: '8px',
-                    border: '1px solid #ced4da',
-                    fontSize: '1rem',
-                    boxSizing: 'border-box'
-                  }}
-                />
-              </div>
-
-              <div style={{ display: 'flex', gap: '1rem', justifyContent: 'flex-end' }}>
-                <button
-                  type="button"
-                  onClick={() => setShowEditModal(false)}
-                  style={{
-                    padding: '0.8rem 1.5rem',
-                    background: '#6c757d',
-                    color: 'white',
-                    border: 'none',
-                    borderRadius: '8px',
-                    cursor: 'pointer'
-                  }}
-                >
-                  Cancelar
                 </button>
-                <button
-                  type="submit"
-                  disabled={loading}
-                  style={{
-                    padding: '0.8rem 2rem',
-                    background: 'linear-gradient(135deg, #d4af37 0%, #c19b26 100%)',
-                    color: 'white',
-                    border: 'none',
-                    borderRadius: '8px',
-                    cursor: 'pointer',
-                    fontWeight: 'bold'
-                  }}
-                >
-                  {loading ? 'Guardando...' : 'Guardar Cambios'}
-                </button>
-              </div>
-            </form>
+              ))}
+            </div>
+
+            <button
+              onClick={() => setShowVariantModal(false)}
+              style={{
+                marginTop: '1.5rem',
+                width: '100%',
+                padding: '1rem',
+                background: '#6c757d',
+                color: 'white',
+                border: 'none',
+                borderRadius: '12px',
+                cursor: 'pointer',
+                fontWeight: '600',
+                textTransform: 'uppercase'
+              }}
+            >
+              Cancelar
+            </button>
           </div>
         </div>
-      )}
+      );
+    };
 
-      {/* Loading overlay */}
-      {loading && (
-        <div style={{
-          position: 'fixed',
+    // ===== RENDER PRINCIPAL =====
+
+    return (
+      <div style={{
+        minHeight: '100vh',
+        background: 'linear-gradient(135deg, #f9f7f4 0%, #f5f3ee 100%)',
+        fontFamily: 'Montserrat, sans-serif'
+      }}>
+        {renderVariantModal()}
+
+        {/* Header */}
+        <header style={{
+          background: 'linear-gradient(135deg, #e6e3d4 0%, #ddd8c7 100%)',
+          boxShadow: '0 4px 20px rgba(0, 0, 0, 0.08)',
+          position: 'sticky',
           top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          background: 'rgba(255, 255, 255, 0.9)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          zIndex: 9999,
-          backdropFilter: 'blur(5px)'
+          zIndex: 1000
         }}>
           <div style={{
-            background: 'white',
-            padding: '2.5rem 3rem',
-            borderRadius: '16px',
-            fontSize: '1.2rem',
-            color: '#333',
-            boxShadow: '0 12px 40px rgba(0, 0, 0, 0.15)',
-            border: '1px solid rgba(230, 227, 212, 0.5)',
-            fontWeight: '500',
-            textTransform: 'uppercase',
-            letterSpacing: '0.5px',
+            maxWidth: '1400px',
+            margin: '0 auto',
+            padding: '1rem 2rem',
             display: 'flex',
+            justifyContent: 'space-between',
             alignItems: 'center',
+            flexWrap: 'wrap',
             gap: '1rem'
           }}>
-            <div style={{
-              width: '24px',
-              height: '24px',
-              border: '3px solid #f3f3f3',
-              borderTop: '3px solid #d4af37',
-              borderRadius: '50%',
-              animation: 'spin 1s linear infinite'
-            }}></div>
-            Procesando...
-          </div>
-        </div>
-      )}
+            {/* Logo y Título */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+              <button
+                onClick={() => window.location.href = '/admin'}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  fontSize: '1.5rem',
+                  cursor: 'pointer',
+                  color: '#333',
+                  display: 'flex',
+                  alignItems: 'center'
+                }}
+                title="Volver al Panel Principal"
+              >
+                ←
+              </button>
+              <h1 style={{
+                fontFamily: 'Didot, serif',
+                fontSize: '2rem',
+                fontStyle: 'italic',
+                color: '#333',
+                margin: 0,
+                fontWeight: '400'
+              }}>
+                Piuma Ventas
+              </h1>
+            </div>
 
-      <style>
-        {`
+            {/* Botones de Acción */}
+            <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+              <button
+                onClick={() => window.location.href = '/admin'}
+                style={{
+                  background: 'linear-gradient(135deg, #007bff 0%, #0056b3 100%)',
+                  color: 'white',
+                  border: 'none',
+                  padding: '0.75rem 1.5rem',
+                  borderRadius: '12px',
+                  cursor: 'pointer',
+                  fontSize: '0.9rem',
+                  fontWeight: '500',
+                  transition: 'all 0.3s ease',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem'
+                }}
+              >
+                <span>🏠</span>
+                <span>Panel Principal</span>
+              </button>
+
+              <button
+                onClick={handleLogout}
+                style={{
+                  background: 'linear-gradient(135deg, #6c757d 0%, #5a6268 100%)',
+                  color: 'white',
+                  border: 'none',
+                  padding: '0.75rem 1.5rem',
+                  borderRadius: '12px',
+                  cursor: 'pointer',
+                  fontSize: '0.9rem',
+                  fontWeight: '500',
+                  transition: 'all 0.3s ease',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem'
+                }}
+              >
+                <span>🚪</span>
+                <span>Salir</span>
+              </button>
+            </div>
+          </div>
+        </header>
+
+        {/* Contenido Principal */}
+        <main style={{
+          maxWidth: '1400px',
+          margin: '0 auto',
+          padding: '2rem'
+        }}>
+          {/* Mensajes de Estado */}
+          {error && (
+            <div style={{
+              background: 'linear-gradient(135deg, #f8d7da 0%, #f5c6cb 100%)',
+              color: '#721c24',
+              padding: '1rem 1.5rem',
+              borderRadius: '12px',
+              marginBottom: '2rem',
+              border: '1px solid #f1aeb5',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.5rem'
+            }}>
+              <span style={{ fontSize: '1.2rem' }}>⚠️</span>
+              <div>
+                <strong>Error:</strong> {error}
+              </div>
+              <button
+                onClick={() => setError(null)}
+                style={{
+                  marginLeft: 'auto',
+                  background: 'none',
+                  border: 'none',
+                  color: '#721c24',
+                  cursor: 'pointer',
+                  fontSize: '1.2rem',
+                  padding: '0.25rem'
+                }}
+              >
+                ✕
+              </button>
+            </div>
+          )}
+
+          {successMessage && (
+            <div style={{
+              background: 'linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%)',
+              color: '#155724',
+              padding: '1rem 1.5rem',
+              borderRadius: '12px',
+              marginBottom: '2rem',
+              border: '1px solid #c6e2c7',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.5rem'
+            }}>
+              <span style={{ fontSize: '1.2rem' }}>✅</span>
+              <div>
+                <strong>Éxito:</strong> {successMessage}
+              </div>
+              <button
+                onClick={() => setSuccessMessage('')}
+                style={{
+                  marginLeft: 'auto',
+                  background: 'none',
+                  border: 'none',
+                  color: '#155724',
+                  cursor: 'pointer',
+                  fontSize: '1.2rem',
+                  padding: '0.25rem'
+                }}
+              >
+                ✕
+              </button>
+            </div>
+          )}
+
+          {/* Navegación de Pestañas */}
+          {renderTabNavigation()}
+
+          {/* Contenido de la Pestaña Activa */}
+          {activeTab === 'new-sale' && renderNewSaleForm()}
+          {activeTab === 'sales-list' && renderSalesList()}
+          {activeTab === 'statistics' && renderStatistics()}
+          {activeTab === 'customers' && <CustomersListAPI authService={authService} API_BASE_URL={API_BASE_URL} formatCurrency={formatCurrency} formatDate={formatDate} />}
+        </main>
+
+        {/* Modal de Edición de Venta */}
+        {showEditModal && editingSale && (
+          <div style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: 'rgba(0,0,0,0.5)',
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            zIndex: 2000,
+            padding: '1rem'
+          }}>
+            <div style={{
+              background: 'white',
+              borderRadius: '16px',
+              padding: '2rem',
+              maxWidth: '500px',
+              width: '100%',
+              maxHeight: '90vh',
+              overflowY: 'auto'
+            }}>
+              <h3 style={{ marginTop: 0, marginBottom: '1.5rem', textAlign: 'center' }}>✏️ Editar Venta #{editingSale.id}</h3>
+
+              <form onSubmit={handleUpdateSale}>
+                <div style={{ marginBottom: '1.5rem' }}>
+                  <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold' }}>Nombre Cliente</label>
+                  <div style={{ padding: '0.8rem', background: '#f8f9fa', borderRadius: '8px' }}>
+                    {editingSale.customer_name} {editingSale.customer_lastname}
+                  </div>
+                </div>
+
+                <div style={{ marginBottom: '1.5rem' }}>
+                  <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold' }}>Total Venta</label>
+                  <div style={{ padding: '0.8rem', background: '#f8f9fa', borderRadius: '8px', fontWeight: 'bold', fontSize: '1.1rem' }}>
+                    {formatCurrency(editingSale.total_amount)}
+                  </div>
+                </div>
+
+                <div style={{ marginBottom: '1.5rem' }}>
+                  <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold' }}>Estado del Pago</label>
+                  <select
+                    value={editingSale.status}
+                    onChange={(e) => handleEditSaleChange('status', e.target.value)}
+                    style={{
+                      width: '100%',
+                      padding: '0.8rem',
+                      borderRadius: '8px',
+                      border: '1px solid #ced4da',
+                      fontSize: '1rem'
+                    }}
+                  >
+                    <option value="pending">⏳ Pendiente</option>
+                    <option value="paid">✅ Pagado</option>
+                  </select>
+                </div>
+
+                <div style={{ marginBottom: '1.5rem' }}>
+                  <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold' }}>Monto Total Abonado ($)</label>
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    value={editingSale.amount_paid}
+                    onChange={(e) => handleEditSaleChange('amount_paid', e.target.value)}
+                    style={{
+                      width: '100%',
+                      padding: '0.8rem',
+                      borderRadius: '8px',
+                      border: '1px solid #ced4da',
+                      fontSize: '1rem',
+                      boxSizing: 'border-box'
+                    }}
+                  />
+
+                  {editingSale.status === 'pending' && (
+                    <div style={{ marginTop: '0.5rem', color: '#dc3545', fontWeight: 'bold', fontSize: '0.9rem' }}>
+                      Debe: {formatCurrency(editingSale.total_amount - (parseFloat(editingSale.amount_paid) || 0))}
+                    </div>
+                  )}
+                </div>
+
+                <div style={{ marginBottom: '1.5rem' }}>
+                  <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold' }}>Notas</label>
+                  <textarea
+                    value={editingSale.notes || ''}
+                    onChange={(e) => handleEditSaleChange('notes', e.target.value)}
+                    rows="3"
+                    style={{
+                      width: '100%',
+                      padding: '0.8rem',
+                      borderRadius: '8px',
+                      border: '1px solid #ced4da',
+                      fontSize: '1rem',
+                      boxSizing: 'border-box'
+                    }}
+                  />
+                </div>
+
+                <div style={{ display: 'flex', gap: '1rem', justifyContent: 'flex-end' }}>
+                  <button
+                    type="button"
+                    onClick={() => setShowEditModal(false)}
+                    style={{
+                      padding: '0.8rem 1.5rem',
+                      background: '#6c757d',
+                      color: 'white',
+                      border: 'none',
+                      borderRadius: '8px',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={loading}
+                    style={{
+                      padding: '0.8rem 2rem',
+                      background: 'linear-gradient(135deg, #d4af37 0%, #c19b26 100%)',
+                      color: 'white',
+                      border: 'none',
+                      borderRadius: '8px',
+                      cursor: 'pointer',
+                      fontWeight: 'bold'
+                    }}
+                  >
+                    {loading ? 'Guardando...' : 'Guardar Cambios'}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
+
+        {/* Loading overlay */}
+        {loading && (
+          <div style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: 'rgba(255, 255, 255, 0.9)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 9999,
+            backdropFilter: 'blur(5px)'
+          }}>
+            <div style={{
+              background: 'white',
+              padding: '2.5rem 3rem',
+              borderRadius: '16px',
+              fontSize: '1.2rem',
+              color: '#333',
+              boxShadow: '0 12px 40px rgba(0, 0, 0, 0.15)',
+              border: '1px solid rgba(230, 227, 212, 0.5)',
+              fontWeight: '500',
+              textTransform: 'uppercase',
+              letterSpacing: '0.5px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '1rem'
+            }}>
+              <div style={{
+                width: '24px',
+                height: '24px',
+                border: '3px solid #f3f3f3',
+                borderTop: '3px solid #d4af37',
+                borderRadius: '50%',
+                animation: 'spin 1s linear infinite'
+              }}></div>
+              Procesando...
+            </div>
+          </div>
+        )}
+
+        <style>
+          {`
           @keyframes spin {
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
@@ -1966,7 +2272,163 @@ const AdminVentas = () => {
             }
           }
         `}
+        </style>
+      </div>
+    );
+  };
+
+  return (
+    <div style={{ padding: '2rem', maxWidth: '1400px', margin: '0 auto', fontFamily: 'Montserrat, sans-serif' }}>
+      <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem', flexWrap: 'wrap', gap: '1rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+          <button
+            onClick={() => window.location.href = '/admin'}
+            style={{
+              background: 'none',
+              border: '1px solid #ddd',
+              borderRadius: '8px',
+              padding: '0.5rem 1rem',
+              cursor: 'pointer',
+              fontSize: '0.9rem',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.5rem',
+              color: '#666'
+            }}
+            title="Volver al Panel Principal"
+          >
+            ⬅️ Volver
+          </button>
+          <h1 style={{ fontFamily: 'Didot, serif', margin: 0, fontSize: 'clamp(1.5rem, 5vw, 2.2rem)', color: '#1a1a1a' }}>
+            Panel de Ventas
+          </h1>
+        </div>
+
+        <div style={{ display: 'flex', gap: '0.5rem', background: '#f8f9fa', padding: '0.5rem', borderRadius: '12px', flexWrap: 'wrap', justifyContent: 'center', width: '100%', maxWidth: '600px' }}>
+          {[
+            { id: 'new-sale', icon: '📝', label: 'Nueva Venta' },
+            { id: 'list', icon: '📋', label: 'Ver Ventas' },
+            { id: 'statistics', icon: '📈', label: 'Estadísticas' },
+            { id: 'customers', icon: '👥', label: 'Clientes' },
+          ].map(tab => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className={`nav-tab ${activeTab === tab.id ? 'active' : ''}`}
+            >
+              <span>{tab.icon}</span>
+              <span className="tab-label">{tab.label}</span>
+            </button>
+          ))}
+        </div>
+      </header>
+
+      {/* Responsive Styles */}
+      <style>
+        {`
+          .nav-tab {
+            border: none;
+            background: transparent;
+            color: #666;
+            padding: 0.6rem 1rem;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            flex: 1 1 auto;
+            justify-content: center;
+            font-size: 0.9rem;
+          }
+          .nav-tab.active {
+            background: #333;
+            color: white;
+          }
+          
+          @media (max-width: 768px) {
+             .tab-label {
+                display: none;
+             }
+             .nav-tab {
+                padding: 0.8rem;
+                font-size: 1.2rem;
+             }
+             h1 {
+                font-size: 1.5rem;
+             }
+          }
+        `}
       </style>
+
+      {/* Messages */}
+      {error && <div style={{ padding: '1rem', background: '#f8d7da', color: '#721c24', borderRadius: '8px', marginBottom: '1rem' }}>⚠️ {error}</div>}
+      {successMessage && <div style={{ padding: '1rem', background: '#d4edda', color: '#155724', borderRadius: '8px', marginBottom: '1rem' }}>✅ {successMessage}</div>}
+
+      <main>
+        {activeTab === 'new-sale' && (typeof renderNewSaleForm === 'function' ? renderNewSaleForm() : <div>Formulario no disponible</div>)}
+        {activeTab === 'list' && (typeof renderSalesList === 'function' ? renderSalesList() : <div>Lista no disponible</div>)}
+        {activeTab === 'statistics' && renderStatistics()}
+        {activeTab === 'customers' && (
+          <CustomersListAPI
+            authService={authService}
+            API_BASE_URL={API_BASE_URL}
+            formatCurrency={formatCurrency}
+            formatDate={formatDate}
+          />
+        )}
+      </main>
+
+      {/* Variant Modal */}
+      {showVariantModal && selectedProductForVariant && (
+        <div style={{
+          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+          background: 'rgba(0,0,0,0.6)', zIndex: 10000,
+          display: 'flex', justifyContent: 'center', alignItems: 'center', backdropFilter: 'blur(3px)'
+        }}>
+          <div style={{
+            background: 'white', borderRadius: '16px', padding: '2rem', width: '90%', maxWidth: '500px',
+            boxShadow: '0 20px 50px rgba(0,0,0,0.3)', maxHeight: '85vh', overflowY: 'auto'
+          }}>
+            <h3 style={{ marginTop: 0, fontFamily: 'Didot, serif' }}>Selecciona un Tono/Variante</h3>
+            <p style={{ color: '#666', marginBottom: '1.5rem' }}>Producto: <strong>{selectedProductForVariant.name}</strong></p>
+
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(100px, 1fr))', gap: '1rem' }}>
+              {(selectedProductForVariant.variants || []).map(variant => {
+                const isAvailable = variant.quantity > 0;
+                return (
+                  <button
+                    key={variant.id}
+                    disabled={!isAvailable}
+                    onClick={() => typeof handleAddVariantToCart === 'function' ? handleAddVariantToCart(selectedProductForVariant, variant) : console.log('Handler missing')}
+                    style={{
+                      border: '1px solid #ddd', borderRadius: '12px', padding: '1rem',
+                      background: isAvailable ? 'white' : '#f9f9f9', cursor: isAvailable ? 'pointer' : 'not-allowed',
+                      opacity: isAvailable ? 1 : 0.6, display: 'flex', flexDirection: 'column', alignItems: 'center'
+                    }}
+                  >
+                    <div style={{
+                      width: '30px', height: '30px', borderRadius: '50%', background: variant.color_hex || '#ccc',
+                      border: '1px solid rgba(0,0,0,0.1)', marginBottom: '0.5rem', boxShadow: '0 2px 5px rgba(0,0,0,0.1)'
+                    }}></div>
+                    <div style={{ fontWeight: '600', fontSize: '0.9rem' }}>{variant.color_name}</div>
+                    <div style={{ fontSize: '0.8rem', color: isAvailable ? '#28a745' : '#dc3545', marginTop: '0.2rem' }}>
+                      {isAvailable ? `Stock: ${variant.quantity}` : 'Agotado'}
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+            <div style={{ marginTop: '2rem', textAlign: 'right' }}>
+              <button onClick={() => setShowVariantModal(false)} style={{
+                padding: '0.8rem 1.5rem', background: '#eee', border: 'none', borderRadius: '8px', cursor: 'pointer'
+              }}>Cancelar</button>
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 };
@@ -2003,6 +2465,39 @@ const CustomersListAPI = ({ authService, API_BASE_URL, formatCurrency, formatDat
 
   useEffect(() => { loadCustomers(search, sortBy, sortOrder); }, [loadCustomers, sortBy, sortOrder, search]); // Auto-reload on filters change
 
+  /* Edit Customer Logic */
+  const [editingCustomer, setEditingCustomer] = useState(null);
+  const [editForm, setEditForm] = useState({});
+
+  const startEdit = (customer) => {
+    setEditingCustomer(customer);
+    setEditForm({ ...customer });
+  };
+
+  const handleEditChange = (field, value) => {
+    setEditForm(prev => ({ ...prev, [field]: value }));
+  };
+
+  const saveEdit = async () => {
+    try {
+      const res = await authService.authenticatedFetch(`${API_BASE_URL}/api/customers`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(editForm)
+      });
+
+      if (res.ok) {
+        // Reload list
+        loadCustomers(search, sortBy, sortOrder);
+        setEditingCustomer(null);
+      } else {
+        alert('Error guardando cambios');
+      }
+    } catch (e) {
+      alert('Error de conexión');
+    }
+  };
+
   return (
     <div style={{
       background: 'white',
@@ -2012,6 +2507,67 @@ const CustomersListAPI = ({ authService, API_BASE_URL, formatCurrency, formatDat
       minHeight: '400px'
     }}>
       <h3 style={{ textAlign: 'center', marginBottom: '2rem', fontFamily: 'Didot, serif', fontSize: '1.8rem' }}>👥 Lista de Clientes</h3>
+
+      {/* Edit Modal */}
+      {editingCustomer && (
+        <div style={{
+          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+          background: 'rgba(0,0,0,0.5)', zIndex: 10000,
+          display: 'flex', justifyContent: 'center', alignItems: 'center'
+        }}>
+          <div style={{
+            background: 'white', padding: '2rem', borderRadius: '16px',
+            width: '90%', maxWidth: '400px',
+            boxShadow: '0 10px 30px rgba(0,0,0,0.2)'
+          }}>
+            <h4 style={{ margin: '0 0 1.5rem 0', textAlign: 'center' }}>Editar Cliente</h4>
+
+            <div style={{ display: 'flex', gap: '1rem', marginBottom: '1rem' }}>
+              <input
+                value={editForm.first_name || ''}
+                onChange={e => handleEditChange('first_name', e.target.value)}
+                placeholder="Nombre"
+                style={{ padding: '0.8rem', borderRadius: '8px', border: '1px solid #ddd', flex: 1 }}
+              />
+              <input
+                value={editForm.last_name || ''}
+                onChange={e => handleEditChange('last_name', e.target.value)}
+                placeholder="Apellido"
+                style={{ padding: '0.8rem', borderRadius: '8px', border: '1px solid #ddd', flex: 1 }}
+              />
+            </div>
+
+            <input
+              value={editForm.phone || ''}
+              onChange={e => handleEditChange('phone', e.target.value)}
+              placeholder="Teléfono"
+              style={{ width: '100%', padding: '0.8rem', borderRadius: '8px', border: '1px solid #ddd', marginBottom: '1rem', boxSizing: 'border-box' }}
+            />
+
+            <input
+              value={editForm.email || ''}
+              onChange={e => handleEditChange('email', e.target.value)}
+              placeholder="Email"
+              style={{ width: '100%', padding: '0.8rem', borderRadius: '8px', border: '1px solid #ddd', marginBottom: '1rem', boxSizing: 'border-box' }}
+            />
+
+            <div style={{ display: 'flex', gap: '1rem', justifyContent: 'flex-end' }}>
+              <button
+                onClick={() => setEditingCustomer(null)}
+                style={{ padding: '0.8rem 1.5rem', borderRadius: '8px', border: 'none', background: '#ccc', cursor: 'pointer' }}
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={saveEdit}
+                style={{ padding: '0.8rem 1.5rem', borderRadius: '8px', border: 'none', background: '#28a745', color: 'white', cursor: 'pointer' }}
+              >
+                Guardar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div style={{ marginBottom: '2rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
         <div style={{ display: 'flex', gap: '1rem' }}>
@@ -2058,54 +2614,68 @@ const CustomersListAPI = ({ authService, API_BASE_URL, formatCurrency, formatDat
         </div>
       </div>
 
-      {loading ? (
-        <div style={{ textAlign: 'center', padding: '2rem', color: '#666' }}>
-          <span style={{ fontSize: '2rem' }}>⏳</span>
-          <div>Cargando clientes...</div>
-        </div>
-      ) : error ? (
-        <div style={{ textAlign: 'center', color: '#dc3545', padding: '2rem' }}>
-          {error}
-        </div>
-      ) : customers.length === 0 ? (
-        <div style={{ textAlign: 'center', padding: '3rem', color: '#999', background: '#f8f9fa', borderRadius: '12px' }}>
-          <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>📭</div>
-          <h3>No se encontraron clientes</h3>
-          <p>Intenta ajustar la búsqueda o registra una venta nueva.</p>
-        </div>
-      ) : (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '1rem' }}>
-          {customers.map(c => (
-            <div key={c.id} style={{
-              padding: '1.5rem', border: '1px solid #eee', borderRadius: '12px',
-              background: '#f9f9f9', display: 'flex', flexDirection: 'column', gap: '0.5rem'
-            }}>
-              <div style={{ fontWeight: 'bold', fontSize: '1.1rem' }}>{c.first_name} {c.last_name}</div>
-              <div style={{ fontSize: '0.9rem', color: '#666' }}>📞 {c.phone || '-'}</div>
-              <div style={{ fontSize: '0.9rem', color: '#666' }}>✉️ {c.email || '-'}</div>
-              <div style={{
-                marginTop: '1rem', paddingTop: '1rem', borderTop: '1px solid #ddd',
-                display: 'flex', justifyContent: 'space-between', alignItems: 'center'
+      {
+        loading ? (
+          <div style={{ textAlign: 'center', padding: '2rem', color: '#666' }}>
+            <span style={{ fontSize: '2rem' }}>⏳</span>
+            <div>Cargando clientes...</div>
+          </div>
+        ) : error ? (
+          <div style={{ textAlign: 'center', color: '#dc3545', padding: '2rem' }}>
+            {error}
+          </div>
+        ) : customers.length === 0 ? (
+          <div style={{ textAlign: 'center', padding: '3rem', color: '#999', background: '#f8f9fa', borderRadius: '12px' }}>
+            <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>📭</div>
+            <h3>No se encontraron clientes</h3>
+            <p>Intenta ajustar la búsqueda o registra una venta nueva.</p>
+          </div>
+        ) : (
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '1rem' }}>
+            {customers.map(c => (
+              <div key={c.id} style={{
+                padding: '1.5rem', border: '1px solid #eee', borderRadius: '12px',
+                background: '#f9f9f9', display: 'flex', flexDirection: 'column', gap: '0.5rem',
+                position: 'relative'
               }}>
-                <span style={{ fontSize: '0.9rem', background: '#e9ecef', padding: '0.3rem 0.8rem', borderRadius: '12px' }}>
-                  🛒 {c.total_purchases} ventas
-                </span>
-                <div style={{ textAlign: 'right' }}>
-                  <div style={{ fontWeight: 'bold', color: '#28a745' }}>
-                    {formatCurrency(c.total_spent)}
-                  </div>
-                  {Number(c.total_debt) > 0 && (
-                    <div style={{ color: '#dc3545', fontWeight: 'bold', fontSize: '0.9rem', marginTop: '0.2rem' }}>
-                      Debe: {formatCurrency(c.total_debt)}
+                <button
+                  onClick={() => startEdit(c)}
+                  style={{
+                    position: 'absolute', top: '10px', right: '10px',
+                    background: 'none', border: 'none', cursor: 'pointer', fontSize: '1.2rem'
+                  }}
+                  title="Editar Cliente"
+                >
+                  ✏️
+                </button>
+
+                <div style={{ fontWeight: 'bold', fontSize: '1.1rem', paddingRight: '30px' }}>{c.first_name} {c.last_name}</div>
+                <div style={{ fontSize: '0.9rem', color: '#666' }}>📞 {c.phone || '-'}</div>
+                <div style={{ fontSize: '0.9rem', color: '#666' }}>✉️ {c.email || '-'}</div>
+                <div style={{
+                  marginTop: '1rem', paddingTop: '1rem', borderTop: '1px solid #ddd',
+                  display: 'flex', justifyContent: 'space-between', alignItems: 'center'
+                }}>
+                  <span style={{ fontSize: '0.9rem', background: '#e9ecef', padding: '0.3rem 0.8rem', borderRadius: '12px' }}>
+                    🛒 {c.total_purchases} ventas
+                  </span>
+                  <div style={{ textAlign: 'right' }}>
+                    <div style={{ fontWeight: 'bold', color: '#28a745' }}>
+                      {formatCurrency(c.total_spent)}
                     </div>
-                  )}
+                    {Number(c.total_debt) > 0 && (
+                      <div style={{ color: '#dc3545', fontWeight: 'bold', fontSize: '0.9rem', marginTop: '0.2rem' }}>
+                        Debe: {formatCurrency(c.total_debt)}
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
+            ))}
+          </div>
+        )
+      }
+    </div >
   );
 };
 

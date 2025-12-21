@@ -222,7 +222,8 @@ app.get('/api/products', async (req, res) => {
                  json_build_object(
                    'id', pv.id,
                    'color_name', pv.color_name,
-                   'in_stock', pv.in_stock
+                   'in_stock', pv.in_stock,
+                   'quantity', pv.quantity
                  )
                ) FILTER (WHERE pv.id IS NOT NULL), 
                '[]'
@@ -283,7 +284,8 @@ app.get('/api/admin/products',
                    json_build_object(
                      'id', pv.id,
                      'color_name', pv.color_name,
-                     'in_stock', pv.in_stock
+                     'in_stock', pv.in_stock,
+                     'quantity', pv.quantity
                    )
                  ) FILTER (WHERE pv.id IS NOT NULL), 
                  '[]'
@@ -449,9 +451,14 @@ app.put('/api/admin/products/:id',
         for (const variant of variants) {
           if (variant.color_name && variant.color_name.trim()) {
             await client.query(`
-              INSERT INTO product_variants (product_id, color_name, in_stock)
-              VALUES ($1, $2, $3)
-            `, [parseInt(id), variant.color_name.trim(), variant.in_stock !== false]);
+              INSERT INTO product_variants (product_id, color_name, in_stock, quantity)
+              VALUES ($1, $2, $3, $4)
+            `, [
+              parseInt(id),
+              variant.color_name.trim(),
+              variant.in_stock !== false,
+              parseInt(variant.quantity) || 0
+            ]);
           }
         }
       }
@@ -466,7 +473,8 @@ app.put('/api/admin/products/:id',
                  json_build_object(
                    'id', pv.id,
                    'color_name', pv.color_name,
-                   'in_stock', pv.in_stock
+                   'in_stock', pv.in_stock,
+                   'quantity', pv.quantity
                  )
                ) FILTER (WHERE pv.id IS NOT NULL), 
                '[]'
