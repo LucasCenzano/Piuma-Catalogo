@@ -351,6 +351,21 @@ function Catalog({ bags, openModal, selectedCategory }) {
 
             return (
               <div key={bag.id} className="product-card">
+                {/* Category above image */}
+                {bag.category && (
+                  <div style={{
+                    fontSize: '0.75rem',
+                    fontWeight: '600',
+                    textTransform: 'uppercase',
+                    color: '#666',
+                    letterSpacing: '0.5px',
+                    marginBottom: '8px',
+                    padding: '4px 0'
+                  }}>
+                    {bag.category}
+                  </div>
+                )}
+                
                 <div className="product-image-container">
                   <SafeProductImage
                     src={currentImage}
@@ -407,34 +422,55 @@ function Catalog({ bags, openModal, selectedCategory }) {
                       {isInStock ? '✓ En Stock' : '✗ Sin Stock'}
                     </span>
                   </div>
-                  <p className="product-category" style={{ marginTop: '10px' }}>{bag.category}</p>
-
-                  {/* Variantes / Colores */}
+                  {/* Variantes / Colores - Mejorado */}
                   {bag.variants && bag.variants.length > 0 && (
-                    <div className="product-variants" style={{ marginTop: '10px', width: '100%' }}>
-                      <span style={{ fontSize: '0.8rem', fontWeight: 'bold', color: '#666', display: 'block', marginBottom: '5px' }}>Colores:</span>
-                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '5px' }}>
+                    <div className="product-variants" style={{ marginTop: '12px', width: '100%' }}>
+                      <span style={{
+                        fontSize: '0.9rem',
+                        fontWeight: '700',
+                        color: '#333',
+                        display: 'block',
+                        marginBottom: '8px',
+                        letterSpacing: '0.3px'
+                      }}>Variantes:</span>
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
                         {bag.variants.map((variant, vIdx) => (
-                          <span key={vIdx} style={{
-                            fontSize: '0.75rem',
-                            padding: '2px 8px',
-                            borderRadius: '12px',
-                            border: '1px solid',
-                            borderColor: variant.in_stock ? '#28a745' : '#dc3545',
-                            color: variant.in_stock ? '#28a745' : '#dc3545',
-                            backgroundColor: variant.in_stock ? 'rgba(40, 167, 69, 0.1)' : 'rgba(220, 53, 69, 0.1)',
+                          <div key={vIdx} style={{
+                            fontSize: '0.85rem',
+                            padding: '6px 12px',
+                            borderRadius: '8px',
+                            border: '1.5px solid',
+                            borderColor: variant.quantity > 0 ? '#28a745' : '#dc3545',
+                            color: '#333',
+                            backgroundColor: variant.quantity > 0 ? 'rgba(40, 167, 69, 0.08)' : 'rgba(220, 53, 69, 0.08)',
                             display: 'flex',
-                            alignItems: 'center',
-                            gap: '4px'
+                            flexDirection: 'column',
+                            gap: '2px',
+                            minWidth: '80px'
                           }}>
+                            <div style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '6px',
+                              fontWeight: '600'
+                            }}>
+                              <span style={{
+                                width: '10px',
+                                height: '10px',
+                                borderRadius: '50%',
+                                backgroundColor: variant.color_hex || (variant.quantity > 0 ? '#28a745' : '#dc3545'),
+                                border: '1px solid rgba(0,0,0,0.1)'
+                              }}></span>
+                              {variant.color_name}
+                            </div>
                             <span style={{
-                              width: '6px',
-                              height: '6px',
-                              borderRadius: '50%',
-                              backgroundColor: variant.in_stock ? '#28a745' : '#dc3545'
-                            }}></span>
-                            {variant.color_name}
-                          </span>
+                              fontSize: '0.75rem',
+                              color: variant.quantity > 0 ? '#28a745' : '#dc3545',
+                              fontWeight: '600'
+                            }}>
+                              {variant.quantity > 0 ? `Stock: ${variant.quantity}` : 'Sin stock'}
+                            </span>
+                          </div>
                         ))}
                       </div>
                     </div>
