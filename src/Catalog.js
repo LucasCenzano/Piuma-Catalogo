@@ -101,6 +101,7 @@ function Catalog({ bags, openModal, selectedCategory }) {
   const [showScrollTop, setShowScrollTop] = useState(false);
   const [activeFilters, setActiveFilters] = useState([]); // List of available filters
   const [selectedFilter, setSelectedFilter] = useState(null); // Currently selected filter key
+  const [changingImages, setChangingImages] = useState({}); // Track which images are changing
 
 
   // Use dataService instead of direct fetch
@@ -211,8 +212,24 @@ function Catalog({ bags, openModal, selectedCategory }) {
   }, [sortedAndFilteredBags]);
 
   const getCurrentImageIndex = (productId) => currentImageIndexes[productId] || 0;
-  const handleNextImage = (e, productId, totalImages) => { e.stopPropagation(); setCurrentImageIndexes(prev => ({ ...prev, [productId]: ((prev[productId] || 0) + 1) % totalImages })); };
-  const handlePrevImage = (e, productId, totalImages) => { e.stopPropagation(); setCurrentImageIndexes(prev => ({ ...prev, [productId]: ((prev[productId] || 0) - 1 + totalImages) % totalImages })); };
+
+  const handleNextImage = (e, productId, totalImages) => {
+    e.stopPropagation();
+    setChangingImages(prev => ({ ...prev, [productId]: true }));
+    setTimeout(() => {
+      setCurrentImageIndexes(prev => ({ ...prev, [productId]: ((prev[productId] || 0) + 1) % totalImages }));
+      setTimeout(() => setChangingImages(prev => ({ ...prev, [productId]: false })), 50);
+    }, 200);
+  };
+
+  const handlePrevImage = (e, productId, totalImages) => {
+    e.stopPropagation();
+    setChangingImages(prev => ({ ...prev, [productId]: true }));
+    setTimeout(() => {
+      setCurrentImageIndexes(prev => ({ ...prev, [productId]: ((prev[productId] || 0) - 1 + totalImages) % totalImages }));
+      setTimeout(() => setChangingImages(prev => ({ ...prev, [productId]: false })), 50);
+    }, 200);
+  };
   const getProductImage = (bag) => { const currentIndex = getCurrentImageIndex(bag.id); return bag.images?.[currentIndex] || bag.images?.[0] || null; };
   const getAllImages = (bag) => bag.images?.filter(img => img && img.trim().length > 0) || [];
 
@@ -362,7 +379,7 @@ function Catalog({ bags, openModal, selectedCategory }) {
                   <SafeProductImage
                     src={currentImage}
                     alt={bag.name}
-                    className="product-image"
+                    className={`product-image ${changingImages[bag.id] ? 'changing' : ''}`}
                     loading={index < 4 ? "eager" : "lazy"}
                     onClick={() => currentImage && openModal(currentImage, bag.name, allImages, currentIndex)}
                   />
