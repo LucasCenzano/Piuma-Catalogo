@@ -1,5 +1,5 @@
 // MainApp.js - SOLUCIÓN ACTUALIZADA
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import Catalog from './Catalog';
 import ImageModal from './ImageModal';
 import './styles.css';
@@ -32,15 +32,14 @@ function MainApp() {
 
     const [categories, setCategories] = useState(['Todos']);
 
-    // ✅ Cargar datos inmediatamente al montar el componente
+    const loadData = useCallback(async () => {
+        await Promise.all([loadProducts(), loadCategories()]);
+    }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
     // ✅ Cargar datos inmediatamente al montar el componente
     useEffect(() => {
         loadData();
-    }, []);
-
-    const loadData = async () => {
-        await Promise.all([loadProducts(), loadCategories()]);
-    };
+    }, [loadData]);
 
     const loadCategories = async () => {
         try {
