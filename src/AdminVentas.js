@@ -1892,440 +1892,53 @@ const AdminVentas = () => {
     // ===== RENDER PRINCIPAL =====
 
     return (
-      <div style={{
-        minHeight: '100vh',
-        background: 'linear-gradient(135deg, #f9f7f4 0%, #f5f3ee 100%)',
-        fontFamily: 'Montserrat, sans-serif'
-      }}>
-        {renderVariantModal()}
+      <div style={{ padding: '2rem', maxWidth: '1400px', margin: '0 auto', fontFamily: 'Montserrat, sans-serif' }}>
+        <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem', flexWrap: 'wrap', gap: '1rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+            <button
+              onClick={() => window.location.href = '/admin'}
+              style={{
+                background: 'none',
+                border: '1px solid #ddd',
+                borderRadius: '8px',
+                padding: '0.5rem 1rem',
+                cursor: 'pointer',
+                fontSize: '0.9rem',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.5rem',
+                color: '#666'
+              }}
+              title="Volver al Panel Principal"
+            >
+              ⬅️ Volver
+            </button>
+            <h1 style={{ fontFamily: 'Didot, serif', margin: 0, fontSize: 'clamp(1.5rem, 5vw, 2.2rem)', color: '#1a1a1a' }}>
+              Panel de Ventas
+            </h1>
+          </div>
 
-        {/* Header */}
-        <header style={{
-          background: 'linear-gradient(135deg, #e6e3d4 0%, #ddd8c7 100%)',
-          boxShadow: '0 4px 20px rgba(0, 0, 0, 0.08)',
-          position: 'sticky',
-          top: 0,
-          zIndex: 1000
-        }}>
-          <div style={{
-            maxWidth: '1400px',
-            margin: '0 auto',
-            padding: '1rem 2rem',
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            flexWrap: 'wrap',
-            gap: '1rem'
-          }}>
-            {/* Logo y Título */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+          <div style={{ display: 'flex', gap: '0.5rem', background: '#f8f9fa', padding: '0.5rem', borderRadius: '12px', flexWrap: 'wrap', justifyContent: 'center', width: '100%', maxWidth: '600px' }}>
+            {[
+              { id: 'new-sale', icon: '📝', label: 'Nueva Venta' },
+              { id: 'list', icon: '📋', label: 'Ver Ventas' },
+              { id: 'statistics', icon: '📈', label: 'Estadísticas' },
+              { id: 'customers', icon: '👥', label: 'Clientes' },
+            ].map(tab => (
               <button
-                onClick={() => window.location.href = '/admin'}
-                style={{
-                  background: 'none',
-                  border: 'none',
-                  fontSize: '1.5rem',
-                  cursor: 'pointer',
-                  color: '#333',
-                  display: 'flex',
-                  alignItems: 'center'
-                }}
-                title="Volver al Panel Principal"
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`nav-tab ${activeTab === tab.id ? 'active' : ''}`}
               >
-                ←
+                <span>{tab.icon}</span>
+                <span className="tab-label">{tab.label}</span>
               </button>
-              <h1 style={{
-                fontFamily: 'Didot, serif',
-                fontSize: '2rem',
-                fontStyle: 'italic',
-                color: '#333',
-                margin: 0,
-                fontWeight: '400'
-              }}>
-                Piuma Ventas
-              </h1>
-            </div>
-
-            {/* Botones de Acción */}
-            <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
-              <button
-                onClick={() => window.location.href = '/admin'}
-                style={{
-                  background: 'linear-gradient(135deg, #007bff 0%, #0056b3 100%)',
-                  color: 'white',
-                  border: 'none',
-                  padding: '0.75rem 1.5rem',
-                  borderRadius: '12px',
-                  cursor: 'pointer',
-                  fontSize: '0.9rem',
-                  fontWeight: '500',
-                  transition: 'all 0.3s ease',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.5rem'
-                }}
-              >
-                <span>🏠</span>
-                <span>Panel Principal</span>
-              </button>
-
-              <button
-                onClick={handleLogout}
-                style={{
-                  background: 'linear-gradient(135deg, #6c757d 0%, #5a6268 100%)',
-                  color: 'white',
-                  border: 'none',
-                  padding: '0.75rem 1.5rem',
-                  borderRadius: '12px',
-                  cursor: 'pointer',
-                  fontSize: '0.9rem',
-                  fontWeight: '500',
-                  transition: 'all 0.3s ease',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.5rem'
-                }}
-              >
-                <span>🚪</span>
-                <span>Salir</span>
-              </button>
-            </div>
+            ))}
           </div>
         </header>
 
-        {/* Contenido Principal */}
-        <main style={{
-          maxWidth: '1400px',
-          margin: '0 auto',
-          padding: '2rem'
-        }}>
-          {/* Mensajes de Estado */}
-          {error && (
-            <div style={{
-              background: 'linear-gradient(135deg, #f8d7da 0%, #f5c6cb 100%)',
-              color: '#721c24',
-              padding: '1rem 1.5rem',
-              borderRadius: '12px',
-              marginBottom: '2rem',
-              border: '1px solid #f1aeb5',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.5rem'
-            }}>
-              <span style={{ fontSize: '1.2rem' }}>⚠️</span>
-              <div>
-                <strong>Error:</strong> {error}
-              </div>
-              <button
-                onClick={() => setError(null)}
-                style={{
-                  marginLeft: 'auto',
-                  background: 'none',
-                  border: 'none',
-                  color: '#721c24',
-                  cursor: 'pointer',
-                  fontSize: '1.2rem',
-                  padding: '0.25rem'
-                }}
-              >
-                ✕
-              </button>
-            </div>
-          )}
-
-          {successMessage && (
-            <div style={{
-              background: 'linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%)',
-              color: '#155724',
-              padding: '1rem 1.5rem',
-              borderRadius: '12px',
-              marginBottom: '2rem',
-              border: '1px solid #c6e2c7',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.5rem'
-            }}>
-              <span style={{ fontSize: '1.2rem' }}>✅</span>
-              <div>
-                <strong>Éxito:</strong> {successMessage}
-              </div>
-              <button
-                onClick={() => setSuccessMessage('')}
-                style={{
-                  marginLeft: 'auto',
-                  background: 'none',
-                  border: 'none',
-                  color: '#155724',
-                  cursor: 'pointer',
-                  fontSize: '1.2rem',
-                  padding: '0.25rem'
-                }}
-              >
-                ✕
-              </button>
-            </div>
-          )}
-
-          {/* Navegación de Pestañas */}
-          {renderTabNavigation()}
-
-          {/* Contenido de la Pestaña Activa */}
-          {activeTab === 'new-sale' && renderNewSaleForm()}
-          {activeTab === 'sales-list' && renderSalesList()}
-          {activeTab === 'statistics' && renderStatistics()}
-          {activeTab === 'customers' && <CustomersListAPI authService={authService} API_BASE_URL={API_BASE_URL} formatCurrency={formatCurrency} formatDate={formatDate} />}
-        </main>
-
-        {/* Modal de Edición de Venta */}
-        {showEditModal && editingSale && (
-          <div style={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            background: 'rgba(0,0,0,0.5)',
-            display: 'flex',
-            justifyContent: 'center',
-            alignItems: 'center',
-            zIndex: 2000,
-            padding: '1rem'
-          }}>
-            <div style={{
-              background: 'white',
-              borderRadius: '16px',
-              padding: '2rem',
-              maxWidth: '500px',
-              width: '100%',
-              maxHeight: '90vh',
-              overflowY: 'auto'
-            }}>
-              <h3 style={{ marginTop: 0, marginBottom: '1.5rem', textAlign: 'center' }}>✏️ Editar Venta #{editingSale.id}</h3>
-
-              <form onSubmit={handleUpdateSale}>
-                <div style={{ marginBottom: '1.5rem' }}>
-                  <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold' }}>Nombre Cliente</label>
-                  <div style={{ padding: '0.8rem', background: '#f8f9fa', borderRadius: '8px' }}>
-                    {editingSale.customer_name} {editingSale.customer_lastname}
-                  </div>
-                </div>
-
-                <div style={{ marginBottom: '1.5rem' }}>
-                  <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold' }}>Total Venta</label>
-                  <div style={{ padding: '0.8rem', background: '#f8f9fa', borderRadius: '8px', fontWeight: 'bold', fontSize: '1.1rem' }}>
-                    {formatCurrency(editingSale.total_amount)}
-                  </div>
-                </div>
-
-                <div style={{ marginBottom: '1.5rem' }}>
-                  <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold' }}>Estado del Pago</label>
-                  <select
-                    value={editingSale.status}
-                    onChange={(e) => handleEditSaleChange('status', e.target.value)}
-                    style={{
-                      width: '100%',
-                      padding: '0.8rem',
-                      borderRadius: '8px',
-                      border: '1px solid #ced4da',
-                      fontSize: '1rem'
-                    }}
-                  >
-                    <option value="pending">⏳ Pendiente</option>
-                    <option value="paid">✅ Pagado</option>
-                  </select>
-                </div>
-
-                <div style={{ marginBottom: '1.5rem' }}>
-                  <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold' }}>Monto Total Abonado ($)</label>
-                  <input
-                    type="text"
-                    inputMode="numeric"
-                    value={editingSale.amount_paid}
-                    onChange={(e) => handleEditSaleChange('amount_paid', e.target.value)}
-                    style={{
-                      width: '100%',
-                      padding: '0.8rem',
-                      borderRadius: '8px',
-                      border: '1px solid #ced4da',
-                      fontSize: '1rem',
-                      boxSizing: 'border-box'
-                    }}
-                  />
-
-                  {editingSale.status === 'pending' && (
-                    <div style={{ marginTop: '0.5rem', color: '#dc3545', fontWeight: 'bold', fontSize: '0.9rem' }}>
-                      Debe: {formatCurrency(editingSale.total_amount - (parseFloat(editingSale.amount_paid) || 0))}
-                    </div>
-                  )}
-                </div>
-
-                <div style={{ marginBottom: '1.5rem' }}>
-                  <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold' }}>Notas</label>
-                  <textarea
-                    value={editingSale.notes || ''}
-                    onChange={(e) => handleEditSaleChange('notes', e.target.value)}
-                    rows="3"
-                    style={{
-                      width: '100%',
-                      padding: '0.8rem',
-                      borderRadius: '8px',
-                      border: '1px solid #ced4da',
-                      fontSize: '1rem',
-                      boxSizing: 'border-box'
-                    }}
-                  />
-                </div>
-
-                <div style={{ display: 'flex', gap: '1rem', justifyContent: 'flex-end' }}>
-                  <button
-                    type="button"
-                    onClick={() => setShowEditModal(false)}
-                    style={{
-                      padding: '0.8rem 1.5rem',
-                      background: '#6c757d',
-                      color: 'white',
-                      border: 'none',
-                      borderRadius: '8px',
-                      cursor: 'pointer'
-                    }}
-                  >
-                    Cancelar
-                  </button>
-                  <button
-                    type="submit"
-                    disabled={loading}
-                    style={{
-                      padding: '0.8rem 2rem',
-                      background: 'linear-gradient(135deg, #d4af37 0%, #c19b26 100%)',
-                      color: 'white',
-                      border: 'none',
-                      borderRadius: '8px',
-                      cursor: 'pointer',
-                      fontWeight: 'bold'
-                    }}
-                  >
-                    {loading ? 'Guardando...' : 'Guardar Cambios'}
-                  </button>
-                </div>
-              </form>
-            </div>
-          </div>
-        )}
-
-        {/* Loading overlay */}
-        {loading && (
-          <div style={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            background: 'rgba(255, 255, 255, 0.9)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            zIndex: 9999,
-            backdropFilter: 'blur(5px)'
-          }}>
-            <div style={{
-              background: 'white',
-              padding: '2.5rem 3rem',
-              borderRadius: '16px',
-              fontSize: '1.2rem',
-              color: '#333',
-              boxShadow: '0 12px 40px rgba(0, 0, 0, 0.15)',
-              border: '1px solid rgba(230, 227, 212, 0.5)',
-              fontWeight: '500',
-              textTransform: 'uppercase',
-              letterSpacing: '0.5px',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '1rem'
-            }}>
-              <div style={{
-                width: '24px',
-                height: '24px',
-                border: '3px solid #f3f3f3',
-                borderTop: '3px solid #d4af37',
-                borderRadius: '50%',
-                animation: 'spin 1s linear infinite'
-              }}></div>
-              Procesando...
-            </div>
-          </div>
-        )}
-
         <style>
           {`
-          @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-          }
-          
-          @media (max-width: 768px) {
-            main {
-              padding: 1rem !important;
-            }
-            
-            .grid-responsive {
-              grid-template-columns: 1fr !important;
-            }
-          }
-        `}
-        </style>
-      </div>
-    );
-  };
-
-  return (
-    <div style={{ padding: '2rem', maxWidth: '1400px', margin: '0 auto', fontFamily: 'Montserrat, sans-serif' }}>
-      <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem', flexWrap: 'wrap', gap: '1rem' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-          <button
-            onClick={() => window.location.href = '/admin'}
-            style={{
-              background: 'none',
-              border: '1px solid #ddd',
-              borderRadius: '8px',
-              padding: '0.5rem 1rem',
-              cursor: 'pointer',
-              fontSize: '0.9rem',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.5rem',
-              color: '#666'
-            }}
-            title="Volver al Panel Principal"
-          >
-            ⬅️ Volver
-          </button>
-          <h1 style={{ fontFamily: 'Didot, serif', margin: 0, fontSize: 'clamp(1.5rem, 5vw, 2.2rem)', color: '#1a1a1a' }}>
-            Panel de Ventas
-          </h1>
-        </div>
-
-        <div style={{ display: 'flex', gap: '0.5rem', background: '#f8f9fa', padding: '0.5rem', borderRadius: '12px', flexWrap: 'wrap', justifyContent: 'center', width: '100%', maxWidth: '600px' }}>
-          {[
-            { id: 'new-sale', icon: '📝', label: 'Nueva Venta' },
-            { id: 'list', icon: '📋', label: 'Ver Ventas' },
-            { id: 'statistics', icon: '📈', label: 'Estadísticas' },
-            { id: 'customers', icon: '👥', label: 'Clientes' },
-          ].map(tab => (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              className={`nav-tab ${activeTab === tab.id ? 'active' : ''}`}
-            >
-              <span>{tab.icon}</span>
-              <span className="tab-label">{tab.label}</span>
-            </button>
-          ))}
-        </div>
-      </header>
-
-      {/* Responsive Styles */}
-      <style>
-        {`
           .nav-tab {
             border: none;
             background: transparent;
@@ -2348,90 +1961,88 @@ const AdminVentas = () => {
           }
           
           @media (max-width: 768px) {
-             .tab-label {
-                display: none;
-             }
-             .nav-tab {
-                padding: 0.8rem;
-                font-size: 1.2rem;
-             }
-             h1 {
-                font-size: 1.5rem;
-             }
+            .tab-label {
+              display: none;
+            }
+            .nav-tab {
+              padding: 0.8rem;
+              font-size: 1.2rem;
+            }
           }
         `}
-      </style>
+        </style>
 
-      {/* Messages */}
-      {error && <div style={{ padding: '1rem', background: '#f8d7da', color: '#721c24', borderRadius: '8px', marginBottom: '1rem' }}>⚠️ {error}</div>}
-      {successMessage && <div style={{ padding: '1rem', background: '#d4edda', color: '#155724', borderRadius: '8px', marginBottom: '1rem' }}>✅ {successMessage}</div>}
+        {error && <div style={{ padding: '1rem', background: '#f8d7da', color: '#721c24', borderRadius: '8px', marginBottom: '1rem' }}>⚠️ {error}</div>}
+        {successMessage && <div style={{ padding: '1rem', background: '#d4edda', color: '#155724', borderRadius: '8px', marginBottom: '1rem' }}>✅ {successMessage}</div>}
 
-      <main>
-        {activeTab === 'new-sale' && (typeof renderNewSaleForm === 'function' ? renderNewSaleForm() : <div>Formulario no disponible</div>)}
-        {activeTab === 'list' && (typeof renderSalesList === 'function' ? renderSalesList() : <div>Lista no disponible</div>)}
-        {activeTab === 'statistics' && renderStatistics()}
-        {activeTab === 'customers' && (
-          <CustomersListAPI
-            authService={authService}
-            API_BASE_URL={API_BASE_URL}
-            formatCurrency={formatCurrency}
-            formatDate={formatDate}
-          />
-        )}
-      </main>
+        <main>
+          {activeTab === 'new-sale' && renderNewSaleForm()}
+          {activeTab === 'list' && renderSalesList()}
+          {activeTab === 'statistics' && renderStatistics()}
+          {activeTab === 'customers' && (
+            <CustomersListAPI
+              authService={authService}
+              API_BASE_URL={API_BASE_URL}
+              formatCurrency={formatCurrency}
+              formatDate={formatDate}
+            />
+          )}
+        </main>
 
-      {/* Variant Modal */}
-      {showVariantModal && selectedProductForVariant && (
-        <div style={{
-          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-          background: 'rgba(0,0,0,0.6)', zIndex: 10000,
-          display: 'flex', justifyContent: 'center', alignItems: 'center', backdropFilter: 'blur(3px)'
-        }}>
+        {showVariantModal && selectedProductForVariant && (
           <div style={{
-            background: 'white', borderRadius: '16px', padding: '2rem', width: '90%', maxWidth: '500px',
-            boxShadow: '0 20px 50px rgba(0,0,0,0.3)', maxHeight: '85vh', overflowY: 'auto'
+            position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+            background: 'rgba(0,0,0,0.6)', zIndex: 10000,
+            display: 'flex', justifyContent: 'center', alignItems: 'center', backdropFilter: 'blur(3px)'
           }}>
-            <h3 style={{ marginTop: 0, fontFamily: 'Didot, serif' }}>Selecciona un Tono/Variante</h3>
-            <p style={{ color: '#666', marginBottom: '1.5rem' }}>Producto: <strong>{selectedProductForVariant.name}</strong></p>
+            <div style={{
+              background: 'white', borderRadius: '16px', padding: '2rem', width: '90%', maxWidth: '500px',
+              boxShadow: '0 20px 50px rgba(0,0,0,0.3)', maxHeight: '85vh', overflowY: 'auto'
+            }}>
+              <h3 style={{ marginTop: 0, fontFamily: 'Didot, serif' }}>Selecciona un Tono/Variante</h3>
+              <p style={{ color: '#666', marginBottom: '1.5rem' }}>Producto: <strong>{selectedProductForVariant.name}</strong></p>
 
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(100px, 1fr))', gap: '1rem' }}>
-              {(selectedProductForVariant.variants || []).map(variant => {
-                const isAvailable = variant.quantity > 0;
-                return (
-                  <button
-                    key={variant.id}
-                    disabled={!isAvailable}
-                    onClick={() => typeof handleAddVariantToCart === 'function' ? handleAddVariantToCart(selectedProductForVariant, variant) : console.log('Handler missing')}
-                    style={{
-                      border: '1px solid #ddd', borderRadius: '12px', padding: '1rem',
-                      background: isAvailable ? 'white' : '#f9f9f9', cursor: isAvailable ? 'pointer' : 'not-allowed',
-                      opacity: isAvailable ? 1 : 0.6, display: 'flex', flexDirection: 'column', alignItems: 'center'
-                    }}
-                  >
-                    <div style={{
-                      width: '30px', height: '30px', borderRadius: '50%', background: variant.color_hex || '#ccc',
-                      border: '1px solid rgba(0,0,0,0.1)', marginBottom: '0.5rem', boxShadow: '0 2px 5px rgba(0,0,0,0.1)'
-                    }}></div>
-                    <div style={{ fontWeight: '600', fontSize: '0.9rem' }}>{variant.color_name}</div>
-                    <div style={{ fontSize: '0.8rem', color: isAvailable ? '#28a745' : '#dc3545', marginTop: '0.2rem' }}>
-                      {isAvailable ? `Stock: ${variant.quantity}` : 'Agotado'}
-                    </div>
-                  </button>
-                );
-              })}
-            </div>
-            <div style={{ marginTop: '2rem', textAlign: 'right' }}>
-              <button onClick={() => setShowVariantModal(false)} style={{
-                padding: '0.8rem 1.5rem', background: '#eee', border: 'none', borderRadius: '8px', cursor: 'pointer'
-              }}>Cancelar</button>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(100px, 1fr))', gap: '1rem' }}>
+                {(selectedProductForVariant.variants || []).map(variant => {
+                  const isAvailable = variant.quantity > 0;
+                  return (
+                    <button
+                      key={variant.id}
+                      disabled={!isAvailable}
+                      onClick={() => handleAddVariantToCart(selectedProductForVariant, variant)}
+                      style={{
+                        border: '1px solid #ddd', borderRadius: '12px', padding: '1rem',
+                        background: isAvailable ? 'white' : '#f9f9f9', cursor: isAvailable ? 'pointer' : 'not-allowed',
+                        opacity: isAvailable ? 1 : 0.6, display: 'flex', flexDirection: 'column', alignItems: 'center'
+                      }}
+                    >
+                      <div style={{
+                        width: '30px', height: '30px', borderRadius: '50%', background: variant.color_hex || '#ccc',
+                        border: '1px solid rgba(0,0,0,0.1)', marginBottom: '0.5rem', boxShadow: '0 2px 5px rgba(0,0,0,0.1)'
+                      }}></div>
+                      <div style={{ fontWeight: '600', fontSize: '0.9rem' }}>{variant.color_name}</div>
+                      <div style={{ fontSize: '0.8rem', color: isAvailable ? '#28a745' : '#dc3545', marginTop: '0.2rem' }}>
+                        {isAvailable ? `Stock: ${variant.quantity}` : 'Agotado'}
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+              <div style={{ marginTop: '2rem', textAlign: 'right' }}>
+                <button onClick={() => setShowVariantModal(false)} style={{
+                  padding: '0.8rem 1.5rem', background: '#eee', border: 'none', borderRadius: '8px', cursor: 'pointer'
+                }}>Cancelar</button>
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        )}
 
-    </div>
-  );
+      </div>
+    );
+  };
+
 };
+
 
 // Subcomponente simple para listar clientes
 const CustomersListAPI = ({ authService, API_BASE_URL, formatCurrency, formatDate }) => {
@@ -2677,6 +2288,6 @@ const CustomersListAPI = ({ authService, API_BASE_URL, formatCurrency, formatDat
       }
     </div >
   );
-};
+  };
 
 export default AdminVentas;
