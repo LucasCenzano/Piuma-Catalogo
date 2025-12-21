@@ -257,20 +257,36 @@ const AdminVentas = () => {
       numericPrice = parseFloat(cleanPrice) || 0;
     }
 
+    // Validar stock disponible
+    const availableStock = variant ? variant.quantity : (product.stock || 0);
+
     const existingItemIndex = newSale.items.findIndex(item =>
       item.product_id === product.id &&
       (variant ? item.variant_id === variant.id : !item.variant_id)
     );
 
     if (existingItemIndex >= 0) {
-      // Incrementar cantidad
+      // Incrementar cantidad si no supera el stock
+      const currentItem = newSale.items[existingItemIndex];
+      const maxStock = currentItem.max_stock;
+
+      if (maxStock !== undefined && currentItem.quantity >= maxStock) {
+        alert(`No puedes agregar más unidades. Stock disponible: ${maxStock}`);
+        return;
+      }
+
       const updatedItems = [...newSale.items];
       updatedItems[existingItemIndex].quantity += 1;
       updatedItems[existingItemIndex].subtotal = updatedItems[existingItemIndex].quantity * numericPrice;
 
       setNewSale(prev => ({ ...prev, items: updatedItems }));
     } else {
-      // Agregar nuevo item
+      // Agregar nuevo item con validación de stock
+      if (availableStock < 1) {
+        alert('Producto sin stock disponible');
+        return;
+      }
+
       const newItem = {
         product_id: product.id,
         product_name: product.name,
@@ -279,7 +295,8 @@ const AdminVentas = () => {
         image_url: Array.isArray(product.images_url) && product.images_url.length > 0 ? product.images_url[0] : (typeof product.images_url === 'string' ? JSON.parse(product.images_url || '[]')[0] : null),
         unit_price: numericPrice,
         quantity: 1,
-        subtotal: numericPrice
+        subtotal: numericPrice,
+        max_stock: availableStock
       };
 
       setNewSale(prev => ({
@@ -295,6 +312,13 @@ const AdminVentas = () => {
 
   const updateItemQuantity = (index, newQuantity) => {
     if (newQuantity < 1) return;
+
+    const item = newSale.items[index];
+    if (item.max_stock !== undefined && newQuantity > item.max_stock) {
+      alert(`La cantidad no puede superar el stock disponible (${item.max_stock})`);
+      return;
+    }
+
     const updatedItems = [...newSale.items];
     updatedItems[index].quantity = parseInt(newQuantity);
     updatedItems[index].subtotal = updatedItems[index].quantity * updatedItems[index].unit_price;
@@ -2003,6 +2027,38 @@ const CustomersListAPI = ({ authService, API_BASE_URL, formatCurrency, formatDat
 
   useEffect(() => { loadCustomers(search, sortBy, sortOrder); }, [loadCustomers, sortBy, sortOrder, search]); // Auto-reload on filters change
 
+
+  /* Edit Customer Logic */
+  const [editingCustomer, setEditingCustomer] = useState(null);
+  const [editForm, setEditForm] = useState({});
+
+  const startEdit = (customer) => {
+    setEditingCustomer(customer);
+    setEditForm({ ...customer });
+  };
+
+  const handleEditChange = (field, value) => {
+    setEditForm(prev => ({ ...prev, [field]: value }));
+  };
+
+  const saveEdit = async () => {
+    try {
+      const res = await authService.authenticatedFetch(`${API_BASE_URL}/api/customers`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(editForm)
+      });
+
+      if (res.ok) {
+        loadCustomers(search, sortBy, sortOrder);
+        setEditingCustomer(null);
+      } else {
+        alert('Error guardando cambios');
+      }
+    } catch (e) {
+      alert('Error de conexión');
+    }
+  };
   return (
     <div style={{
       background: 'white',
@@ -2013,6 +2069,67 @@ const CustomersListAPI = ({ authService, API_BASE_URL, formatCurrency, formatDat
     }}>
       <h3 style={{ textAlign: 'center', marginBottom: '2rem', fontFamily: 'Didot, serif', fontSize: '1.8rem' }}>👥 Lista de Clientes</h3>
 
+
+      {/* Edit Modal */}
+      {editingCustomer && (
+        <div style={{
+          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+          background: 'rgba(0,0,0,0.5)', zIndex: 10000,
+          display: 'flex', justifyContent: 'center', alignItems: 'center'
+        }}>
+          <div style={{
+            background: 'white', padding: '2rem', borderRadius: '16px',
+            width: '90%', maxWidth: '400px',
+            boxShadow: '0 10px 30px rgba(0,0,0,0.2)'
+          }}>
+            <h4 style={{ margin: '0 0 1.5rem 0', textAlign: 'center' }}>Editar Cliente</h4>
+
+            <div style={{ display: 'flex', gap: '1rem', marginBottom: '1rem' }}>
+              <input
+                value={editForm.first_name || ''}
+                onChange={e => handleEditChange('first_name', e.target.value)}
+                placeholder="Nombre"
+                style={{ padding: '0.8rem', borderRadius: '8px', border: '1px solid #ddd', flex: 1 }}
+              />
+              <input
+                value={editForm.last_name || ''}
+                onChange={e => handleEditChange('last_name', e.target.value)}
+                placeholder="Apellido"
+                style={{ padding: '0.8rem', borderRadius: '8px', border: '1px solid #ddd', flex: 1 }}
+              />
+            </div>
+
+            <input
+              value={editForm.phone || ''}
+              onChange={e => handleEditChange('phone', e.target.value)}
+              placeholder="Teléfono"
+              style={{ width: '100%', padding: '0.8rem', borderRadius: '8px', border: '1px solid #ddd', marginBottom: '1rem', boxSizing: 'border-box' }}
+            />
+
+            <input
+              value={editForm.email || ''}
+              onChange={e => handleEditChange('email', e.target.value)}
+              placeholder="Email"
+              style={{ width: '100%', padding: '0.8rem', borderRadius: '8px', border: '1px solid #ddd', marginBottom: '1rem', boxSizing: 'border-box' }}
+            />
+
+            <div style={{ display: 'flex', gap: '1rem', justifyContent: 'flex-end' }}>
+              <button
+                onClick={() => setEditingCustomer(null)}
+                style={{ padding: '0.8rem 1.5rem', borderRadius: '8px', border: 'none', background: '#ccc', cursor: 'pointer' }}
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={saveEdit}
+                style={{ padding: '0.8rem 1.5rem', borderRadius: '8px', border: 'none', background: '#28a745', color: 'white', cursor: 'pointer' }}
+              >
+                Guardar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       <div style={{ marginBottom: '2rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
         <div style={{ display: 'flex', gap: '1rem' }}>
           <input
@@ -2078,9 +2195,20 @@ const CustomersListAPI = ({ authService, API_BASE_URL, formatCurrency, formatDat
           {customers.map(c => (
             <div key={c.id} style={{
               padding: '1.5rem', border: '1px solid #eee', borderRadius: '12px',
-              background: '#f9f9f9', display: 'flex', flexDirection: 'column', gap: '0.5rem'
+              background: '#f9f9f9', display: 'flex', flexDirection: 'column', gap: '0.5rem', position: 'relative'
             }}>
-              <div style={{ fontWeight: 'bold', fontSize: '1.1rem' }}>{c.first_name} {c.last_name}</div>
+              <button
+                onClick={() => startEdit(c)}
+                style={{
+                  position: 'absolute', top: '10px', right: '10px',
+                  background: 'none', border: 'none', cursor: 'pointer', fontSize: '1.2rem'
+                }}
+                title="Editar Cliente"
+              >
+                ✏️
+              </button>
+
+              <div style={{ fontWeight: 'bold', fontSize: '1.1rem', paddingRight: '30px' }}>{c.first_name} {c.last_name}</div>
               <div style={{ fontSize: '0.9rem', color: '#666' }}>📞 {c.phone || '-'}</div>
               <div style={{ fontSize: '0.9rem', color: '#666' }}>✉️ {c.email || '-'}</div>
               <div style={{
