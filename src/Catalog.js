@@ -396,7 +396,7 @@ function Catalog({ bags, openModal, selectedCategory }) {
                 </div>
                 <div className="product-info">
                   <h3 className="product-name">{bag.name}</h3>
-                  <p className="product-description">{bag.description || 'Sin descripción'}</p>
+                  {bag.description && <p className="product-description">{bag.description}</p>}
                   <div className="product-details" style={{ flexDirection: 'column', alignItems: 'flex-start', gap: '5px' }}>
 
                     <div className="price-container">
