@@ -353,19 +353,11 @@ function Catalog({ bags, openModal, selectedCategory }) {
               <div key={bag.id} className="product-card">
                 {/* Category above image */}
                 {bag.category && (
-                  <div style={{
-                    fontSize: '0.75rem',
-                    fontWeight: '600',
-                    textTransform: 'uppercase',
-                    color: '#666',
-                    letterSpacing: '0.5px',
-                    marginBottom: '8px',
-                    padding: '4px 0'
-                  }}>
+                  <p className="product-category" style={{ marginTop: '0', marginBottom: '8px', textAlign: 'center' }}>
                     {bag.category}
-                  </div>
+                  </p>
                 )}
-                
+
                 <div className="product-image-container">
                   <SafeProductImage
                     src={currentImage}
