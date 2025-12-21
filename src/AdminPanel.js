@@ -13,14 +13,7 @@ const ADMIN_SECTIONS = [
   { id: 'settings', name: 'Configuración', icon: '⚙️' }
 ];
 
-const VALID_CATEGORIES = [
-  'Bandoleras',
-  'Carteras',
-  'Billeteras',
-  'Mochilas',
-  'Riñoneras',
-  'Porta Celulares'
-];
+// NOTE: VALID_CATEGORIES replaced by dynamic state
 
 // Componente para imagen segura
 const SafeImage = ({ src, alt, style, ...props }) => {
@@ -60,12 +53,12 @@ const SafeImage = ({ src, alt, style, ...props }) => {
 };
 
 // Componente Dashboard Stats
-const DashboardStats = ({ products }) => {
+const DashboardStats = ({ products, categoriesCount }) => {
   const stats = {
     total: products.length,
     inStock: products.filter(p => p.in_stock).length,
     outStock: products.filter(p => !p.in_stock).length,
-    categories: [...new Set(products.map(p => p.category))].length
+    categories: categoriesCount || [...new Set(products.map(p => p.category))].length
   };
 
   return (
@@ -140,6 +133,16 @@ const AdminPanel = ({ onLogout }) => {
   const [editingProductId, setEditingProductId] = useState(null);
   const [showAddForm, setShowAddForm] = useState(false);
 
+  // Categories State
+  const [categories, setCategories] = useState([]);
+  const [newCategoryName, setNewCategoryName] = useState('');
+  const [loadingCategories, setLoadingCategories] = useState(false);
+
+  // Filters State
+  const [filters, setFilters] = useState([]);
+  const [loadingFilters, setLoadingFilters] = useState(false);
+  const [newFilterName, setNewFilterName] = useState('');
+
   // ✅ 1. ESTADO PARA GUARDAR EL ORDEN
   const [sortConfig, setSortConfig] = useState({ key: 'id', direction: 'descending' });
 
@@ -155,6 +158,7 @@ const AdminPanel = ({ onLogout }) => {
   const [newIsFeatured, setNewIsFeatured] = useState(false);
   const [newIsNew, setNewIsNew] = useState(false);
   const [newDiscountPercentage, setNewDiscountPercentage] = useState(0);
+  const [newTags, setNewTags] = useState([]); // Array of strings
 
   // Estados para variantes (colores) - Creación
   const [newVariants, setNewVariants] = useState([]); // [{color_name, in_stock}]
@@ -172,6 +176,7 @@ const AdminPanel = ({ onLogout }) => {
   const [editIsFeatured, setEditIsFeatured] = useState(false);
   const [editIsNew, setEditIsNew] = useState(false);
   const [editDiscountPercentage, setEditDiscountPercentage] = useState(0);
+  const [editTags, setEditTags] = useState([]); // Array of strings
 
   // Estados para variantes (colores) - Edición
   const [editVariants, setEditVariants] = useState([]); // [{id, color_name, in_stock}]
@@ -239,7 +244,116 @@ const AdminPanel = ({ onLogout }) => {
       return;
     }
     loadProducts();
+    loadCategories();
+    loadFilters();
   }, []);
+
+  const loadFilters = async () => {
+    try {
+      setLoadingFilters(true);
+      const data = await authService.getAdminFilters();
+      setFilters(data);
+    } catch (e) {
+      console.error('Error loading filters:', e);
+    } finally {
+      setLoadingFilters(false);
+    }
+  };
+
+  const handleUpdateFilterLabel = async (filterId, newLabel) => {
+    const label = prompt('Nuevo nombre para el filtro:', newLabel);
+    if (!label || label === newLabel) return;
+    try {
+      await authService.updateFilter(filterId, { label });
+      loadFilters();
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  const handleToggleFilter = async (filterId, currentState) => {
+    try {
+      await authService.updateFilter(filterId, { is_active: !currentState });
+      loadFilters();
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  const handleCreateFilter = async (e) => {
+    e.preventDefault();
+    if (!newFilterName.trim()) return;
+    try {
+      const res = await authService.authenticatedFetch('/api/admin/filters', {
+        method: 'POST',
+        body: JSON.stringify({ label: newFilterName })
+      });
+      if (res.ok) {
+        setNewFilterName('');
+        loadFilters();
+      } else {
+        const d = await res.json();
+        alert(d.error || 'Error creando filtro');
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const handleDeleteFilter = async (id) => {
+    if (!window.confirm('¿Eliminar este filtro?')) return;
+    try {
+      const res = await authService.authenticatedFetch(`/api/admin/filters/${id}`, { method: 'DELETE' });
+      if (res.ok) loadFilters();
+    } catch (e) { console.error(e); }
+  };
+
+
+
+  const loadCategories = async () => {
+    try {
+      setLoadingCategories(true);
+      const cats = await authService.getCategories();
+      setCategories(cats);
+    } catch (error) {
+      console.error('Error cargando categorías:', error);
+    } finally {
+      setLoadingCategories(false);
+    }
+  };
+
+  const handleAddCategory = async (e) => {
+    e.preventDefault();
+    if (!newCategoryName.trim()) return;
+
+    try {
+      setLoading(true);
+      await authService.createCategory(newCategoryName);
+      setNewCategoryName('');
+      await loadCategories();
+      alert('Categoría creada exitosamente');
+    } catch (error) {
+      console.error('Error creando categoría:', error);
+      setError(`Error creando categoría: ${error.message}`);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDeleteCategory = async (id) => {
+    if (!window.confirm('¿Seguro que quieres eliminar esta categoría?')) return;
+
+    try {
+      setLoading(true);
+      await authService.deleteCategory(id);
+      await loadCategories();
+    } catch (error) {
+      console.error('Error eliminando categoría:', error);
+      alert(error.message); // Mostrar error (ej: si hay productos usándola)
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const loadProducts = async () => {
     try {
@@ -281,7 +395,8 @@ const AdminPanel = ({ onLogout }) => {
         isFeatured: newIsFeatured,
         isNew: newIsNew,
         discountPercentage: parseInt(newDiscountPercentage) || 0,
-        variants: newVariants // Enviar variantes
+        variants: newVariants, // Enviar variantes
+        tags: newTags // Send tags
       });
 
       // Limpiar formulario
@@ -298,6 +413,8 @@ const AdminPanel = ({ onLogout }) => {
       setNewVariants([]); // Reset variants
       setTempVariantName('');
       setTempVariantStock(true);
+      setNewTags([]); // Reset tags
+      setNewTags([]); // Reset tags
       setShowAddForm(false);
 
       await loadProducts();
@@ -337,7 +454,8 @@ const AdminPanel = ({ onLogout }) => {
         isFeatured: editIsFeatured,
         isNew: editIsNew,
         discountPercentage: parseInt(editDiscountPercentage) || 0,
-        variants: editVariants // Enviar variantes actualizadas
+        variants: editVariants, // Enviar variantes actualizadas
+        tags: editTags
       });
 
       cancelEditing();
@@ -394,7 +512,8 @@ const AdminPanel = ({ onLogout }) => {
     setEditIsFeatured(product.is_featured || false);
     setEditIsNew(product.is_new || false);
     setEditDiscountPercentage(product.discount_percentage || 0);
-    setEditVariants(product.variants || []);
+    setEditVariants(product.variants || []); // Load variants
+    setEditTags(product.tags || []);
   };
 
   const cancelEditing = () => {
@@ -496,7 +615,7 @@ const AdminPanel = ({ onLogout }) => {
             }}>
               📊 Panel de Control
             </h2>
-            <DashboardStats products={products} />
+            <DashboardStats products={products} categoriesCount={categories.length} />
 
             {/* Productos recientes */}
             <div style={{
@@ -914,8 +1033,8 @@ const AdminPanel = ({ onLogout }) => {
                       }}
                     >
                       <option value="">Seleccionar categoría</option>
-                      {VALID_CATEGORIES.map(category => (
-                        <option key={category} value={category}>{category}</option>
+                      {categories.map(cat => (
+                        <option key={cat.id} value={cat.name}>{cat.name}</option>
                       ))}
                     </select>
 
@@ -1612,8 +1731,8 @@ const AdminPanel = ({ onLogout }) => {
                                               }}
                                             >
                                               <option value="">Seleccionar categoría</option>
-                                              {VALID_CATEGORIES.map(category => (
-                                                <option key={category} value={category}>{category}</option>
+                                              {categories.map(cat => (
+                                                <option key={cat.id} value={cat.name}>{cat.name}</option>
                                               ))}
                                             </select>
 
@@ -1940,7 +2059,7 @@ const AdminPanel = ({ onLogout }) => {
                               <input type="text" value={editPrice} onChange={(e) => setEditPrice(e.target.value)} placeholder="Precio" style={{ padding: '0.8rem', border: '1px solid #ddd', borderRadius: '8px', width: '100%', fontSize: '16px' }} />
                               <select value={editCategory} onChange={(e) => setEditCategory(e.target.value)} style={{ padding: '0.8rem', border: '1px solid #ddd', borderRadius: '8px', width: '100%', fontSize: '16px', background: 'white' }}>
                                 <option value="">Categoría</option>
-                                {VALID_CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
+                                {categories.map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
                               </select>
                               <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.5rem', background: '#f8f9fa', borderRadius: '8px' }}>
                                 <input type="checkbox" checked={editInStock} onChange={(e) => setEditInStock(e.target.checked)} style={{ width: '20px', height: '20px', accentColor: '#d4af37' }} />
@@ -2173,21 +2292,229 @@ const AdminPanel = ({ onLogout }) => {
 
       case 'settings':
         return (
-          <div style={{ textAlign: 'center', padding: '4rem 2rem' }}>
-            <div style={{ fontSize: '4rem', marginBottom: '1rem', opacity: 0.5 }}>⚙️</div>
+          <div style={{ padding: '2rem' }}>
             <h2 style={{
               fontFamily: 'Didot, serif',
-              fontSize: '2rem',
+              fontSize: '2.5rem',
               color: '#333',
-              marginBottom: '1rem',
+              textAlign: 'center',
+              marginBottom: '2rem',
               fontWeight: '400'
             }}>
-              Configuración
+              ⚙️ Configuración
             </h2>
-            <p style={{ fontSize: '1.1rem', color: '#666', maxWidth: '500px', margin: '0 auto' }}>
-              Aquí podrás configurar usuarios, cambiar contraseñas, ajustar preferencias del sistema
-              y gestionar la configuración general de la aplicación.
-            </p>
+
+            {/* Gestión de Categorías */}
+            <div style={{
+              background: 'white',
+              borderRadius: '16px',
+              padding: '2rem',
+              boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1)',
+              maxWidth: '800px',
+              margin: '0 auto',
+              border: '1px solid rgba(230, 227, 212, 0.5)'
+            }}>
+              <h3 style={{
+                fontFamily: 'Didot, serif',
+                fontSize: '1.8rem',
+                color: '#333',
+                marginBottom: '1.5rem',
+                fontWeight: '400',
+                borderBottom: '2px solid #f0f0f0',
+                paddingBottom: '1rem'
+              }}>
+                📂 Gestión de Categorías
+              </h3>
+
+              <form onSubmit={handleAddCategory} style={{ display: 'flex', gap: '1rem', marginBottom: '2rem', flexWrap: 'wrap' }}>
+                <input
+                  type="text"
+                  placeholder="Nueva categoría (ej: Bolsos de Viaje)"
+                  value={newCategoryName}
+                  onChange={(e) => setNewCategoryName(e.target.value)}
+                  style={{
+                    flex: 1,
+                    padding: '1rem',
+                    border: '2px solid #e9ecef',
+                    borderRadius: '12px',
+                    fontSize: '1rem',
+                    minWidth: '200px',
+                    outline: 'none'
+                  }}
+                />
+                <button
+                  type="submit"
+                  disabled={loading || !newCategoryName.trim()}
+                  style={{
+                    background: 'linear-gradient(135deg, #d4af37 0%, #c19b26 100%)',
+                    color: 'white',
+                    border: 'none',
+                    padding: '1rem 2rem',
+                    borderRadius: '12px',
+                    fontSize: '1rem',
+                    fontWeight: '600',
+                    cursor: (loading || !newCategoryName.trim()) ? 'not-allowed' : 'pointer',
+                    minWidth: '150px'
+                  }}
+                >
+                  {loading ? '⏳...' : '➕ Agregar'}
+                </button>
+              </form>
+
+              {loadingCategories ? (
+                <div style={{ textAlign: 'center', padding: '2rem' }}>⏳ Cargando categorías...</div>
+              ) : (
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '1rem' }}>
+                  {categories.map(category => (
+                    <div key={category.id} style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      padding: '1rem',
+                      background: '#f8f9fa',
+                      borderRadius: '12px',
+                      border: '1px solid #dee2e6'
+                    }}>
+                      <span style={{ fontWeight: '500', color: '#333' }}>{category.name}</span>
+                      <button
+                        onClick={() => handleDeleteCategory(category.id)}
+                        disabled={loading}
+                        style={{
+                          background: 'none',
+                          border: 'none',
+                          color: '#dc3545',
+                          cursor: 'pointer',
+                          fontSize: '1.2rem',
+                          padding: '0.25rem',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center'
+                        }}
+                        title="Eliminar categoría"
+                      >
+                        🗑️
+                      </button>
+                    </div>
+                  ))}
+                  {categories.length === 0 && (
+                    <p style={{ color: '#666', fontStyle: 'italic' }}>No hay categorías activas.</p>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* Gestión de Filtros */}
+            <div style={{
+              background: 'white',
+              borderRadius: '16px',
+              padding: '2rem',
+              boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1)',
+              maxWidth: '800px',
+              margin: '2rem auto',
+              border: '1px solid rgba(230, 227, 212, 0.5)'
+            }}>
+              <h3 style={{
+                fontFamily: 'Didot, serif',
+                fontSize: '1.8rem',
+                color: '#333',
+                marginBottom: '1.5rem',
+                fontWeight: '400',
+                borderBottom: '2px solid #f0f0f0',
+                paddingBottom: '1rem'
+              }}>
+                🎯 Gestión de Filtros Rápidos
+              </h3>
+              <p style={{ color: '#666', marginBottom: '1.5rem' }}>
+                Activa o desactiva los filtros que quieres que aparezcan en la tienda.
+                También puedes renombrarlos (ej: cambiar "Nuevos" por "Recién Llegados").
+              </p>
+
+              {/* Crear nuevo filtro */}
+              <form onSubmit={handleCreateFilter} style={{ display: 'flex', gap: '1rem', marginBottom: '2rem' }}>
+                <input
+                  type="text"
+                  placeholder="Nuevo filtro (ej: Liquidación)"
+                  value={newFilterName}
+                  onChange={e => setNewFilterName(e.target.value)}
+                  style={{ flex: 1, padding: '0.8rem', borderRadius: '8px', border: '1px solid #ddd' }}
+                />
+                <button type="submit" disabled={!newFilterName.trim()}
+                  style={{ background: '#333', color: 'white', border: 'none', padding: '0.8rem 1.5rem', borderRadius: '8px', cursor: 'pointer' }}>
+                  ➕ Crear
+                </button>
+              </form>
+
+              {loadingFilters ? (
+                <div style={{ textAlign: 'center', padding: '1rem' }}>⏳ Cargando filtros...</div>
+              ) : (
+                <div style={{ display: 'grid', gap: '1rem' }}>
+                  {filters.map(filter => (
+                    <div key={filter.id} style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      padding: '1rem',
+                      background: '#f8f9fa',
+                      borderRadius: '12px',
+                      border: '1px solid #dee2e6'
+                    }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                        <div style={{
+                          width: '12px', height: '12px', borderRadius: '50%',
+                          background: filter.is_active ? '#28a745' : '#dc3545'
+                        }} />
+                        <span style={{ fontWeight: '500', color: '#333', fontSize: '1.1rem' }}>
+                          {filter.label}
+                        </span>
+                        <span style={{ fontSize: '0.8rem', color: '#999', fontFamily: 'monospace' }}>
+                          ({filter.key})
+                        </span>
+                      </div>
+
+                      <div style={{ display: 'flex', gap: '0.5rem' }}>
+                        <button
+                          onClick={() => handleUpdateFilterLabel(filter.id, filter.label)}
+                          style={{
+                            padding: '0.5rem 1rem',
+                            border: '1px solid #ced4da',
+                            borderRadius: '8px',
+                            background: 'white',
+                            cursor: 'pointer',
+                            fontSize: '0.9rem'
+                          }}
+                        >
+                          ✏️
+                        </button>
+                        <button
+                          onClick={() => handleToggleFilter(filter.id, filter.is_active)}
+                          style={{
+                            padding: '0.5rem 1rem',
+                            border: 'none',
+                            borderRadius: '8px',
+                            background: filter.is_active ? '#ffebee' : '#e8f5e9',
+                            color: filter.is_active ? '#c62828' : '#2e7d32',
+                            cursor: 'pointer',
+                            fontSize: '0.9rem',
+                            fontWeight: '600'
+                          }}
+                        >
+                          {filter.is_active ? 'OFF' : 'ON'}
+                        </button>
+                        {filter.type === 'custom' && (
+                          <button
+                            onClick={() => handleDeleteFilter(filter.id)}
+                            style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '1.2rem' }}
+                            title="Eliminar filtro"
+                          >
+                            🗑️
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
         );
 

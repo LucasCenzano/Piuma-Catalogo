@@ -321,6 +321,84 @@ class AuthService {
     }
   }
 
+  // ✅ Métodos para Categorías
+  async getCategories() {
+    try {
+      // Esta API es pública, así que usamos fetch normal (aunque authenticatedFetch tmb funcionaría)
+      const response = await fetch(`${API_BASE_URL}/api/categories`);
+      if (!response.ok) {
+        throw new Error('Error al obtener categorías');
+      }
+      return await response.json();
+    } catch (error) {
+      console.error('Error getting categories:', error);
+      throw error;
+    }
+  }
+
+  async createCategory(name) {
+    try {
+      const response = await this.authenticatedFetch(`${API_BASE_URL}/api/admin/categories`, {
+        method: 'POST',
+        body: JSON.stringify({ name }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('Error creating category:', error);
+      throw error;
+    }
+  }
+
+  async deleteCategory(id) {
+    try {
+      const response = await this.authenticatedFetch(`${API_BASE_URL}/api/admin/categories/${id}`, {
+        method: 'DELETE',
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('Error deleting category:', error);
+      throw error;
+    }
+  }
+
+  // ✅ Methods for Shop Filters (Admin)
+  async getAdminFilters() {
+    try {
+      const response = await this.authenticatedFetch(`${API_BASE_URL}/api/admin/filters`);
+      if (!response.ok) throw new Error('Error fetching admin filters');
+      return await response.json();
+    } catch (error) {
+      console.error('Error fetching admin filters:', error);
+      throw error;
+    }
+  }
+
+  async updateFilter(id, data) {
+    try {
+      const response = await this.authenticatedFetch(`${API_BASE_URL}/api/admin/filters/${id}`, {
+        method: 'PUT',
+        body: JSON.stringify(data)
+      });
+      if (!response.ok) throw new Error('Error updating filter');
+      return await response.json();
+    } catch (error) {
+      console.error('Error updating filter:', error);
+      throw error;
+    }
+  }
+
   // Métodos de utilidad
   getCurrentUser() {
     return this.user;

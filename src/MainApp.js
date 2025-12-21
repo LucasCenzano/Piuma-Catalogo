@@ -30,12 +30,31 @@ function MainApp() {
 
     const searchRef = useRef(null);
 
-    const categories = ['Todos', 'Bandoleras', 'Carteras', 'Billeteras', 'Riñoneras', 'Mochilas', 'Porta Celulares'];
+    const [categories, setCategories] = useState(['Todos']);
 
     // ✅ Cargar datos inmediatamente al montar el componente
+    // ✅ Cargar datos inmediatamente al montar el componente
     useEffect(() => {
-        loadProducts();
+        loadData();
     }, []);
+
+    const loadData = async () => {
+        await Promise.all([loadProducts(), loadCategories()]);
+    };
+
+    const loadCategories = async () => {
+        try {
+            const cats = await dataService.getCategories();
+            if (cats && cats.length > 0) {
+                setCategories(['Todos', ...cats.map(c => c.name)]);
+            } else {
+                setCategories(['Todos', 'Bandoleras', 'Carteras', 'Billeteras', 'Riñoneras', 'Mochilas', 'Porta Celulares']);
+            }
+        } catch (e) {
+            console.error('Error loading categories in MainApp:', e);
+            setCategories(['Todos', 'Bandoleras', 'Carteras', 'Billeteras', 'Riñoneras', 'Mochilas', 'Porta Celulares']);
+        }
+    };
 
     // ✅ Función CORREGIDA para cargar productos
     const loadProducts = async () => {

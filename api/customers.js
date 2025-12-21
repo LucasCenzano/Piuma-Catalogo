@@ -78,6 +78,7 @@ module.exports = async function handler(req, res) {
           SELECT c.*, 
             COUNT(s.id) as total_purchases, 
             COALESCE(SUM(s.total_amount), 0) as total_spent,
+            COALESCE(SUM(CASE WHEN s.status = 'pending' THEN (s.total_amount - COALESCE(s.amount_paid, 0)) ELSE 0 END), 0) as total_debt,
             MAX(s.created_at) as last_purchase
           FROM customers c
           LEFT JOIN sales s ON c.id = s.customer_id
@@ -96,7 +97,7 @@ module.exports = async function handler(req, res) {
         }
 
         // Sorting
-        const sortBy = req.query.sortBy || 'spent'; // name, recent, spent, purchases
+        const sortBy = req.query.sortBy || 'spent'; // name, recent, spent, purchases, debt
         let sortOrder = req.query.sortOrder || 'desc';
         // Sanitize sortOrder to prevent SQL injection
         if (sortOrder.toLowerCase() !== 'asc' && sortOrder.toLowerCase() !== 'desc') {
@@ -115,6 +116,9 @@ module.exports = async function handler(req, res) {
             break;
           case 'purchases':
             queryText += ` ORDER BY total_purchases ${sortOrder}`;
+            break;
+          case 'debt':
+            queryText += ` ORDER BY total_debt ${sortOrder}`;
             break;
           case 'spent':
           default:

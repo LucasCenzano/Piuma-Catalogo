@@ -99,6 +99,20 @@ function Catalog({ bags, openModal, selectedCategory }) {
   /* const { preloadProgress } = useImagePreloader(bags); - Removed for performance */
   const [sortOrder, setSortOrder] = useState('default');
   const [showScrollTop, setShowScrollTop] = useState(false);
+  const [activeFilters, setActiveFilters] = useState([]); // List of available filters
+  const [selectedFilter, setSelectedFilter] = useState(null); // Currently selected filter key
+
+
+  // Use dataService instead of direct fetch
+  useEffect(() => {
+    import('./dataService').then(({ default: ds }) => {
+      ds.getFilters().then(data => {
+        if (Array.isArray(data)) {
+          setActiveFilters(data);
+        }
+      });
+    });
+  }, []);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -121,7 +135,18 @@ function Catalog({ bags, openModal, selectedCategory }) {
   };
 
   const sortedAndFilteredBags = useMemo(() => {
-    const filtered = bags.filter(bag => selectedCategory === 'Todos' || bag.category === selectedCategory);
+    let filtered = bags.filter(bag => selectedCategory === 'Todos' || bag.category === selectedCategory);
+
+    // Apply dynamic filter
+    if (selectedFilter) {
+      if (selectedFilter === 'featured') {
+        filtered = filtered.filter(bag => bag.is_featured);
+      } else if (selectedFilter === 'new') {
+        filtered = filtered.filter(bag => bag.is_new);
+      } else if (selectedFilter === 'discount') {
+        filtered = filtered.filter(bag => bag.discount_percentage > 0);
+      }
+    }
 
     const sorted = [...filtered].sort((a, b) => {
       const parsePrice = (priceStr) => {
@@ -141,7 +166,7 @@ function Catalog({ bags, openModal, selectedCategory }) {
       }
     });
     return sorted;
-  }, [bags, selectedCategory, sortOrder]);
+  }, [bags, selectedCategory, sortOrder, selectedFilter]);
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -198,33 +223,27 @@ function Catalog({ bags, openModal, selectedCategory }) {
           {selectedCategory === 'Todos' ? `Colección Piuma` : `${selectedCategory}`}
         </h2>
 
-        <div style={{ minWidth: '180px' }}>
+        <div style={{ minWidth: '180px', display: 'flex', gap: '1rem', alignItems: 'center' }}>
+
+          {/* Ordenar por selector */}
           <select
             value={sortOrder}
             onChange={(e) => setSortOrder(e.target.value)}
             style={{
-              width: '100%',
               padding: '8px 12px',
               fontSize: '0.9rem',
               borderRadius: '20px',
-              border: '1px solid rgba(0, 0, 0, 0.1)', // Borde más sutil
-              backgroundColor: 'rgba(255, 255, 255, 0.8)', // Fondo semitransparente
-              boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)', // Sombra para dar profundidad
+              border: '1px solid rgba(0, 0, 0, 0.1)',
+              backgroundColor: 'rgba(255, 255, 255, 0.8)',
+              boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)',
               cursor: 'pointer',
               fontFamily: 'inherit',
-              transition: 'all 0.2s ease', // Transición para suavidad
-              appearance: 'none' // Quita la flecha por defecto para un look más limpio
-            }}
-            onMouseOver={(e) => {
-              e.currentTarget.style.borderColor = 'rgba(0, 0, 0, 0.3)';
-              e.currentTarget.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.15)';
-            }}
-            onMouseOut={(e) => {
-              e.currentTarget.style.borderColor = 'rgba(0, 0, 0, 0.1)';
-              e.currentTarget.style.boxShadow = '0 2px 8px rgba(0, 0, 0, 0.1)';
+              transition: 'all 0.2s ease',
+              outline: 'none',
+              minWidth: '140px'
             }}
           >
-            <option value="default">Filtrar por</option>
+            <option value="default">Ordenar por</option>
             <option value="price-desc">Mayor precio</option>
             <option value="price-asc">Menor precio</option>
             <option value="name-asc">A-Z</option>
@@ -232,6 +251,59 @@ function Catalog({ bags, openModal, selectedCategory }) {
           </select>
         </div>
       </div>
+
+      {/* Dynamic Filters Bar */}
+      {activeFilters.length > 0 && (
+        <div style={{
+          display: 'flex',
+          gap: '0.5rem',
+          marginBottom: '2rem',
+          overflowX: 'auto',
+          paddingBottom: '0.5rem',
+          flexWrap: 'wrap'
+        }}>
+          {activeFilters.map(filter => (
+            <button
+              key={filter.id}
+              onClick={() => setSelectedFilter(selectedFilter === filter.key ? null : filter.key)}
+              style={{
+                padding: '0.5rem 1rem',
+                borderRadius: '20px',
+                border: selectedFilter === filter.key ? 'none' : '1px solid #ddd',
+                background: selectedFilter === filter.key
+                  ? 'linear-gradient(135deg, #d4af37 0%, #c19b26 100%)'
+                  : 'white',
+                color: selectedFilter === filter.key ? 'white' : '#666',
+                cursor: 'pointer',
+                fontSize: '0.9rem',
+                fontWeight: '500',
+                transition: 'all 0.2s ease',
+                boxShadow: selectedFilter === filter.key ? '0 4px 10px rgba(212, 175, 55, 0.3)' : 'none',
+                flexShrink: 0
+              }}
+            >
+              {filter.label} {selectedFilter === filter.key && '✓'}
+            </button>
+          ))}
+          {selectedFilter && (
+            <button
+              onClick={() => setSelectedFilter(null)}
+              style={{
+                padding: '0.5rem 1rem',
+                borderRadius: '20px',
+                border: 'none',
+                background: '#f8f9fa',
+                color: '#666',
+                cursor: 'pointer',
+                fontSize: '0.9rem',
+                flexShrink: 0
+              }}
+            >
+              Limpiar filtros ✕
+            </button>
+          )}
+        </div>
+      )}
 
 
 

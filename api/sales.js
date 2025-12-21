@@ -164,7 +164,12 @@ module.exports = async function handler(req, res) {
             LEFT JOIN sale_items si ON s.id = si.sale_id
             WHERE 1=1 ${whereClause}
             GROUP BY s.id
-            ORDER BY s.created_at DESC
+            ORDER BY 
+              CASE 
+                WHEN s.status = 'pending' OR (s.total_amount > COALESCE(s.amount_paid, 0)) THEN 0 
+                ELSE 1 
+              END ASC,
+              s.created_at DESC
             LIMIT $${paramCount} OFFSET $${paramCount + 1}
           `, queryParams);
 

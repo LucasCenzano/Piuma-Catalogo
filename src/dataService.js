@@ -12,6 +12,46 @@ class DataService {
     // ✅ Cache de imágenes precargadas
     this.imageCache = new Map();
     this.preloadInProgress = false;
+
+    // Cache de categorías
+    this.categoriesCache = null;
+  }
+
+  async getCategories() {
+    if (this.categoriesCache) {
+      return this.categoriesCache;
+    }
+
+    try {
+      const response = await fetch(`${process.env.REACT_APP_API_URL || ''}/api/categories`);
+      if (!response.ok) throw new Error('Error fetching categories');
+      const cats = await response.json();
+      this.categoriesCache = cats;
+      return cats;
+    } catch (error) {
+      console.error('Error fetching categories:', error);
+      // Fallback
+      return [
+        { name: 'Bandoleras' },
+        { name: 'Carteras' },
+        { name: 'Billeteras' },
+        { name: 'Mochilas' },
+        { name: 'Riñoneras' },
+        { name: 'Porta Celulares' }
+      ];
+    }
+  }
+
+  // ✅ Obtener filtros dinámicos
+  async getFilters() {
+    try {
+      const response = await fetch(`${process.env.REACT_APP_API_URL || ''}/api/filters`);
+      if (!response.ok) throw new Error('Error fetching filters');
+      return await response.json();
+    } catch (error) {
+      console.warn('Error fetching filters:', error);
+      return []; // Return empty array on error
+    }
   }
 
   // Verificar si el cache es válido

@@ -254,6 +254,19 @@ app.get('/api/products', async (req, res) => {
   }
 });
 
+// Obtener categorías (Pública)
+app.get('/api/categories', async (req, res) => {
+  try {
+    const result = await query(
+      'SELECT * FROM product_categories WHERE is_active = true ORDER BY name ASC'
+    );
+    res.json(result.rows);
+  } catch (error) {
+    console.error('Error obteniendo categorías:', error);
+    res.status(500).json({ error: 'Error interno del servidor' });
+  }
+});
+
 // ========== RUTAS ADMIN (PROTEGIDAS) ==========
 
 // Obtener productos (admin)
@@ -328,11 +341,10 @@ app.post('/api/admin/products',
       const nextId = maxIdResult.rows[0].next_id;
 
       const result = await query(`
-        INSERT INTO products (
           id, name, price, category, description, in_stock, images_url,
-          is_featured, is_new, discount_percentage
+          is_featured, is_new, discount_percentage, tags
         )
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
         RETURNING *
       `, [
         nextId,
@@ -344,7 +356,8 @@ app.post('/api/admin/products',
         JSON.stringify(imagesUrl || []),
         isFeatured || false,
         isNew || false,
-        discountPercentage || 0
+        discountPercentage || 0,
+        req.body.tags || [] // tags
       ]);
 
       const product = result.rows[0];
@@ -383,12 +396,11 @@ app.put('/api/admin/products/:id',
       // 1. Update Product Fields
       const fields = [];
       const values = [];
-      let paramCount = 1;
-
       const allowedFields = [
         'name', 'price', 'category', 'description', 'inStock', 'imagesUrl',
-        'isFeatured', 'isNew', 'discountPercentage'
+        'isFeatured', 'isNew', 'discountPercentage', 'tags'
       ];
+      let paramCount = 1;
 
       for (const field of allowedFields) {
         if (updates[field] !== undefined) {
@@ -522,6 +534,184 @@ app.delete('/api/admin/products/:id',
       }
 
       // Para cualquier otro error, mantenemos el 500
+      res.status(500).json({ error: 'Error interno del servidor' });
+    }
+  }
+);
+
+// ========== RUTAS DE CATEGORÍAS (ADMIN) ==========
+
+// Crear categoría
+app.post('/api/admin/categories',
+  authenticate,
+  requireRole('admin'),
+  async (req, res) => {
+    try {
+      const { name } = req.body;
+
+      if (!name || !name.trim()) {
+        return res.status(400).json({ error: 'El nombre es requerido' });
+      }
+
+      const result = await query(
+        'INSERT INTO product_categories (name) VALUES ($1) ON CONFLICT (name) DO UPDATE SET is_active = true RETURNING *',
+        [name.trim()]
+      );
+
+      res.status(201).json(result.rows[0]);
+    } catch (error) {
+      console.error('Error creando categoría:', error);
+      res.status(500).json({ error: 'Error interno del servidor' });
+    }
+  }
+);
+
+// Eliminar (desactivar) categoría
+app.delete('/api/admin/categories/:id',
+  authenticate,
+  requireRole('admin'),
+  async (req, res) => {
+    try {
+      const { id } = req.params;
+
+      // Verificar si hay productos usando esta categoría
+      const catResult = await query('SELECT name FROM product_categories WHERE id = $1', [id]);
+      if (catResult.rows.length === 0) {
+        return res.status(404).json({ error: 'Categoría no encontrada' });
+      }
+
+      const categoryName = catResult.rows[0].name;
+
+      // Verificar uso en productos activos
+      const productsUsage = await query(
+        'SELECT COUNT(*) FROM products WHERE category = $1 AND is_active = true',
+        [categoryName]
+      );
+
+      if (parseInt(productsUsage.rows[0].count) > 0) {
+        return res.status(409).json({
+          error: `No se puede eliminar la categoría porque hay ${productsUsage.rows[0].count} productos activos usándola.`
+        });
+      }
+
+      // Soft delete
+      await query(
+        'UPDATE product_categories SET is_active = false WHERE id = $1',
+        [id]
+      );
+
+      res.json({ message: 'Categoría eliminada exitosamente' });
+
+    } catch (error) {
+    }
+  }
+);
+
+// ========== RUTAS DE FILTROS (PÚBLICAS Y ADMIN) ==========
+
+// Obtener filtros activos (Pública)
+app.get('/api/filters', async (req, res) => {
+  try {
+    const result = await query(
+      'SELECT * FROM shop_filters WHERE is_active = true ORDER BY id ASC'
+    );
+    res.json(result.rows);
+  } catch (error) {
+    console.error('Error obteniendo filtros:', error);
+    res.status(500).json({ error: 'Error interno del servidor' });
+  }
+});
+
+// Obtener todos los filtros (Admin)
+app.get('/api/admin/filters',
+  authenticate,
+  requireRole('admin'),
+  async (req, res) => {
+    try {
+      const result = await query('SELECT * FROM shop_filters ORDER BY id ASC');
+      res.json(result.rows);
+    } catch (error) {
+      console.error('Error obteniendo filtros admin:', error);
+      res.status(500).json({ error: 'Error interno del servidor' });
+    }
+  }
+);
+
+// Actualizar filtro (Admin)
+// Actualizar filtro (Admin)
+app.put('/api/admin/filters/:id',
+  authenticate,
+  requireRole('admin'),
+  async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { label, is_active } = req.body;
+
+      const result = await query(
+        'UPDATE shop_filters SET label = COALESCE($1, label), is_active = COALESCE($2, is_active) WHERE id = $3 RETURNING *',
+        [label, is_active, id]
+      );
+
+      if (result.rows.length === 0) {
+        return res.status(404).json({ error: 'Filtro no encontrado' });
+      }
+
+      res.json(result.rows[0]);
+    } catch (error) {
+      console.error('Error actualizando filtro:', error);
+      res.status(500).json({ error: 'Error interno del servidor' });
+    }
+  }
+);
+
+// Crear Filtro (Admin) - Solo para 'custom'
+app.post('/api/admin/filters',
+  authenticate,
+  requireRole('admin'),
+  async (req, res) => {
+    try {
+      const { label } = req.body;
+      if (!label || !label.trim()) return res.status(400).json({ error: 'Nombre requerido' });
+
+      // Generate key from label
+      const key = label.trim().toLowerCase().replace(/\s+/g, '_').replace(/[^\w]/g, '');
+
+      const result = await query(
+        `INSERT INTO shop_filters (key, label, type, is_active) 
+         VALUES ($1, $2, 'custom', true) 
+         ON CONFLICT (key) DO NOTHING 
+         RETURNING *`,
+        [key, label.trim()]
+      );
+
+      if (result.rows.length === 0) {
+        return res.status(409).json({ error: 'Ya existe un filtro con esa clave' });
+      }
+
+      res.status(201).json(result.rows[0]);
+    } catch (error) {
+      console.error('Error creando filtro:', error);
+      res.status(500).json({ error: 'Error interno del servidor' });
+    }
+  }
+);
+
+// Eliminar Filtro (Admin) - Solo si es custom
+app.delete('/api/admin/filters/:id',
+  authenticate,
+  requireRole('admin'),
+  async (req, res) => {
+    try {
+      const { id } = req.params;
+
+      const check = await query('SELECT type FROM shop_filters WHERE id = $1', [id]);
+      if (check.rows.length === 0) return res.status(404).json({ error: 'Filtro no encontrado' });
+      if (check.rows[0].type === 'system') return res.status(403).json({ error: 'No se pueden eliminar filtros del sistema' });
+
+      await query('DELETE FROM shop_filters WHERE id = $1', [id]);
+      res.json({ message: 'Filtro eliminado' });
+    } catch (error) {
+      console.error('Error eliminando filtro:', error);
       res.status(500).json({ error: 'Error interno del servidor' });
     }
   }

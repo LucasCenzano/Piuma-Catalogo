@@ -159,6 +159,19 @@ module.exports = async function handler(req, res) {
       WHERE 1=1 ${dateFilter}
     `, queryParams);
 
+    // 1b. Total items vendidos (Corrección para bug "031")
+    const itemsStats = await query(`
+      SELECT COALESCE(SUM(si.quantity), 0) as total_items_sold
+      FROM sale_items si
+      JOIN sales s ON si.sale_id = s.id
+      WHERE 1=1 ${dateFilter}
+    `, queryParams);
+
+    // Merge items count into general stats
+    if (generalStats.rows.length > 0) {
+      generalStats.rows[0].total_items_sold = parseInt(itemsStats.rows[0].total_items_sold);
+    }
+
     // 2. Ventas por día (últimos días)
     const dailySales = await query(`
       SELECT 

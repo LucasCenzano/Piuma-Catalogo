@@ -1391,7 +1391,7 @@ const AdminVentas = () => {
             }}>
               <div style={{ fontSize: '3rem', marginBottom: '0.5rem' }}>🛍️</div>
               <div style={{ fontSize: '2rem', fontWeight: '700', marginBottom: '0.5rem' }}>
-                {Object.values(stats.payment_methods || {}).reduce((sum, method) => sum + (method.count || 0), 0)}
+                {stats.general?.total_items_sold || 0}
               </div>
               <div style={{ fontSize: '1rem', opacity: 0.9 }}>Items Vendidos</div>
             </div>
@@ -2041,6 +2041,7 @@ const CustomersListAPI = ({ authService, API_BASE_URL, formatCurrency, formatDat
             style={{ padding: '0.5rem', borderRadius: '8px', border: '1px solid #ddd' }}
           >
             <option value="spent">💰 Mayor Gasto</option>
+            <option value="debt">🚩 Mayor Deuda</option>
             <option value="purchases">🛒 Más Compras</option>
             <option value="recent">📅 Más Recientes</option>
             <option value="name">🔤 Alfabético</option>
@@ -2089,9 +2090,16 @@ const CustomersListAPI = ({ authService, API_BASE_URL, formatCurrency, formatDat
                 <span style={{ fontSize: '0.9rem', background: '#e9ecef', padding: '0.3rem 0.8rem', borderRadius: '12px' }}>
                   🛒 {c.total_purchases} ventas
                 </span>
-                <span style={{ fontWeight: 'bold', color: '#28a745' }}>
-                  {formatCurrency(c.total_spent)}
-                </span>
+                <div style={{ textAlign: 'right' }}>
+                  <div style={{ fontWeight: 'bold', color: '#28a745' }}>
+                    {formatCurrency(c.total_spent)}
+                  </div>
+                  {Number(c.total_debt) > 0 && (
+                    <div style={{ color: '#dc3545', fontWeight: 'bold', fontSize: '0.9rem', marginTop: '0.2rem' }}>
+                      Debe: {formatCurrency(c.total_debt)}
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           ))}
