@@ -342,16 +342,26 @@ app.post('/api/admin/products',
       );
       const nextId = maxIdResult.rows[0].next_id;
 
+      // Sanitize price
+      const finalPrice = (function (p) {
+        if (!p) return '0';
+        const clean = String(p).replace(/[^0-9.,-]/g, '');
+        let normalized = clean.replace(/,/g, '.');
+        return (parseFloat(normalized) || 0).toString();
+      })(price);
+
       const result = await query(`
+        INSERT INTO products (
           id, name, price, category, description, in_stock, images_url,
-          is_featured, is_new, discount_percentage, tags
+          is_featured, is_new, discount_percentage, tags,
+          created_at, updated_at, is_active
         )
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, true)
         RETURNING *
       `, [
         nextId,
         name,
-        price || '',
+        finalPrice,
         category,
         description || '',
         inStock !== undefined ? inStock : true,
@@ -359,12 +369,32 @@ app.post('/api/admin/products',
         isFeatured || false,
         isNew || false,
         discountPercentage || 0,
-        req.body.tags || [] // tags
+        req.body.tags || []
       ]);
 
       const product = result.rows[0];
       if (typeof product.images_url === 'string') {
         product.images_url = JSON.parse(product.images_url);
+      }
+
+      // Insert variants if provided
+      const { variants } = req.body;
+      if (variants && Array.isArray(variants) && variants.length > 0) {
+        console.log(`📝 Insertando ${variants.length} variantes...`);
+        for (const variant of variants) {
+          await query(`
+            INSERT INTO product_variants (product_id, color_name, in_stock, quantity, created_at, updated_at)
+            VALUES ($1, $2, $3, $4, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+          `, [
+            product.id,
+            variant.color_name,
+            variant.in_stock !== undefined ? variant.in_stock : true,
+            parseInt(variant.quantity) || 0
+          ]);
+        }
+        product.variants = variants;
+      } else {
+        product.variants = [];
       }
 
       res.status(201).json({
@@ -374,7 +404,10 @@ app.post('/api/admin/products',
 
     } catch (error) {
       console.error('Error creando producto:', error);
-      res.status(500).json({ error: 'Error interno del servidor' });
+      res.status(500).json({
+        error: 'Error interno del servidor',
+        details: error.message
+      });
     }
   }
 );
