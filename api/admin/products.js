@@ -26,7 +26,7 @@ function validateToken(authHeader) {
 
   try {
     let token = authHeader;
-    
+
     // Remover prefijos si existen
     if (authHeader.startsWith('Bearer ')) {
       token = authHeader.substring(7);
@@ -39,7 +39,7 @@ function validateToken(authHeader) {
     if (token.startsWith('bearer_')) {
       const tokenData = token.substring(7);
       const decoded = JSON.parse(Buffer.from(tokenData, 'base64').toString());
-      
+
       // Verificar expiración
       if (decoded.exp && decoded.exp < Date.now()) {
         return { valid: false, error: 'Token expirado' };
@@ -75,12 +75,12 @@ module.exports = async function handler(req, res) {
   console.log('Authorization header recibido:', authHeader ? authHeader.substring(0, 30) + '...' : 'No presente');
 
   const tokenValidation = validateToken(authHeader);
-  
+
   if (!tokenValidation.valid) {
     console.log('Token inválido:', tokenValidation.error);
-    return res.status(401).json({ 
+    return res.status(401).json({
       error: 'No autorizado',
-      details: tokenValidation.error 
+      details: tokenValidation.error
     });
   }
 
@@ -94,11 +94,11 @@ module.exports = async function handler(req, res) {
             'SELECT * FROM products WHERE id = $1',
             [parseInt(req.query.id)]
           );
-          
+
           if (result.rows.length === 0) {
             return res.status(404).json({ error: 'Producto no encontrado' });
           }
-          
+
           const product = result.rows[0];
           if (typeof product.images_url === 'string') {
             try {
@@ -107,7 +107,7 @@ module.exports = async function handler(req, res) {
               product.images_url = [];
             }
           }
-          
+
           return res.status(200).json(product);
         } else {
           const result = await query(`
@@ -119,7 +119,7 @@ module.exports = async function handler(req, res) {
             WHERE is_active = true
             ORDER BY category, name
           `);
-          
+
           const products = result.rows.map(product => {
             if (typeof product.images_url === 'string') {
               try {
@@ -130,14 +130,14 @@ module.exports = async function handler(req, res) {
             }
             return product;
           });
-          
+
           console.log(`Enviando ${products.length} productos`);
           return res.status(200).json(products);
         }
 
       case 'POST':
         const { name, price, category, description, inStock, imagesUrl } = req.body;
-        
+
         if (!name || !category) {
           return res.status(400).json({ error: 'Nombre y categoría son requeridos' });
         }
@@ -153,7 +153,26 @@ module.exports = async function handler(req, res) {
         `, [
           nextId,
           name,
-          price || '',
+          (function (p) {
+            if (!p) return 0;
+            // Remove symbols like '$' and spaces. Keep numbers, dots, commas, minus.
+            const clean = String(p).replace(/[^0-9.,-]/g, '');
+            // Normalize: If there are multiple dots, or dots and commas, it gets tricky.
+            // Simple approach for now: replace comma with dot (for 42,50 -> 42.50) 
+            // CAUTION: 1.000 in AR is 1000, 1.000 in US is 1. 
+            // We will first try to just parse what remains. 
+            // If the user inputs $42.000 and we get 42, it's safer than crashing.
+            // But if we want to support 42.000 as 42k, we can remove dots if they are followed by 3 digits and there is no comma?
+            // Let's stick to standard `parseFloat` behavior after stripping symbols, but with comma->dot replacement to support decimals with comma.
+            let normalized = clean.replace(/,/g, '.');
+
+            // Fix for "42.000" (thousands separator) being parsed as 42
+            // If the string has dots and no decimal part (or we assume . is thousand sep because of locale), we might want to strip dots.
+            // Heuristic for AR/ES: If it looks like X.XXX , treat as integer X000.
+            // But checking that is risky.
+            // Let's just fix the CRASH (NaN).
+            return parseFloat(normalized) || 0;
+          })(price),
           category,
           description || '',
           inStock !== undefined ? inStock : true,
@@ -174,106 +193,111 @@ module.exports = async function handler(req, res) {
           product: newProduct
         });
 
-        case 'PUT':
-          const updateData = req.body;
-          
-          if (!updateData.id) {
-            return res.status(400).json({ error: 'ID del producto es requerido' });
-          }
+      case 'PUT':
+        const updateData = req.body;
 
-          console.log('📝 Datos de actualización recibidos:', updateData);
+        if (!updateData.id) {
+          return res.status(400).json({ error: 'ID del producto es requerido' });
+        }
 
-          const updates = [];
-          const values = [];
-          let paramCount = 1;
+        console.log('📝 Datos de actualización recibidos:', updateData);
 
-          if (updateData.name !== undefined) {
-            updates.push(`name = $${paramCount++}`);
-            values.push(updateData.name);
-          }
-          if (updateData.price !== undefined) {
-            updates.push(`price = $${paramCount++}`);
-            values.push(updateData.price);
-          }
-          if (updateData.category !== undefined) {
-            updates.push(`category = $${paramCount++}`);
-            values.push(updateData.category);
-          }
-          if (updateData.description !== undefined) {
-            updates.push(`description = $${paramCount++}`);
-            values.push(updateData.description);
-          }
-          // ✅ Manejo correcto de inStock
-          if (updateData.inStock !== undefined) {
-            updates.push(`in_stock = $${paramCount++}`);
-            values.push(updateData.inStock);
-          }
-          if (updateData.imagesUrl !== undefined) {
-            updates.push(`images_url = $${paramCount++}`);
-            values.push(JSON.stringify(updateData.imagesUrl));
-          }
+        const updates = [];
+        const values = [];
+        let paramCount = 1;
 
-          if (updates.length === 0) {
-            return res.status(400).json({ error: 'No hay campos para actualizar' });
-          }
+        if (updateData.name !== undefined) {
+          updates.push(`name = $${paramCount++}`);
+          values.push(updateData.name);
+        }
+        if (updateData.price !== undefined) {
+          updates.push(`price = $${paramCount++}`);
+          values.push((function (p) {
+            if (!p) return 0;
+            const clean = String(p).replace(/[^0-9.,-]/g, '');
+            let normalized = clean.replace(/,/g, '.');
+            return parseFloat(normalized) || 0;
+          })(updateData.price));
+        }
+        if (updateData.category !== undefined) {
+          updates.push(`category = $${paramCount++}`);
+          values.push(updateData.category);
+        }
+        if (updateData.description !== undefined) {
+          updates.push(`description = $${paramCount++}`);
+          values.push(updateData.description);
+        }
+        // ✅ Manejo correcto de inStock
+        if (updateData.inStock !== undefined) {
+          updates.push(`in_stock = $${paramCount++}`);
+          values.push(updateData.inStock);
+        }
+        if (updateData.imagesUrl !== undefined) {
+          updates.push(`images_url = $${paramCount++}`);
+          values.push(JSON.stringify(updateData.imagesUrl));
+        }
 
-          updates.push(`updated_at = CURRENT_TIMESTAMP`);
-          values.push(parseInt(updateData.id));
+        if (updates.length === 0) {
+          return res.status(400).json({ error: 'No hay campos para actualizar' });
+        }
 
-          const updateQuery = `
+        updates.push(`updated_at = CURRENT_TIMESTAMP`);
+        values.push(parseInt(updateData.id));
+
+        const updateQuery = `
             UPDATE products 
             SET ${updates.join(', ')}
             WHERE id = $${paramCount}
             RETURNING *
           `;
 
-          console.log('🔍 Query ejecutándose:', updateQuery);
-          console.log('🔍 Valores:', values);
+        console.log('🔍 Query ejecutándose:', updateQuery);
+        console.log('🔍 Valores:', values);
 
-          const updateResult = await query(updateQuery, values);
+        const updateResult = await query(updateQuery, values);
 
-          if (updateResult.rows.length === 0) {
-            return res.status(404).json({ error: 'Producto no encontrado' });
+        if (updateResult.rows.length === 0) {
+          return res.status(404).json({ error: 'Producto no encontrado' });
+        }
+
+        const updatedProduct = updateResult.rows[0];
+        if (typeof updatedProduct.images_url === 'string') {
+          try {
+            updatedProduct.images_url = JSON.parse(updatedProduct.images_url);
+          } catch (e) {
+            updatedProduct.images_url = [];
           }
+        }
 
-          const updatedProduct = updateResult.rows[0];
-          if (typeof updatedProduct.images_url === 'string') {
-            try {
-              updatedProduct.images_url = JSON.parse(updatedProduct.images_url);
-            } catch (e) {
-              updatedProduct.images_url = [];
-            }
-          }
+        console.log('✅ Producto actualizado exitosamente:', updatedProduct);
 
-          console.log('✅ Producto actualizado exitosamente:', updatedProduct);
-
-          return res.status(200).json({
-            message: 'Producto actualizado exitosamente',
-            product: updatedProduct
-          });
+        return res.status(200).json({
+          message: 'Producto actualizado exitosamente',
+          product: updatedProduct
+        });
 
       case 'DELETE':
         const urlParts = req.url.split('/');
         const productId = urlParts[urlParts.length - 1];
-        
-         if (!productId || isNaN(parseInt(productId))) {
-            return res.status(400).json({ error: 'ID de producto inválido en la URL' });
-          }
 
-          // En lugar de borrar, actualizamos
-          const softDeleteResult = await query(
-            'UPDATE products SET is_active = false WHERE id = $1 RETURNING id, name',
-            [parseInt(productId)]
-          );
+        if (!productId || isNaN(parseInt(productId))) {
+          return res.status(400).json({ error: 'ID de producto inválido en la URL' });
+        }
 
-          if (softDeleteResult.rows.length === 0) {
-              return res.status(404).json({ error: 'Producto no encontrado' });
-          }
+        // En lugar de borrar, actualizamos
+        const softDeleteResult = await query(
+          'UPDATE products SET is_active = false WHERE id = $1 RETURNING id, name',
+          [parseInt(productId)]
+        );
 
-          return res.status(200).json({ 
-              message: 'Producto desactivado exitosamente',
-              product: softDeleteResult.rows[0]
-          });
+        if (softDeleteResult.rows.length === 0) {
+          return res.status(404).json({ error: 'Producto no encontrado' });
+        }
+
+        return res.status(200).json({
+          message: 'Producto desactivado exitosamente',
+          product: softDeleteResult.rows[0]
+        });
 
       default:
         res.setHeader('Allow', ['GET', 'POST', 'PUT', 'DELETE']);
@@ -281,7 +305,7 @@ module.exports = async function handler(req, res) {
     }
   } catch (error) {
     console.error('Error en admin products API:', error);
-    return res.status(500).json({ 
+    return res.status(500).json({
       error: 'Error interno del servidor',
       details: error.message
     });
