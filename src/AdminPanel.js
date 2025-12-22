@@ -761,26 +761,26 @@ const AdminPanel = ({ onLogout }) => {
               <button
                 onClick={() => setShowAddForm(!showAddForm)}
                 style={{
-                  background: 'linear-gradient(135deg, #d4af37 0%, #c19b26 100%)',
-                  color: 'white',
-                  border: 'none',
+                  background: showAddForm ? 'transparent' : 'linear-gradient(135deg, #d4af37 0%, #c19b26 100%)',
+                  color: showAddForm ? '#666' : 'white',
+                  border: showAddForm ? '2px solid #ccc' : 'none',
                   padding: '1rem 2rem',
                   borderRadius: '12px',
                   fontSize: '1rem',
                   fontWeight: '600',
                   cursor: 'pointer',
-                  boxShadow: '0 4px 15px rgba(212, 175, 55, 0.3)',
+                  boxShadow: showAddForm ? 'none' : '0 4px 15px rgba(212, 175, 55, 0.3)',
                   transition: 'all 0.3s ease',
                   textTransform: 'uppercase',
                   letterSpacing: '0.5px'
                 }}
                 onMouseOver={(e) => {
                   e.target.style.transform = 'translateY(-2px)';
-                  e.target.style.boxShadow = '0 8px 25px rgba(212, 175, 55, 0.4)';
+                  e.target.style.boxShadow = showAddForm ? '0 4px 10px rgba(0,0,0,0.1)' : '0 8px 25px rgba(212, 175, 55, 0.4)';
                 }}
                 onMouseOut={(e) => {
                   e.target.style.transform = 'translateY(0)';
-                  e.target.style.boxShadow = '0 4px 15px rgba(212, 175, 55, 0.3)';
+                  e.target.style.boxShadow = showAddForm ? 'none' : '0 4px 15px rgba(212, 175, 55, 0.3)';
                 }}
               >
                 {showAddForm ? '❌ Cancelar' : '➕ Agregar Producto'}
@@ -1291,9 +1291,9 @@ const AdminPanel = ({ onLogout }) => {
                       type="button"
                       onClick={() => setShowAddForm(false)}
                       style={{
-                        background: 'linear-gradient(135deg, #6c757d 0%, #5a6268 100%)',
-                        color: 'white',
-                        border: 'none',
+                        background: 'transparent',
+                        color: '#666',
+                        border: '2px solid #e0e0e0',
                         padding: '1rem 3rem',
                         borderRadius: '12px',
                         fontSize: '1rem',
@@ -1409,19 +1409,6 @@ const AdminPanel = ({ onLogout }) => {
                             color: '#333',
                             textTransform: 'uppercase',
                             letterSpacing: '0.5px',
-                            borderBottom: '2px solid rgba(230, 227, 212, 0.8)',
-                            maxWidth: '200px'
-                          }}>Descripción</th>
-
-                          <th style={{
-                            padding: '1.5rem 1rem',
-                            textAlign: 'left',
-                            fontFamily: 'Montserrat, sans-serif',
-                            fontWeight: '600',
-                            fontSize: '0.9rem',
-                            color: '#333',
-                            textTransform: 'uppercase',
-                            letterSpacing: '0.5px',
                             borderBottom: '2px solid rgba(230, 227, 212, 0.8)'
                           }}>Precio</th>
 
@@ -1505,17 +1492,6 @@ const AdminPanel = ({ onLogout }) => {
                                     ⚠️ Sin imágenes
                                   </div>
                                 )}
-                              </td>
-                              <td style={{
-                                padding: '1.25rem 1rem',
-                                color: '#666',
-                                fontSize: '0.85rem',
-                                maxWidth: '200px',
-                                overflow: 'hidden',
-                                textOverflow: 'ellipsis',
-                                whiteSpace: 'nowrap'
-                              }}>
-                                {product.description || '—'}
                               </td>
                               <td style={{
                                 padding: '1.25rem 1rem',
@@ -2001,18 +1977,18 @@ const AdminPanel = ({ onLogout }) => {
                                           type="button"
                                           onClick={cancelEditing}
                                           style={{
-                                            background: 'linear-gradient(135deg, #6c757d 0%, #5a6268 100%)',
-                                            color: 'white',
-                                            border: 'none',
-                                            padding: '1rem 2.5rem',
+                                            background: 'transparent',
+                                            color: '#666',
+                                            border: '2px solid #e0e0e0',
+                                            padding: '0.8rem 1.5rem',
                                             borderRadius: '12px',
-                                            fontSize: '1rem',
+                                            fontSize: '0.9rem',
                                             fontWeight: '600',
                                             cursor: 'pointer',
                                             transition: 'all 0.3s ease',
                                             textTransform: 'uppercase',
                                             letterSpacing: '0.5px',
-                                            minWidth: '160px'
+                                            minWidth: '120px'
                                           }}
                                         >
                                           ❌ Cancelar
@@ -2222,7 +2198,7 @@ const AdminPanel = ({ onLogout }) => {
 
                               <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.5rem' }}>
                                 <button type="submit" disabled={loading} style={{ flex: 1, padding: '1rem', background: '#6b7c59', color: 'white', border: 'none', borderRadius: '8px', fontWeight: 'bold' }}>Guardar</button>
-                                <button type="button" onClick={cancelEditing} style={{ flex: 1, padding: '1rem', background: '#666', color: 'white', border: 'none', borderRadius: '8px', fontWeight: 'bold' }}>Cancelar</button>
+                                <button type="button" onClick={cancelEditing} style={{ flex: 1, padding: '1rem', background: 'transparent', color: '#666', border: '2px solid #e0e0e0', borderRadius: '8px', fontWeight: 'bold' }}>Cancelar</button>
                               </div>
                             </div>
                           </form>
@@ -2671,7 +2647,7 @@ const AdminPanel = ({ onLogout }) => {
           gap: '1rem'
         }}>
           {/* Logo */}
-          <h1 style={{
+          <h1 className="header-logo" style={{
             fontFamily: 'Didot, serif',
             fontSize: '2rem',
             fontStyle: 'italic',
@@ -2682,8 +2658,23 @@ const AdminPanel = ({ onLogout }) => {
             Piuma Admin
           </h1>
 
-          {/* Navegación desktop */}
-          <nav style={{
+          {/* Estilos CSS para Header Responsive */}
+          <style>
+            {`
+              @media (max-width: 768px) {
+                .desktop-nav { display: none !important; }
+                .mobile-menu-btn { display: flex !important; }
+                .header-logo { font-size: 1.5rem !important; }
+              }
+              @media (min-width: 769px) {
+                .desktop-nav { display: flex !important; }
+                .mobile-menu-btn { display: none !important; }
+              }
+            `}
+          </style>
+
+          {/* Navegación desktop (Oculta en móvil) */}
+          <nav className="desktop-nav" style={{
             display: 'flex',
             gap: '0.5rem',
             flexWrap: 'wrap'
@@ -2722,134 +2713,130 @@ const AdminPanel = ({ onLogout }) => {
                 }}
               >
                 <span style={{ fontSize: '1.1rem' }}>{section.icon}</span>
-                <span className="nav-text" style={{
-                  display: window.innerWidth > 768 ? 'inline' : 'none'
-                }}>
-                  {section.name}
-                </span>
+                <span>{section.name}</span>
               </button>
             ))}
+
+            <button
+              onClick={handleLogout}
+              style={{
+                background: 'transparent',
+                color: '#a85751',
+                border: '2px solid #a85751',
+                padding: '0.75rem 1.5rem',
+                borderRadius: '12px',
+                cursor: 'pointer',
+                fontSize: '0.9rem',
+                fontWeight: '600',
+                fontFamily: 'Montserrat, sans-serif',
+                textTransform: 'uppercase',
+                letterSpacing: '0.5px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.5rem',
+                transition: 'all 0.3s ease'
+              }}
+            >
+              🚪 Salir
+            </button>
           </nav>
 
-          {/* Botón de menú móvil */}
+          {/* Botón de menú móvil - Display controlado por CSS */}
           <button
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
             className="mobile-menu-btn"
             style={{
-              display: window.innerWidth <= 768 ? 'flex' : 'none',
-              flexDirection: 'column',
-              justifyContent: 'space-around',
-              width: '30px',
-              height: '25px',
-              background: 'none',
+              display: 'none', // CSS toggles this
+              background: 'transparent',
               border: 'none',
+              fontSize: '1.8rem',
               cursor: 'pointer',
-              padding: 0
+              color: '#333',
+              padding: '0.5rem'
             }}
           >
-            <div style={{
-              width: '100%',
-              height: '3px',
-              background: '#333',
-              borderRadius: '5px',
-              transition: 'all 0.3s ease'
-            }}></div>
-            <div style={{
-              width: '100%',
-              height: '3px',
-              background: '#333',
-              borderRadius: '5px',
-              transition: 'all 0.3s ease'
-            }}></div>
-            <div style={{
-              width: '100%',
-              height: '3px',
-              background: '#333',
-              borderRadius: '5px',
-              transition: 'all 0.3s ease'
-            }}></div>
-          </button>
-
-
-
-          {/* Botón logout */}
-          <button
-            onClick={handleLogout}
-            style={{
-              background: 'linear-gradient(135deg, #6c757d 0%, #5a6268 100%)',
-              color: 'white',
-              border: 'none',
-              padding: '0.75rem 1.5rem',
-              borderRadius: '12px',
-              cursor: 'pointer',
-              fontSize: '0.9rem',
-              fontWeight: '500',
-              transition: 'all 0.3s ease',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.5rem',
-              textTransform: 'uppercase',
-              letterSpacing: '0.5px'
-            }}
-          >
-            <span>🚪</span>
-            <span>Salir</span>
+            {mobileMenuOpen ? '✕' : '☰'}
           </button>
         </div>
 
         {/* Menú móvil desplegable */}
-        {mobileMenuOpen && (
-          <div style={{
-            background: 'linear-gradient(135deg, #e6e3d4 0%, #ddd8c7 100%)',
-            borderTop: '1px solid rgba(51, 51, 51, 0.1)',
-            padding: '1rem 2rem'
-          }}>
+        {
+          mobileMenuOpen && (
             <div style={{
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '0.5rem'
+              background: 'linear-gradient(135deg, #e6e3d4 0%, #ddd8c7 100%)',
+              borderTop: '1px solid rgba(51, 51, 51, 0.1)',
+              padding: '1rem 2rem'
             }}>
-              {ADMIN_SECTIONS.map(section => (
+              <div style={{
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '0.5rem'
+              }}>
+                {ADMIN_SECTIONS.map(section => (
+                  <button
+                    key={section.id}
+                    onClick={() => {
+                      if (section.path) {
+                        window.location.href = section.path;
+                      } else {
+                        setActiveSection(section.id);
+                        setMobileMenuOpen(false);
+                      }
+                    }}
+                    style={{
+                      background: activeSection === section.id
+                        ? 'linear-gradient(135deg, #d4af37 0%, #c19b26 100%)'
+                        : 'transparent',
+                      color: activeSection === section.id ? 'white' : '#333',
+                      border: 'none',
+                      padding: '1rem',
+                      borderRadius: '8px',
+                      cursor: 'pointer',
+                      fontSize: '1rem',
+                      fontWeight: '500',
+                      transition: 'all 0.3s ease',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.75rem',
+                      textAlign: 'left',
+                      width: '100%'
+                    }}
+                  >
+                    <span style={{ fontSize: '1.2rem' }}>{section.icon}</span>
+                    <span>{section.name}</span>
+                  </button>
+                ))}
+
                 <button
-                  key={section.id}
-                  onClick={() => {
-                    if (section.path) {
-                      window.location.href = section.path;
-                    } else {
-                      setActiveSection(section.id);
-                      setMobileMenuOpen(false);
-                    }
-                  }}
+                  onClick={handleLogout}
                   style={{
-                    background: activeSection === section.id
-                      ? 'linear-gradient(135deg, #d4af37 0%, #c19b26 100%)'
-                      : 'transparent',
-                    color: activeSection === section.id ? 'white' : '#333',
-                    border: 'none',
+                    background: 'transparent',
+                    color: '#a85751',
+                    border: '1px solid #a85751',
                     padding: '1rem',
                     borderRadius: '8px',
                     cursor: 'pointer',
                     fontSize: '1rem',
-                    fontWeight: '500',
-                    transition: 'all 0.3s ease',
+                    fontWeight: '600',
                     display: 'flex',
                     alignItems: 'center',
                     gap: '0.75rem',
-                    textAlign: 'left',
-                    width: '100%'
+                    width: '100%',
+                    justifyContent: 'flex-start',
+                    marginTop: '0.5rem'
                   }}
                 >
-                  <span style={{ fontSize: '1.2rem' }}>{section.icon}</span>
-                  <span>{section.name}</span>
+                  <span style={{ fontSize: '1.2rem' }}>🚪</span>
+                  <span>Salir</span>
                 </button>
-              ))}
+              </div>
             </div>
-          </div>
-        )}
-      </header>
+          )
+        }
+      </header >
 
       {/* Contenido principal */}
-      <main style={{
+      < main style={{
         maxWidth: '1400px',
         margin: '0 auto',
         padding: '2rem'
@@ -2890,50 +2877,52 @@ const AdminPanel = ({ onLogout }) => {
         )}
 
         {renderContent()}
-      </main>
+      </main >
 
       {/* Loading overlay */}
-      {loading && products.length > 0 && (
-        <div style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          background: 'rgba(255, 255, 255, 0.9)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          zIndex: 9999,
-          backdropFilter: 'blur(5px)'
-        }}>
+      {
+        loading && products.length > 0 && (
           <div style={{
-            background: 'white',
-            padding: '2.5rem 3rem',
-            borderRadius: '16px',
-            fontSize: '1.2rem',
-            color: '#333',
-            boxShadow: '0 12px 40px rgba(0, 0, 0, 0.15)',
-            border: '1px solid rgba(230, 227, 212, 0.5)',
-            fontWeight: '500',
-            textTransform: 'uppercase',
-            letterSpacing: '0.5px',
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: 'rgba(255, 255, 255, 0.9)',
             display: 'flex',
             alignItems: 'center',
-            gap: '1rem'
+            justifyContent: 'center',
+            zIndex: 9999,
+            backdropFilter: 'blur(5px)'
           }}>
             <div style={{
-              width: '24px',
-              height: '24px',
-              border: '3px solid #f3f3f3',
-              borderTop: '3px solid #d4af37',
-              borderRadius: '50%',
-              animation: 'spin 1s linear infinite'
-            }}></div>
-            Procesando...
+              background: 'white',
+              padding: '2.5rem 3rem',
+              borderRadius: '16px',
+              fontSize: '1.2rem',
+              color: '#333',
+              boxShadow: '0 12px 40px rgba(0, 0, 0, 0.15)',
+              border: '1px solid rgba(230, 227, 212, 0.5)',
+              fontWeight: '500',
+              textTransform: 'uppercase',
+              letterSpacing: '0.5px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '1rem'
+            }}>
+              <div style={{
+                width: '24px',
+                height: '24px',
+                border: '3px solid #f3f3f3',
+                borderTop: '3px solid #d4af37',
+                borderRadius: '50%',
+                animation: 'spin 1s linear infinite'
+              }}></div>
+              Procesando...
+            </div>
           </div>
-        </div>
-      )}
+        )
+      }
 
       <style>
         {`
@@ -2964,7 +2953,7 @@ const AdminPanel = ({ onLogout }) => {
           }
         `}
       </style>
-    </div>
+    </div >
   );
 };
 
