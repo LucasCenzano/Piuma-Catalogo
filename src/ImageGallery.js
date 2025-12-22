@@ -5,35 +5,49 @@ function ImageGallery({ images, name }) {
     const [currentImageIndex, setCurrentImageIndex] = useState(0);
     const [touchStart, setTouchStart] = useState(null);
     const [touchEnd, setTouchEnd] = useState(null);
-    const [isPaused, setIsPaused] = useState(false);
-    const pauseTimeoutRef = useRef(null);
+    const intervalRef = useRef(null);
+    const lastInteractionRef = useRef(Date.now());
 
     // Minimum swipe distance (in px)
     const minSwipeDistance = 50;
+    const AUTO_PLAY_DELAY = 3000; // 3 seconds
+    const PAUSE_DURATION = 10000; // 10 seconds after user interaction
 
-    // Pause auto-play for 10 seconds when user interacts
-    const pauseAutoPlay = () => {
-        setIsPaused(true);
-
-        // Clear any existing timeout
-        if (pauseTimeoutRef.current) {
-            clearTimeout(pauseTimeoutRef.current);
+    // Clear and restart the auto-play interval
+    const resetAutoPlay = () => {
+        // Clear existing interval
+        if (intervalRef.current) {
+            clearInterval(intervalRef.current);
+            intervalRef.current = null;
         }
 
-        // Resume auto-play after 10 seconds
-        pauseTimeoutRef.current = setTimeout(() => {
-            setIsPaused(false);
-        }, 10000);
+        // Only start auto-play if we have multiple images
+        if (!images || images.length <= 1) return;
+
+        // Start new interval
+        intervalRef.current = setInterval(() => {
+            const timeSinceLastInteraction = Date.now() - lastInteractionRef.current;
+
+            // Only auto-advance if enough time has passed since last interaction
+            if (timeSinceLastInteraction >= PAUSE_DURATION) {
+                setCurrentImageIndex((prevIndex) => (prevIndex + 1) % images.length);
+            }
+        }, AUTO_PLAY_DELAY);
+    };
+
+    // Mark user interaction
+    const markInteraction = () => {
+        lastInteractionRef.current = Date.now();
     };
 
     const handleNext = () => {
         setCurrentImageIndex((prevIndex) => (prevIndex + 1) % images.length);
-        pauseAutoPlay();
+        markInteraction();
     };
 
     const handlePrevious = () => {
         setCurrentImageIndex((prevIndex) => (prevIndex - 1 + images.length) % images.length);
-        pauseAutoPlay();
+        markInteraction();
     };
 
     const onTouchStart = (e) => {
@@ -61,27 +75,20 @@ function ImageGallery({ images, name }) {
 
     const handleDotClick = (index) => {
         setCurrentImageIndex(index);
-        pauseAutoPlay();
+        markInteraction();
     };
 
+    // Setup auto-play on mount and when images change
     useEffect(() => {
-        if (!images || images.length <= 1 || isPaused) return;
+        resetAutoPlay();
 
-        const interval = setInterval(() => {
-            setCurrentImageIndex((prevIndex) => (prevIndex + 1) % images.length);
-        }, 3000);
-
-        return () => clearInterval(interval);
-    }, [images, isPaused]);
-
-    // Cleanup timeout on unmount
-    useEffect(() => {
+        // Cleanup on unmount
         return () => {
-            if (pauseTimeoutRef.current) {
-                clearTimeout(pauseTimeoutRef.current);
+            if (intervalRef.current) {
+                clearInterval(intervalRef.current);
             }
         };
-    }, []);
+    }, [images]);
 
     return (
         <div className="image-gallery">
