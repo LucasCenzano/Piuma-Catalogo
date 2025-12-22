@@ -204,6 +204,8 @@ const AdminPanel = ({ onLogout }) => {
     // Filtrar por búsqueda (nombre, código de producto, o código de variante)
     if (productSearch.trim()) {
       const searchLower = productSearch.toLowerCase();
+      console.log('🔍 Buscando:', searchLower);
+
       sortableProducts = sortableProducts.filter(product => {
         // Buscar en nombre y código de producto
         const matchesNameOrCode =
@@ -211,12 +213,18 @@ const AdminPanel = ({ onLogout }) => {
           product.product_code?.toLowerCase().includes(searchLower);
 
         // Buscar en códigos de variantes
-        const matchesVariantCode = product.variants?.some(variant =>
-          variant.product_code?.toLowerCase().includes(searchLower)
-        );
+        const matchesVariantCode = product.variants?.some(variant => {
+          const hasCode = variant.product_code?.toLowerCase().includes(searchLower);
+          if (searchLower.includes('473') || searchLower.includes('4734313')) {
+            console.log('🔍', product.name, '- Variante:', variant.product_code, '- Match:', hasCode);
+          }
+          return hasCode;
+        });
 
         return matchesNameOrCode || matchesVariantCode;
       });
+
+      console.log('📊 Resultados:', sortableProducts.length);
     }
 
     // Ordenar
