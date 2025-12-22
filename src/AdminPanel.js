@@ -144,7 +144,7 @@ const AdminPanel = ({ onLogout }) => {
   const [newFilterName, setNewFilterName] = useState('');
 
   // ✅ 1. ESTADO PARA GUARDAR EL ORDEN
-  const [sortConfig, setSortConfig] = useState({ key: 'id', direction: 'descending' });
+  const [sortConfig] = useState({ key: 'id', direction: 'descending' });
   const [productSearch, setProductSearch] = useState('');
 
   // Estados para nuevo producto
@@ -185,16 +185,6 @@ const AdminPanel = ({ onLogout }) => {
   const [tempEditVariantName, setTempEditVariantName] = useState('');
   const [tempEditVariantStock, setTempEditVariantStock] = useState(true);
   const [tempEditVariantQuantity, setTempEditVariantQuantity] = useState(0);
-
-  // ✅ 2. FUNCIÓN PARA ORDENAR (corregida)
-  const requestSort = (key) => {
-    let direction = 'ascending';
-    // Si ya está ordenando por esta columna, invierte la dirección
-    if (sortConfig.key === key && sortConfig.direction === 'ascending') {
-      direction = 'descending';
-    }
-    setSortConfig({ key, direction });
-  };
 
   // ✅ 3. useMemo PARA ORDENAR Y FILTRAR LOS PRODUCTOS
   const sortedProducts = useMemo(() => {
@@ -807,7 +797,6 @@ const AdminPanel = ({ onLogout }) => {
               border: '2px solid rgba(212, 175, 55, 0.2)'
             }}>
               <label style={{
-                display: 'block',
                 fontWeight: '600',
                 fontSize: '1rem',
                 color: '#333',
