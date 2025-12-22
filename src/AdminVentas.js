@@ -1,6 +1,8 @@
 // src/AdminVentas.js - Panel de Ventas completo e independiente
 import React, { useState, useEffect, useCallback } from 'react';
 import authService from './authService';
+import './AdminVentas.css';
+
 const API_BASE_URL = process.env.REACT_APP_API_URL || '';
 
 
@@ -2075,6 +2077,38 @@ const AdminVentas = () => {
             }
           }
         `}
+
+      {/* Bottom Navigation Bar - Mobile Only */}
+      <div className="bottom-nav">
+        <button
+          onClick={() => setActiveTab('new-sale')}
+          className={`bottom-nav-item ${activeTab === 'new-sale' ? 'active' : ''}`}
+        >
+          <span className="bottom-nav-icon">📝</span>
+          <span className="bottom-nav-label">Nueva</span>
+        </button>
+        <button
+          onClick={() => setActiveTab('sales-list')}
+          className={`bottom-nav-item ${activeTab === 'sales-list' ? 'active' : ''}`}
+        >
+          <span className="bottom-nav-icon">📊</span>
+          <span className="bottom-nav-label">Ventas</span>
+        </button>
+        <button
+          onClick={() => setActiveTab('statistics')}
+          className={`bottom-nav-item ${activeTab === 'statistics' ? 'active' : ''}`}
+        >
+          <span className="bottom-nav-icon">📈</span>
+          <span className="bottom-nav-label">Stats</span>
+        </button>
+        <button
+          onClick={() => setActiveTab('customers')}
+          className={`bottom-nav-item ${activeTab === 'customers' ? 'active' : ''}`}
+        >
+          <span className="bottom-nav-icon">👥</span>
+          <span className="bottom-nav-label">Clientes</span>
+        </button>
+      </div>
       </style>
     </div>
   );
