@@ -145,6 +145,7 @@ const AdminPanel = ({ onLogout }) => {
 
   // ✅ 1. ESTADO PARA GUARDAR EL ORDEN
   const [sortConfig, setSortConfig] = useState({ key: 'id', direction: 'descending' });
+  const [productSearch, setProductSearch] = useState('');
 
   // Estados para nuevo producto
   const [newName, setNewName] = useState('');
@@ -195,9 +196,19 @@ const AdminPanel = ({ onLogout }) => {
     setSortConfig({ key, direction });
   };
 
-  // ✅ 3. useMemo PARA ORDENAR LOS PRODUCTOS (corregido)
+  // ✅ 3. useMemo PARA ORDENAR Y FILTRAR LOS PRODUCTOS
   const sortedProducts = useMemo(() => {
     let sortableProducts = [...products];
+
+    // Filtrar por búsqueda
+    if (productSearch.trim()) {
+      const searchLower = productSearch.toLowerCase();
+      sortableProducts = sortableProducts.filter(product =>
+        product.name?.toLowerCase().includes(searchLower)
+      );
+    }
+
+    // Ordenar
     if (sortConfig.key) {
       sortableProducts.sort((a, b) => {
         let aValue = a[sortConfig.key];
@@ -237,7 +248,7 @@ const AdminPanel = ({ onLogout }) => {
       });
     }
     return sortableProducts;
-  }, [products, sortConfig]);
+  }, [products, sortConfig, productSearch]);
 
   useEffect(() => {
     if (!authService.isAuthenticated()) {
@@ -788,166 +799,84 @@ const AdminPanel = ({ onLogout }) => {
 
             {/* Controles de ordenamiento */}
             <div style={{
-              background: 'white',
+              background: 'linear-gradient(135deg, #f3f1eb 0%, #f8f6f0 100%)',
+              padding: '1.5rem',
               borderRadius: '16px',
-              padding: '1.5rem 2rem',
               marginBottom: '2rem',
               boxShadow: '0 4px 20px rgba(0, 0, 0, 0.08)',
-              border: '2px solid rgba(212, 175, 55, 0.2)',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '1rem',
-              flexWrap: 'wrap'
+              border: '2px solid rgba(212, 175, 55, 0.2)'
             }}>
-              <span style={{
+              <label style={{
+                display: 'block',
                 fontWeight: '600',
                 fontSize: '1rem',
                 color: '#333',
                 fontFamily: 'Montserrat, sans-serif',
+                marginBottom: '0.75rem',
                 display: 'flex',
                 alignItems: 'center',
                 gap: '0.5rem'
               }}>
-                🔍 Ordenar por:
-              </span>
+                🔍 Buscar Producto
+              </label>
 
-              <div style={{
-                display: 'flex',
-                gap: '0.75rem',
-                flexWrap: 'wrap'
-              }}>
-                <button
-                  onClick={() => requestSort('id')}
+              <div style={{ position: 'relative' }}>
+                <input
+                  type="text"
+                  placeholder="Escribí el nombre del producto..."
+                  value={productSearch}
+                  onChange={(e) => setProductSearch(e.target.value)}
                   style={{
-                    padding: '0.75rem 1.5rem',
+                    width: '100%',
+                    padding: '1rem 3rem 1rem 1rem',
                     borderRadius: '12px',
-                    border: sortConfig.key === 'id' ? '2px solid #d4af37' : '2px solid #e9ecef',
-                    background: sortConfig.key === 'id'
-                      ? 'linear-gradient(135deg, #d4af37 0%, #c19b26 100%)'
-                      : 'white',
-                    color: sortConfig.key === 'id' ? 'white' : '#333',
-                    cursor: 'pointer',
-                    fontSize: '0.9rem',
-                    fontWeight: '600',
+                    border: '2px solid #e9ecef',
+                    fontSize: '1rem',
                     fontFamily: 'Montserrat, sans-serif',
+                    outline: 'none',
                     transition: 'all 0.3s ease',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '0.5rem',
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.5px'
+                    boxSizing: 'border-box'
                   }}
-                >
-                  ID
-                  {sortConfig.key === 'id' && (
-                    <span>{sortConfig.direction === 'ascending' ? '▲' : '▼'}</span>
-                  )}
-                </button>
+                  onFocus={(e) => e.target.style.borderColor = '#d4af37'}
+                  onBlur={(e) => e.target.style.borderColor = '#e9ecef'}
+                />
 
-                <button
-                  onClick={() => requestSort('name')}
-                  style={{
-                    padding: '0.75rem 1.5rem',
-                    borderRadius: '12px',
-                    border: sortConfig.key === 'name' ? '2px solid #d4af37' : '2px solid #e9ecef',
-                    background: sortConfig.key === 'name'
-                      ? 'linear-gradient(135deg, #d4af37 0%, #c19b26 100%)'
-                      : 'white',
-                    color: sortConfig.key === 'name' ? 'white' : '#333',
-                    cursor: 'pointer',
-                    fontSize: '0.9rem',
-                    fontWeight: '600',
-                    fontFamily: 'Montserrat, sans-serif',
-                    transition: 'all 0.3s ease',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '0.5rem',
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.5px'
-                  }}
-                >
-                  Nombre
-                  {sortConfig.key === 'name' && (
-                    <span>{sortConfig.direction === 'ascending' ? '▲' : '▼'}</span>
-                  )}
-                </button>
-
-                <button
-                  onClick={() => requestSort('price')}
-                  style={{
-                    padding: '0.75rem 1.5rem',
-                    borderRadius: '12px',
-                    border: sortConfig.key === 'price' ? '2px solid #d4af37' : '2px solid #e9ecef',
-                    background: sortConfig.key === 'price'
-                      ? 'linear-gradient(135deg, #d4af37 0%, #c19b26 100%)'
-                      : 'white',
-                    color: sortConfig.key === 'price' ? 'white' : '#333',
-                    cursor: 'pointer',
-                    fontSize: '0.9rem',
-                    fontWeight: '600',
-                    fontFamily: 'Montserrat, sans-serif',
-                    transition: 'all 0.3s ease',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '0.5rem',
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.5px'
-                  }}
-                >
-                  Precio
-                  {sortConfig.key === 'price' && (
-                    <span>{sortConfig.direction === 'ascending' ? '▲' : '▼'}</span>
-                  )}
-                </button>
-
-                <button
-                  onClick={() => requestSort('in_stock')}
-                  style={{
-                    padding: '0.75rem 1.5rem',
-                    borderRadius: '12px',
-                    border: sortConfig.key === 'in_stock' ? '2px solid #d4af37' : '2px solid #e9ecef',
-                    background: sortConfig.key === 'in_stock'
-                      ? 'linear-gradient(135deg, #d4af37 0%, #c19b26 100%)'
-                      : 'white',
-                    color: sortConfig.key === 'in_stock' ? 'white' : '#333',
-                    cursor: 'pointer',
-                    fontSize: '0.9rem',
-                    fontWeight: '600',
-                    fontFamily: 'Montserrat, sans-serif',
-                    transition: 'all 0.3s ease',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '0.5rem',
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.5px'
-                  }}
-                >
-                  Stock
-                  {sortConfig.key === 'in_stock' && (
-                    <span>{sortConfig.direction === 'ascending' ? '▲' : '▼'}</span>
-                  )}
-                </button>
+                {productSearch && (
+                  <button
+                    onClick={() => setProductSearch('')}
+                    style={{
+                      position: 'absolute',
+                      right: '1rem',
+                      top: '50%',
+                      transform: 'translateY(-50%)',
+                      background: 'none',
+                      border: 'none',
+                      cursor: 'pointer',
+                      fontSize: '1.2rem',
+                      color: '#999',
+                      padding: '0.25rem',
+                      display: 'flex',
+                      alignItems: 'center'
+                    }}
+                    title="Limpiar búsqueda"
+                  >
+                    ✕
+                  </button>
+                )}
               </div>
 
-              {sortConfig.key && (
-                <button
-                  onClick={() => setSortConfig({ key: null, direction: 'ascending' })}
-                  style={{
-                    padding: '0.75rem 1.25rem',
-                    borderRadius: '12px',
-                    border: '2px solid #a85751',
-                    background: 'white',
-                    color: '#a85751',
-                    cursor: 'pointer',
-                    fontSize: '0.9rem',
-                    fontWeight: '600',
-                    fontFamily: 'Montserrat, sans-serif',
-                    transition: 'all 0.3s ease',
-                    marginLeft: 'auto'
-                  }}
-                >
-                  🔄 Reiniciar orden
-                </button>
+              {productSearch && (
+                <div style={{
+                  marginTop: '0.75rem',
+                  fontSize: '0.9rem',
+                  color: '#666',
+                  fontStyle: 'italic'
+                }}>
+                  {sortedProducts.length === 0
+                    ? '❌ No se encontraron productos'
+                    : `✅ ${sortedProducts.length} producto${sortedProducts.length !== 1 ? 's' : ''} encontrado${sortedProducts.length !== 1 ? 's' : ''}`
+                  }
+                </div>
               )}
             </div>
 
