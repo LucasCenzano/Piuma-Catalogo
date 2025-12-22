@@ -2,6 +2,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import authService from './authService';
 import './AdminVentas.css';
+import ProfitReport from './ProfitReport';
 
 const API_BASE_URL = process.env.REACT_APP_API_URL || '';
 
@@ -1729,6 +1730,14 @@ const AdminVentas = () => {
               </div>
             </div>
           )}
+
+          {/* Reporte de Ganancias */}
+          <ProfitReport
+            profitData={stats.profit}
+            profitByProduct={stats.profit_by_product}
+            profitByCategory={stats.profit_by_category}
+            formatCurrency={formatCurrency}
+          />
         </div>
       )}
     </div>
