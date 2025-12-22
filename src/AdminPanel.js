@@ -385,6 +385,8 @@ const AdminPanel = ({ onLogout }) => {
       setLoading(true);
       setError(null);
       const productsData = await authService.getProducts();
+      console.log('🔍 Productos cargados:', productsData.length);
+      console.log('🔍 Primer producto con variantes:', productsData[0]?.variants);
       setProducts(productsData);
     } catch (error) {
       console.error('Error cargando productos:', error);
