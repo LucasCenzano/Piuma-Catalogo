@@ -397,13 +397,14 @@ app.post('/api/admin/products',
         console.log(`📝 Insertando ${variants.length} variantes...`);
         for (const variant of variants) {
           await query(`
-            INSERT INTO product_variants (product_id, color_name, in_stock, quantity, created_at, updated_at)
-            VALUES ($1, $2, $3, $4, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+            INSERT INTO product_variants (product_id, color_name, in_stock, quantity, product_code, created_at, updated_at)
+            VALUES ($1, $2, $3, $4, $5, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
           `, [
             product.id,
             variant.color_name,
             variant.in_stock !== undefined ? variant.in_stock : true,
-            parseInt(variant.quantity) || 0
+            parseInt(variant.quantity) || 0,
+            variant.product_code || null
           ]);
         }
         product.variants = variants;
@@ -515,13 +516,14 @@ app.put('/api/admin/products/:id',
         for (const variant of variants) {
           if (variant.color_name && variant.color_name.trim()) {
             await client.query(`
-              INSERT INTO product_variants (product_id, color_name, in_stock, quantity)
-              VALUES ($1, $2, $3, $4)
+              INSERT INTO product_variants (product_id, color_name, in_stock, quantity, product_code)
+              VALUES ($1, $2, $3, $4, $5)
             `, [
               parseInt(id),
               variant.color_name.trim(),
               variant.in_stock !== false,
-              parseInt(variant.quantity) || 0
+              parseInt(variant.quantity) || 0,
+              variant.product_code || null
             ]);
           }
         }
