@@ -1417,49 +1417,87 @@ const AdminVentas = () => {
             gap: '1.5rem',
             marginBottom: '3rem'
           }}>
+            {/* Tarjeta Unificada: Vendido vs Cobrado con Barra de Progreso */}
             <div style={{
               background: 'linear-gradient(135deg, #d4af37 0%, #c19b26 100%)',
               color: 'white',
               padding: '2rem',
               borderRadius: '16px',
-              textAlign: 'center',
-              boxShadow: '0 8px 32px rgba(212, 175, 55, 0.3)'
+              boxShadow: '0 8px 32px rgba(212, 175, 55, 0.3)',
+              gridColumn: window.innerWidth < 768 ? 'span 1' : 'span 2'
             }}>
-              <div style={{ fontSize: '3rem', marginBottom: '0.5rem' }}>💰</div>
-              <div style={{ fontSize: '2rem', fontWeight: '700', marginBottom: '0.5rem' }}>
-                {formatCurrency(stats.general?.total_revenue || 0)}
-              </div>
-              <div style={{ fontSize: '1rem', opacity: 0.9 }}>Total Vendido</div>
-            </div>
+              <div style={{ fontSize: '2.5rem', marginBottom: '1rem', textAlign: 'center' }}>💰</div>
 
-            <div style={{
-              background: 'linear-gradient(135deg, #6b7c59 0%, #8b9a7a 100%)',
-              color: 'white',
-              padding: '2rem',
-              borderRadius: '16px',
-              textAlign: 'center',
-              boxShadow: '0 8px 32px rgba(40, 167, 69, 0.3)'
-            }}>
-              <div style={{ fontSize: '3rem', marginBottom: '0.5rem' }}>✅</div>
-              <div style={{ fontSize: '2rem', fontWeight: '700', marginBottom: '0.5rem' }}>
-                {formatCurrency(stats.general?.total_collected || 0)}
+              {/* Montos */}
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
+                <div>
+                  <div style={{ fontSize: '0.9rem', opacity: 0.9, marginBottom: '0.3rem' }}>Total Vendido</div>
+                  <div style={{ fontSize: '1.8rem', fontWeight: '700' }}>
+                    {formatCurrency(stats.general?.total_revenue || 0)}
+                  </div>
+                </div>
+                <div style={{ textAlign: 'right' }}>
+                  <div style={{ fontSize: '0.9rem', opacity: 0.9, marginBottom: '0.3rem' }}>Total Cobrado</div>
+                  <div style={{ fontSize: '1.8rem', fontWeight: '700' }}>
+                    {formatCurrency(stats.general?.total_collected || 0)}
+                  </div>
+                </div>
               </div>
-              <div style={{ fontSize: '1rem', opacity: 0.9 }}>Total Cobrado</div>
-            </div>
 
-            <div style={{
-              background: 'linear-gradient(135deg, #a85751 0%, #8b4640 100%)',
-              color: 'white',
-              padding: '2rem',
-              borderRadius: '16px',
-              textAlign: 'center',
-              boxShadow: '0 8px 32px rgba(220, 53, 69, 0.3)'
-            }}>
-              <div style={{ fontSize: '3rem', marginBottom: '0.5rem' }}>⏳</div>
-              <div style={{ fontSize: '2rem', fontWeight: '700', marginBottom: '0.5rem' }}>
-                {formatCurrency(stats.general?.total_pending || 0)}
-              </div>
-              <div style={{ fontSize: '1rem', opacity: 0.9 }}>Total Por Cobrar</div>
+              {/* Barra de Progreso */}
+              {(() => {
+                const revenue = stats.general?.total_revenue || 0;
+                const collected = stats.general?.total_collected || 0;
+                const percentage = revenue > 0 ? Math.round((collected / revenue) * 100) : 0;
+
+                return (
+                  <div>
+                    <div style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      marginBottom: '0.5rem',
+                      fontSize: '0.85rem'
+                    }}>
+                      <span>Tasa de Cobro</span>
+                      <span style={{ fontWeight: '700', fontSize: '1.1rem' }}>{percentage}%</span>
+                    </div>
+
+                    <div style={{
+                      background: 'rgba(255, 255, 255, 0.3)',
+                      borderRadius: '20px',
+                      height: '12px',
+                      overflow: 'hidden',
+                      position: 'relative'
+                    }}>
+                      <div style={{
+                        background: percentage >= 80 ? '#6b7c59' : percentage >= 50 ? '#f39c12' : '#a85751',
+                        height: '100%',
+                        width: `${percentage}%`,
+                        borderRadius: '20px',
+                        transition: 'width 0.5s ease',
+                        boxShadow: '0 2px 8px rgba(0,0,0,0.2)'
+                      }} />
+                    </div>
+
+                    {percentage < 100 && (
+                      <div style={{
+                        marginTop: '0.8rem',
+                        fontSize: '0.85rem',
+                        opacity: 0.95,
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.5rem'
+                      }}>
+                        <span>⏳ Pendiente:</span>
+                        <span style={{ fontWeight: '600' }}>
+                          {formatCurrency((revenue - collected) || 0)}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
             </div>
 
             <div style={{
@@ -2078,37 +2116,37 @@ const AdminVentas = () => {
           }
         `}
 
-      {/* Bottom Navigation Bar - Mobile Only */}
-      <div className="bottom-nav">
-        <button
-          onClick={() => setActiveTab('new-sale')}
-          className={`bottom-nav-item ${activeTab === 'new-sale' ? 'active' : ''}`}
-        >
-          <span className="bottom-nav-icon">📝</span>
-          <span className="bottom-nav-label">Nueva</span>
-        </button>
-        <button
-          onClick={() => setActiveTab('sales-list')}
-          className={`bottom-nav-item ${activeTab === 'sales-list' ? 'active' : ''}`}
-        >
-          <span className="bottom-nav-icon">📊</span>
-          <span className="bottom-nav-label">Ventas</span>
-        </button>
-        <button
-          onClick={() => setActiveTab('statistics')}
-          className={`bottom-nav-item ${activeTab === 'statistics' ? 'active' : ''}`}
-        >
-          <span className="bottom-nav-icon">📈</span>
-          <span className="bottom-nav-label">Stats</span>
-        </button>
-        <button
-          onClick={() => setActiveTab('customers')}
-          className={`bottom-nav-item ${activeTab === 'customers' ? 'active' : ''}`}
-        >
-          <span className="bottom-nav-icon">👥</span>
-          <span className="bottom-nav-label">Clientes</span>
-        </button>
-      </div>
+        {/* Bottom Navigation Bar - Mobile Only */}
+        <div className="bottom-nav">
+          <button
+            onClick={() => setActiveTab('new-sale')}
+            className={`bottom-nav-item ${activeTab === 'new-sale' ? 'active' : ''}`}
+          >
+            <span className="bottom-nav-icon">📝</span>
+            <span className="bottom-nav-label">Nueva</span>
+          </button>
+          <button
+            onClick={() => setActiveTab('sales-list')}
+            className={`bottom-nav-item ${activeTab === 'sales-list' ? 'active' : ''}`}
+          >
+            <span className="bottom-nav-icon">📊</span>
+            <span className="bottom-nav-label">Ventas</span>
+          </button>
+          <button
+            onClick={() => setActiveTab('statistics')}
+            className={`bottom-nav-item ${activeTab === 'statistics' ? 'active' : ''}`}
+          >
+            <span className="bottom-nav-icon">📈</span>
+            <span className="bottom-nav-label">Stats</span>
+          </button>
+          <button
+            onClick={() => setActiveTab('customers')}
+            className={`bottom-nav-item ${activeTab === 'customers' ? 'active' : ''}`}
+          >
+            <span className="bottom-nav-icon">👥</span>
+            <span className="bottom-nav-label">Clientes</span>
+          </button>
+        </div>
       </style>
     </div>
   );
