@@ -1804,7 +1804,14 @@ const AdminPanel = ({ onLogout }) => {
                                                 }}>
                                                   💰 Costo: ${parseFloat(editUnitCostArs).toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                                                   <span style={{ marginLeft: '1rem', color: '#d4af37' }}>
-                                                    | 📊 Margen: {((parseFloat(editPrice.replace(/[^0-9.-]/g, '')) - parseFloat(editUnitCostArs)) / parseFloat(editPrice.replace(/[^0-9.-]/g, '')) * 100).toFixed(1)}%
+                                                    | 📊 Margen: {(() => {
+                                                      // Clean price: remove $ and convert dots to nothing, comma to dot
+                                                      const cleanPrice = String(editPrice).replace(/\$/g, '').replace(/\./g, '').replace(/,/g, '.');
+                                                      const priceNum = parseFloat(cleanPrice) || 0;
+                                                      const costNum = parseFloat(editUnitCostArs) || 0;
+                                                      if (priceNum === 0) return '0.0';
+                                                      return (((priceNum - costNum) / priceNum) * 100).toFixed(1);
+                                                    })()}%
                                                   </span>
                                                 </div>
                                               )}
