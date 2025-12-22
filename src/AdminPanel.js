@@ -199,11 +199,12 @@ const AdminPanel = ({ onLogout }) => {
   const sortedProducts = useMemo(() => {
     let sortableProducts = [...products];
 
-    // Filtrar por búsqueda
+    // Filtrar por búsqueda (nombre o código)
     if (productSearch.trim()) {
       const searchLower = productSearch.toLowerCase();
       sortableProducts = sortableProducts.filter(product =>
-        product.name?.toLowerCase().includes(searchLower)
+        product.name?.toLowerCase().includes(searchLower) ||
+        product.product_code?.toLowerCase().includes(searchLower)
       );
     }
 
@@ -862,7 +863,7 @@ const AdminPanel = ({ onLogout }) => {
               <div style={{ position: 'relative' }}>
                 <input
                   type="text"
-                  placeholder="Escribí el nombre del producto..."
+                  placeholder="Buscar por nombre o código..."
                   value={productSearch}
                   onChange={(e) => setProductSearch(e.target.value)}
                   style={{
