@@ -1167,20 +1167,38 @@ const AdminPanel = ({ onLogout }) => {
                       ))}
                     </div>
 
-                    <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+                    <div style={{
+                      display: 'flex',
+                      flexDirection: window.innerWidth < 768 ? 'column' : 'row',
+                      gap: '1rem',
+                      alignItems: window.innerWidth < 768 ? 'stretch' : 'center'
+                    }}>
                       <input
                         type="text"
                         placeholder="Nombre del color (ej: Rojo)"
                         value={tempVariantName}
                         onChange={(e) => setTempVariantName(e.target.value)}
-                        style={{ flex: 1, padding: '0.75rem', borderRadius: '8px', border: '1px solid #ced4da' }}
+                        style={{
+                          flex: 1,
+                          padding: '0.75rem',
+                          borderRadius: '8px',
+                          border: '1px solid #ced4da',
+                          width: window.innerWidth < 768 ? '100%' : 'auto',
+                          boxSizing: 'border-box'
+                        }}
                       />
                       <input
                         type="number"
                         placeholder="Cant."
                         value={tempVariantQuantity}
                         onChange={(e) => setTempVariantQuantity(e.target.value)}
-                        style={{ width: '80px', padding: '0.75rem', borderRadius: '8px', border: '1px solid #ced4da' }}
+                        style={{
+                          width: window.innerWidth < 768 ? '100%' : '80px',
+                          padding: '0.75rem',
+                          borderRadius: '8px',
+                          border: '1px solid #ced4da',
+                          boxSizing: 'border-box'
+                        }}
                       />
                       <label style={{ display: 'none' }}>
                         <input
@@ -1194,7 +1212,13 @@ const AdminPanel = ({ onLogout }) => {
                         type="button"
                         onClick={addVariant}
                         style={{
-                          padding: '0.75rem 1.5rem', background: '#333', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer'
+                          padding: '0.75rem 1.5rem',
+                          background: '#333',
+                          color: 'white',
+                          border: 'none',
+                          borderRadius: '8px',
+                          cursor: 'pointer',
+                          width: window.innerWidth < 768 ? '100%' : 'auto'
                         }}
                       >
                         + Agregar
@@ -1220,7 +1244,13 @@ const AdminPanel = ({ onLogout }) => {
                       🖼️ Agregar Imágenes
                     </h4>
 
-                    <div style={{ display: 'flex', gap: '1rem', marginBottom: '1rem', flexWrap: 'wrap' }}>
+                    <div style={{
+                      display: 'flex',
+                      flexDirection: window.innerWidth < 768 ? 'column' : 'row',
+                      gap: '1rem',
+                      marginBottom: '1rem',
+                      flexWrap: 'wrap'
+                    }}>
                       <input
                         type="url"
                         placeholder="URL de la imagen (ej: https://...)"
@@ -1228,12 +1258,13 @@ const AdminPanel = ({ onLogout }) => {
                         onChange={(e) => setNewImageUrl(e.target.value)}
                         style={{
                           flex: 1,
-                          minWidth: '300px',
+                          minWidth: window.innerWidth < 768 ? '100%' : '300px',
                           padding: '1rem',
                           border: '2px solid #e9ecef',
                           borderRadius: '12px',
                           fontSize: '1rem',
-                          outline: 'none'
+                          outline: 'none',
+                          boxSizing: 'border-box'
                         }}
                       />
 
@@ -1249,6 +1280,7 @@ const AdminPanel = ({ onLogout }) => {
                           borderRadius: '12px',
                           cursor: newImageUrl ? 'pointer' : 'not-allowed',
                           fontWeight: '600',
+                          width: window.innerWidth < 768 ? '100%' : 'auto',
                           transition: 'all 0.3s ease',
                           whiteSpace: 'nowrap'
                         }}
