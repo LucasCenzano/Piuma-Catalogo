@@ -160,6 +160,8 @@ const AdminPanel = ({ onLogout }) => {
   const [newIsNew, setNewIsNew] = useState(false);
   const [newDiscountPercentage, setNewDiscountPercentage] = useState(0);
   const [newTags, setNewTags] = useState([]); // Array of strings
+  const [newProductCode, setNewProductCode] = useState('');
+  const [newUnitCostUsd, setNewUnitCostUsd] = useState('');
 
   // Estados para variantes (colores) - Creación
   const [newVariants, setNewVariants] = useState([]); // [{color_name, in_stock, quantity}]
@@ -179,12 +181,17 @@ const AdminPanel = ({ onLogout }) => {
   const [editIsNew, setEditIsNew] = useState(false);
   const [editDiscountPercentage, setEditDiscountPercentage] = useState(0);
   const [editTags, setEditTags] = useState([]); // Array of strings
+  const [editProductCode, setEditProductCode] = useState('');
+  const [editUnitCostUsd, setEditUnitCostUsd] = useState('');
 
   // Estados para variantes (colores) - Edición
   const [editVariants, setEditVariants] = useState([]); // [{id, color_name, in_stock, quantity}]
   const [tempEditVariantName, setTempEditVariantName] = useState('');
   const [tempEditVariantStock, setTempEditVariantStock] = useState(true);
   const [tempEditVariantQuantity, setTempEditVariantQuantity] = useState(0);
+
+  // Exchange rate state
+  const [exchangeRate, setExchangeRate] = useState(1200);
 
   // ✅ 3. useMemo PARA ORDENAR Y FILTRAR LOS PRODUCTOS
   const sortedProducts = useMemo(() => {
@@ -249,6 +256,7 @@ const AdminPanel = ({ onLogout }) => {
     loadProducts();
     loadCategories();
     loadFilters();
+    loadExchangeRate();
   }, []);
 
   const loadFilters = async () => {
@@ -372,6 +380,16 @@ const AdminPanel = ({ onLogout }) => {
     }
   };
 
+  const loadExchangeRate = async () => {
+    try {
+      const data = await authService.getExchangeRate();
+      setExchangeRate(data.rate || 1200);
+    } catch (error) {
+      console.error('Error cargando tipo de cambio:', error);
+      setExchangeRate(1200); // Default fallback
+    }
+  };
+
   const handleCreateProduct = async (e) => {
     e.preventDefault();
 
@@ -398,8 +416,10 @@ const AdminPanel = ({ onLogout }) => {
         isFeatured: newIsFeatured,
         isNew: newIsNew,
         discountPercentage: parseInt(newDiscountPercentage) || 0,
-        variants: newVariants, // Enviar variantes
-        tags: newTags // Send tags
+        variants: newVariants,
+        tags: newTags,
+        productCode: newProductCode.trim(),
+        unitCostUsd: newUnitCostUsd ? parseFloat(newUnitCostUsd) : 0
       });
 
       // Limpiar formulario
@@ -417,7 +437,8 @@ const AdminPanel = ({ onLogout }) => {
       setTempVariantName('');
       setTempVariantStock(true);
       setNewTags([]); // Reset tags
-      setNewTags([]); // Reset tags
+      setNewProductCode('');
+      setNewUnitCostUsd('');
       setShowAddForm(false);
 
       await loadProducts();
@@ -457,8 +478,10 @@ const AdminPanel = ({ onLogout }) => {
         isFeatured: editIsFeatured,
         isNew: editIsNew,
         discountPercentage: parseInt(editDiscountPercentage) || 0,
-        variants: editVariants, // Enviar variantes actualizadas
-        tags: editTags
+        variants: editVariants,
+        tags: editTags,
+        productCode: editProductCode.trim(),
+        unitCostUsd: editUnitCostUsd ? parseFloat(editUnitCostUsd) : 0
       });
 
       cancelEditing();
@@ -517,6 +540,8 @@ const AdminPanel = ({ onLogout }) => {
     setEditDiscountPercentage(product.discount_percentage || 0);
     setEditVariants(product.variants || []); // Load variants
     setEditTags(product.tags || []);
+    setEditProductCode(product.product_code || '');
+    setEditUnitCostUsd(String(product.unit_cost_usd || ''));
   };
 
   const cancelEditing = () => {
@@ -940,6 +965,52 @@ const AdminPanel = ({ onLogout }) => {
                         outline: 'none'
                       }}
                     />
+
+                    <input
+                      type="text"
+                      placeholder="Código del Producto (opcional)"
+                      value={newProductCode}
+                      onChange={(e) => setNewProductCode(e.target.value)}
+                      style={{
+                        padding: '1rem',
+                        border: '2px solid #e9ecef',
+                        borderRadius: '12px',
+                        fontSize: '1rem',
+                        fontFamily: 'Montserrat, sans-serif',
+                        transition: 'all 0.3s ease',
+                        outline: 'none'
+                      }}
+                    />
+
+                    <div style={{ position: 'relative' }}>
+                      <input
+                        type="number"
+                        step="0.01"
+                        placeholder="Costo Unitario USD (opcional)"
+                        value={newUnitCostUsd}
+                        onChange={(e) => setNewUnitCostUsd(e.target.value)}
+                        style={{
+                          padding: '1rem',
+                          border: '2px solid #e9ecef',
+                          borderRadius: '12px',
+                          fontSize: '1rem',
+                          fontFamily: 'Montserrat, sans-serif',
+                          transition: 'all 0.3s ease',
+                          outline: 'none',
+                          width: '100%'
+                        }}
+                      />
+                      {newUnitCostUsd && (
+                        <div style={{
+                          fontSize: '0.85rem',
+                          color: '#6b7c59',
+                          marginTop: '0.5rem',
+                          fontWeight: '500'
+                        }}>
+                          💵 En ARS: ${(parseFloat(newUnitCostUsd) * exchangeRate).toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        </div>
+                      )}
+                    </div>
                   </div>
 
                   <div style={{
@@ -1675,6 +1746,55 @@ const AdminPanel = ({ onLogout }) => {
                                                 transition: 'all 0.3s ease'
                                               }}
                                             />
+
+                                            <input
+                                              type="text"
+                                              value={editProductCode}
+                                              onChange={(e) => setEditProductCode(e.target.value)}
+                                              placeholder="Código del Producto"
+                                              style={{
+                                                padding: '1rem',
+                                                border: '2px solid #e9ecef',
+                                                borderRadius: '12px',
+                                                fontSize: '1rem',
+                                                outline: 'none',
+                                                transition: 'all 0.3s ease'
+                                              }}
+                                            />
+
+                                            <div style={{ position: 'relative' }}>
+                                              <input
+                                                type="number"
+                                                step="0.01"
+                                                value={editUnitCostUsd}
+                                                onChange={(e) => setEditUnitCostUsd(e.target.value)}
+                                                placeholder="Costo Unitario USD"
+                                                style={{
+                                                  padding: '1rem',
+                                                  border: '2px solid #e9ecef',
+                                                  borderRadius: '12px',
+                                                  fontSize: '1rem',
+                                                  outline: 'none',
+                                                  transition: 'all 0.3s ease',
+                                                  width: '100%'
+                                                }}
+                                              />
+                                              {editUnitCostUsd && (
+                                                <div style={{
+                                                  fontSize: '0.85rem',
+                                                  color: '#6b7c59',
+                                                  marginTop: '0.5rem',
+                                                  fontWeight: '500'
+                                                }}>
+                                                  💵 En ARS: ${(parseFloat(editUnitCostUsd) * exchangeRate).toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                                  {editPrice && (
+                                                    <span style={{ marginLeft: '1rem', color: '#d4af37' }}>
+                                                      | 📊 Margen: {((parseFloat(editPrice.replace(/[^0-9.-]/g, '')) - (parseFloat(editUnitCostUsd) * exchangeRate)) / parseFloat(editPrice.replace(/[^0-9.-]/g, '')) * 100).toFixed(1)}%
+                                                    </span>
+                                                  )}
+                                                </div>
+                                              )}
+                                            </div>
 
                                             <select
                                               value={editCategory}

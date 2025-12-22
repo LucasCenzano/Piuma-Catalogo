@@ -406,6 +406,32 @@ class AuthService {
     }
   }
 
+  // ✅ Exchange Rate Methods
+  async getExchangeRate() {
+    try {
+      const response = await this.authenticatedFetch(`${API_BASE_URL}/api/admin/exchange-rate`);
+      if (!response.ok) throw new Error('Error fetching exchange rate');
+      return await response.json();
+    } catch (error) {
+      console.error('Error fetching exchange rate:', error);
+      throw error;
+    }
+  }
+
+  async updateExchangeRate(rate) {
+    try {
+      const response = await this.authenticatedFetch(`${API_BASE_URL}/api/admin/exchange-rate`, {
+        method: 'PUT',
+        body: JSON.stringify({ rate })
+      });
+      if (!response.ok) throw new Error('Error updating exchange rate');
+      return await response.json();
+    } catch (error) {
+      console.error('Error updating exchange rate:', error);
+      throw error;
+    }
+  }
+
   // Métodos de utilidad
   getCurrentUser() {
     return this.user;

@@ -334,7 +334,7 @@ app.post('/api/admin/products',
     try {
       const {
         name, price, category, description, inStock, imagesUrl,
-        isFeatured, isNew, discountPercentage
+        isFeatured, isNew, discountPercentage, productCode, unitCostUsd
       } = req.body;
 
       const maxIdResult = await query(
@@ -354,9 +354,10 @@ app.post('/api/admin/products',
         INSERT INTO products (
           id, name, price, category, description, in_stock, images_url,
           is_featured, is_new, discount_percentage, tags,
+          product_code, unit_cost_usd,
           created_at, updated_at, is_active
         )
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, true)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, true)
         RETURNING *
       `, [
         nextId,
@@ -369,7 +370,9 @@ app.post('/api/admin/products',
         isFeatured || false,
         isNew || false,
         discountPercentage || 0,
-        req.body.tags || []
+        req.body.tags || [],
+        productCode || null,
+        unitCostUsd ? parseFloat(unitCostUsd) : 0
       ]);
 
       const product = result.rows[0];
@@ -433,7 +436,7 @@ app.put('/api/admin/products/:id',
       const values = [];
       const allowedFields = [
         'name', 'price', 'category', 'description', 'inStock', 'imagesUrl',
-        'isFeatured', 'isNew', 'discountPercentage', 'tags'
+        'isFeatured', 'isNew', 'discountPercentage', 'tags', 'productCode', 'unitCostUsd'
       ];
       let paramCount = 1;
 
@@ -451,6 +454,11 @@ app.put('/api/admin/products/:id',
           else if (field === 'isFeatured') dbField = 'is_featured';
           else if (field === 'isNew') dbField = 'is_new';
           else if (field === 'discountPercentage') dbField = 'discount_percentage';
+          else if (field === 'productCode') dbField = 'product_code';
+          else if (field === 'unitCostUsd') {
+            dbField = 'unit_cost_usd';
+            value = value ? parseFloat(value) : 0;
+          }
 
           fields.push(`${dbField} = $${paramCount}`);
           values.push(value);
@@ -753,6 +761,59 @@ app.delete('/api/admin/filters/:id',
       res.json({ message: 'Filtro eliminado' });
     } catch (error) {
       console.error('Error eliminando filtro:', error);
+      res.status(500).json({ error: 'Error interno del servidor' });
+    }
+  }
+);
+
+// ========== RUTAS DE TIPO DE CAMBIO (ADMIN) ==========
+
+// Obtener tipo de cambio actual
+app.get('/api/admin/exchange-rate',
+  authenticate,
+  requireRole('admin'),
+  async (req, res) => {
+    try {
+      const result = await query(
+        'SELECT * FROM exchange_rates WHERE currency_from = $1 AND currency_to = $2',
+        ['USD', 'ARS']
+      );
+
+      if (result.rows.length === 0) {
+        return res.json({ rate: 1200, updated_at: new Date() }); // Default
+      }
+
+      res.json(result.rows[0]);
+    } catch (error) {
+      console.error('Error obteniendo tipo de cambio:', error);
+      res.status(500).json({ error: 'Error interno del servidor' });
+    }
+  }
+);
+
+// Actualizar tipo de cambio
+app.put('/api/admin/exchange-rate',
+  authenticate,
+  requireRole('admin'),
+  async (req, res) => {
+    try {
+      const { rate } = req.body;
+
+      if (!rate || rate <= 0) {
+        return res.status(400).json({ error: 'Tipo de cambio inválido' });
+      }
+
+      const result = await query(`
+        INSERT INTO exchange_rates (currency_from, currency_to, rate, updated_at)
+        VALUES ('USD', 'ARS', $1, CURRENT_TIMESTAMP)
+        ON CONFLICT (currency_from, currency_to)
+        DO UPDATE SET rate = $1, updated_at = CURRENT_TIMESTAMP
+        RETURNING *
+      `, [parseFloat(rate)]);
+
+      res.json(result.rows[0]);
+    } catch (error) {
+      console.error('Error actualizando tipo de cambio:', error);
       res.status(500).json({ error: 'Error interno del servidor' });
     }
   }
