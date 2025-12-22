@@ -165,10 +165,11 @@ const AdminPanel = ({ onLogout }) => {
   const [newUnitCostArs, setNewUnitCostArs] = useState('');
 
   // Estados para variantes (colores) - Creación
-  const [newVariants, setNewVariants] = useState([]); // [{color_name, in_stock, quantity}]
+  const [newVariants, setNewVariants] = useState([]); // [{color_name, in_stock, quantity, product_code}]
   const [tempVariantName, setTempVariantName] = useState('');
   const [tempVariantStock, setTempVariantStock] = useState(true);
   const [tempVariantQuantity, setTempVariantQuantity] = useState(0);
+  const [tempVariantCode, setTempVariantCode] = useState('');
 
   // Estados para edición
   const [editName, setEditName] = useState('');
@@ -633,11 +634,13 @@ const AdminPanel = ({ onLogout }) => {
       setNewVariants([...newVariants, {
         color_name: tempVariantName.trim(),
         in_stock: tempVariantStock,
-        quantity: parseInt(tempVariantQuantity) || 0
+        quantity: parseInt(tempVariantQuantity) || 0,
+        product_code: tempVariantCode.trim() || null
       }]);
       setTempVariantName('');
       setTempVariantStock(true);
       setTempVariantQuantity(0);
+      setTempVariantCode('');
     }
   };
 
@@ -1183,6 +1186,20 @@ const AdminPanel = ({ onLogout }) => {
                         placeholder="Nombre del color (ej: Rojo)"
                         value={tempVariantName}
                         onChange={(e) => setTempVariantName(e.target.value)}
+                        style={{
+                          flex: 1,
+                          padding: '0.75rem',
+                          borderRadius: '8px',
+                          border: '1px solid #ced4da',
+                          width: window.innerWidth < 768 ? '100%' : 'auto',
+                          boxSizing: 'border-box'
+                        }}
+                      />
+                      <input
+                        type="text"
+                        placeholder="Código (ej: MOCH-001-R)"
+                        value={tempVariantCode}
+                        onChange={(e) => setTempVariantCode(e.target.value)}
                         style={{
                           flex: 1,
                           padding: '0.75rem',
