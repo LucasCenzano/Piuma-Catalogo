@@ -136,62 +136,91 @@ module.exports = async function handler(req, res) {
         }
 
       case 'POST':
-        const { name, price, category, description, inStock, imagesUrl } = req.body;
+        console.log('📝 Creando producto...');
+        try {
+          const {
+            name, price, category, description, inStock, imagesUrl,
+            isFeatured, isNew, discountPercentage, tags, variants
+          } = req.body;
 
-        if (!name || !category) {
-          return res.status(400).json({ error: 'Nombre y categoría son requeridos' });
-        }
-
-        // Obtener el siguiente ID disponible
-        const maxIdResult = await query('SELECT COALESCE(MAX(id), 0) + 1 as next_id FROM products');
-        const nextId = maxIdResult.rows[0].next_id;
-
-        const createResult = await query(`
-          INSERT INTO products (id, name, price, category, description, in_stock, images_url, created_at, updated_at)
-          VALUES ($1, $2, $3, $4, $5, $6, $7, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
-          RETURNING *
-        `, [
-          nextId,
-          name,
-          (function (p) {
-            if (!p) return 0;
-            // Remove symbols like '$' and spaces. Keep numbers, dots, commas, minus.
-            const clean = String(p).replace(/[^0-9.,-]/g, '');
-            // Normalize: If there are multiple dots, or dots and commas, it gets tricky.
-            // Simple approach for now: replace comma with dot (for 42,50 -> 42.50) 
-            // CAUTION: 1.000 in AR is 1000, 1.000 in US is 1. 
-            // We will first try to just parse what remains. 
-            // If the user inputs $42.000 and we get 42, it's safer than crashing.
-            // But if we want to support 42.000 as 42k, we can remove dots if they are followed by 3 digits and there is no comma?
-            // Let's stick to standard `parseFloat` behavior after stripping symbols, but with comma->dot replacement to support decimals with comma.
-            let normalized = clean.replace(/,/g, '.');
-
-            // Fix for "42.000" (thousands separator) being parsed as 42
-            // If the string has dots and no decimal part (or we assume . is thousand sep because of locale), we might want to strip dots.
-            // Heuristic for AR/ES: If it looks like X.XXX , treat as integer X000.
-            // But checking that is risky.
-            // Let's just fix the CRASH (NaN).
-            return parseFloat(normalized) || 0;
-          })(price),
-          category,
-          description || '',
-          inStock !== undefined ? inStock : true,
-          JSON.stringify(imagesUrl || [])
-        ]);
-
-        const newProduct = createResult.rows[0];
-        if (typeof newProduct.images_url === 'string') {
-          try {
-            newProduct.images_url = JSON.parse(newProduct.images_url);
-          } catch (e) {
-            newProduct.images_url = [];
+          if (!name || !category) {
+            return res.status(400).json({ error: 'Nombre y categoría son requeridos' });
           }
-        }
 
-        return res.status(201).json({
-          message: 'Producto creado exitosamente',
-          product: newProduct
-        });
+          // Obtener el siguiente ID disponible
+          const maxIdResult = await query('SELECT COALESCE(MAX(id), 0) + 1 as next_id FROM products');
+          const nextId = maxIdResult.rows[0].next_id;
+
+          // Sanitizar precio
+          const finalPrice = (function (p) {
+            if (!p) return 0;
+            const clean = String(p).replace(/[^0-9.,-]/g, '');
+            let normalized = clean.replace(/,/g, '.');
+            return parseFloat(normalized) || 0;
+          })(price);
+
+          console.log('📝 Insertando producto principal:', { nextId, name });
+
+          const createResult = await query(`
+            INSERT INTO products (
+              id, name, price, category, description, in_stock, images_url, 
+              is_featured, is_new, discount_percentage, tags,
+              created_at, updated_at, is_active
+            )
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, true)
+            RETURNING *
+          `, [
+            nextId,
+            name,
+            finalPrice,
+            category,
+            description || '',
+            inStock !== undefined ? inStock : true,
+            JSON.stringify(imagesUrl || []),
+            isFeatured || false,
+            isNew || false,
+            parseInt(discountPercentage) || 0,
+            tags || [] // Array de tags
+          ]);
+
+          const newProduct = createResult.rows[0];
+
+          // Insertar variantes si existen
+          if (variants && Array.isArray(variants) && variants.length > 0) {
+            console.log(`📝 Insertando ${variants.length} variantes...`);
+            for (const variant of variants) {
+              await query(`
+                INSERT INTO product_variants (product_id, color_name, in_stock, quantity, created_at, updated_at)
+                VALUES ($1, $2, $3, $4, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+              `, [
+                newProduct.id,
+                variant.color_name,
+                variant.in_stock !== undefined ? variant.in_stock : true,
+                parseInt(variant.quantity) || 0
+              ]);
+            }
+          }
+
+          if (typeof newProduct.images_url === 'string') {
+            try { newProduct.images_url = JSON.parse(newProduct.images_url); } catch (e) { newProduct.images_url = []; }
+          }
+
+          // Adjuntar variantes en la respuesta
+          newProduct.variants = variants || [];
+
+          return res.status(201).json({
+            message: 'Producto creado exitosamente',
+            product: newProduct
+          });
+
+        } catch (postError) {
+          console.error('❌ Error específico en POST /products:', postError);
+          return res.status(500).json({
+            error: 'Error creando producto en base de datos',
+            details: postError.message,
+            code: postError.code
+          });
+        }
 
       case 'PUT':
         const updateData = req.body;
@@ -227,7 +256,6 @@ module.exports = async function handler(req, res) {
           updates.push(`description = $${paramCount++}`);
           values.push(updateData.description);
         }
-        // ✅ Manejo correcto de inStock
         if (updateData.inStock !== undefined) {
           updates.push(`in_stock = $${paramCount++}`);
           values.push(updateData.inStock);
@@ -236,45 +264,75 @@ module.exports = async function handler(req, res) {
           updates.push(`images_url = $${paramCount++}`);
           values.push(JSON.stringify(updateData.imagesUrl));
         }
-
-        if (updates.length === 0) {
-          return res.status(400).json({ error: 'No hay campos para actualizar' });
+        // Nuevos campos
+        if (updateData.isFeatured !== undefined) {
+          updates.push(`is_featured = $${paramCount++}`);
+          values.push(updateData.isFeatured);
+        }
+        if (updateData.isNew !== undefined) {
+          updates.push(`is_new = $${paramCount++}`);
+          values.push(updateData.isNew);
+        }
+        if (updateData.discountPercentage !== undefined) {
+          updates.push(`discount_percentage = $${paramCount++}`);
+          values.push(updateData.discountPercentage);
+        }
+        if (updateData.tags !== undefined) {
+          updates.push(`tags = $${paramCount++}`);
+          values.push(updateData.tags);
         }
 
-        updates.push(`updated_at = CURRENT_TIMESTAMP`);
-        values.push(parseInt(updateData.id));
-
-        const updateQuery = `
-            UPDATE products 
-            SET ${updates.join(', ')}
-            WHERE id = $${paramCount}
-            RETURNING *
-          `;
-
-        console.log('🔍 Query ejecutándose:', updateQuery);
-        console.log('🔍 Valores:', values);
-
-        const updateResult = await query(updateQuery, values);
-
-        if (updateResult.rows.length === 0) {
-          return res.status(404).json({ error: 'Producto no encontrado' });
-        }
-
-        const updatedProduct = updateResult.rows[0];
-        if (typeof updatedProduct.images_url === 'string') {
-          try {
-            updatedProduct.images_url = JSON.parse(updatedProduct.images_url);
-          } catch (e) {
-            updatedProduct.images_url = [];
+        // Actualizar variantes: Estrategia simple -> Borrar todas de este producto y recrearlas
+        // SOLO si variants se pasa en el body
+        if (updateData.variants && Array.isArray(updateData.variants)) {
+          console.log(`🔄 Actualizando variantes para producto ${updateData.id}...`);
+          // Primero borrar existentes
+          await query('DELETE FROM product_variants WHERE product_id = $1', [updateData.id]);
+          // Insertar nuevas
+          for (const variant of updateData.variants) {
+            await query(`
+                INSERT INTO product_variants (product_id, color_name, in_stock, quantity, created_at, updated_at)
+                VALUES ($1, $2, $3, $4, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+              `, [
+              updateData.id,
+              variant.color_name,
+              variant.in_stock !== undefined ? variant.in_stock : true,
+              parseInt(variant.quantity) || 0
+            ]);
           }
         }
 
-        console.log('✅ Producto actualizado exitosamente:', updatedProduct);
+        if (updates.length > 0) {
+          updates.push(`updated_at = CURRENT_TIMESTAMP`);
+          values.push(parseInt(updateData.id));
 
-        return res.status(200).json({
-          message: 'Producto actualizado exitosamente',
-          product: updatedProduct
-        });
+          const updateQuery = `
+              UPDATE products 
+              SET ${updates.join(', ')}
+              WHERE id = $${paramCount}
+              RETURNING *
+            `;
+
+          const updateResult = await query(updateQuery, values);
+          if (updateResult.rows.length === 0) {
+            return res.status(404).json({ error: 'Producto no encontrado' });
+          }
+
+          const updatedProduct = updateResult.rows[0];
+          if (typeof updatedProduct.images_url === 'string') {
+            try { updatedProduct.images_url = JSON.parse(updatedProduct.images_url); } catch (e) { updatedProduct.images_url = []; }
+          }
+          // Retornar variantes actualizadas también
+          updatedProduct.variants = updateData.variants || []; // Simplificación, deberíamos re-consultar si queremos datos reales de la BD
+
+          return res.status(200).json({
+            message: 'Producto actualizado exitosamente',
+            product: updatedProduct
+          });
+        } else {
+          // Si solo se actualizaron variantes o nada
+          return res.status(200).json({ message: 'Datos actualizados' });
+        }
 
       case 'DELETE':
         const urlParts = req.url.split('/');
@@ -284,7 +342,7 @@ module.exports = async function handler(req, res) {
           return res.status(400).json({ error: 'ID de producto inválido en la URL' });
         }
 
-        // En lugar de borrar, actualizamos
+        // Desactivar
         const softDeleteResult = await query(
           'UPDATE products SET is_active = false WHERE id = $1 RETURNING id, name',
           [parseInt(productId)]
@@ -304,10 +362,11 @@ module.exports = async function handler(req, res) {
         return res.status(405).end(`Method ${req.method} Not Allowed`);
     }
   } catch (error) {
-    console.error('Error en admin products API:', error);
+    console.error('❌ Error GLOBAL en admin products API:', error);
     return res.status(500).json({
-      error: 'Error interno del servidor',
-      details: error.message
+      error: 'Error interno del servidor (Global)',
+      details: error.message,
+      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
     });
   }
 };
