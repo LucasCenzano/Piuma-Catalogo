@@ -156,10 +156,10 @@ module.exports = async function handler(req, res) {
             if (!p) return 0;
             const clean = String(p).replace(/[^0-9.,-]/g, '');
             let normalized = clean.replace(/,/g, '.');
-            return parseFloat(normalized) || 0;
+            return (parseFloat(normalized) || 0).toString(); // Convertir a string para VARCHAR
           })(price);
 
-          console.log('📝 Insertando producto principal:', { nextId, name });
+          console.log('📝 Insertando producto principal:', { nextId, name, finalPrice });
 
           const createResult = await query(`
             INSERT INTO products (
@@ -180,7 +180,7 @@ module.exports = async function handler(req, res) {
             isFeatured || false,
             isNew || false,
             parseInt(discountPercentage) || 0,
-            tags || [] // Array de tags
+            tags || []
           ]);
 
           const newProduct = createResult.rows[0];

@@ -256,7 +256,8 @@ class AuthService {
           ? `${errorData.error}: ${errorData.details}`
           : (errorData.error || `HTTP error! status: ${response.status}`);
 
-        console.error('SERVER ERROR DETAILS:', errorData); // Log full object
+        console.error('SERVER ERROR DETAILS:', JSON.stringify(errorData, null, 2));
+        alert(`Error del servidor: ${JSON.stringify(errorData, null, 2)}`); // Mostrar alerta visible
         throw new Error(combinedError);
       }
 
