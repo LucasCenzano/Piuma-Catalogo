@@ -56,9 +56,11 @@ const SafeProductImage = ({ src, alt, className, style, onClick, onError, ...pro
   }
 
   return (
-    <div style={{ position: 'relative', width: 'calc(100% + 4rem)',
-                      marginLeft: '-2rem',
-                      marginRight: '-2rem', height: '100%' }}>
+    <div style={{
+      position: 'relative', width: 'calc(100% + 4rem)',
+      marginLeft: '-2rem',
+      marginRight: '-2rem', height: '100%'
+    }}>
       {loading && (
         <div
           className={className}
@@ -68,8 +70,8 @@ const SafeProductImage = ({ src, alt, className, style, onClick, onError, ...pro
             top: 0,
             left: 0,
             width: 'calc(100% + 4rem)',
-                      marginLeft: '-2rem',
-                      marginRight: '-2rem',
+            marginLeft: '-2rem',
+            marginRight: '-2rem',
             height: '100%',
             background: 'linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%)',
             backgroundSize: '200% 100%',
@@ -106,6 +108,8 @@ function Catalog({ bags, openModal, selectedCategory }) {
   const [activeFilters, setActiveFilters] = useState([]); // List of available filters
   const [selectedFilter, setSelectedFilter] = useState(null); // Currently selected filter key
   const [changingImages, setChangingImages] = useState({}); // Track which images are changing
+  const [touchStart, setTouchStart] = useState(null);
+  const [touchEnd, setTouchEnd] = useState(null);
 
 
   // Use dataService instead of direct fetch
@@ -234,6 +238,35 @@ function Catalog({ bags, openModal, selectedCategory }) {
       setTimeout(() => setChangingImages(prev => ({ ...prev, [productId]: false })), 50);
     }, 200);
   };
+
+  // Touch handlers for swipe
+  const minSwipeDistance = 50;
+
+  const handleTouchStart = (e) => {
+    setTouchEnd(null);
+    setTouchStart(e.targetTouches[0].clientX);
+  };
+
+  const handleTouchMove = (e) => {
+    setTouchEnd(e.targetTouches[0].clientX);
+  };
+
+  const handleTouchEnd = (productId, totalImages) => {
+    if (!touchStart || !touchEnd) return;
+
+    const distance = touchStart - touchEnd;
+    const isLeftSwipe = distance > minSwipeDistance;
+    const isRightSwipe = distance < -minSwipeDistance;
+
+    if (isLeftSwipe) {
+      const fakeEvent = { stopPropagation: () => { } };
+      handleNextImage(fakeEvent, productId, totalImages);
+    } else if (isRightSwipe) {
+      const fakeEvent = { stopPropagation: () => { } };
+      handlePrevImage(fakeEvent, productId, totalImages);
+    }
+  };
+
   const getProductImage = (bag) => { const currentIndex = getCurrentImageIndex(bag.id); return bag.images?.[currentIndex] || bag.images?.[0] || null; };
   const getAllImages = (bag) => bag.images?.filter(img => img && img.trim().length > 0) || [];
 
@@ -379,7 +412,12 @@ function Catalog({ bags, openModal, selectedCategory }) {
                   </p>
                 )}
 
-                <div className="product-image-container">
+                <div
+                  className="product-image-container"
+                  onTouchStart={handleTouchStart}
+                  onTouchMove={handleTouchMove}
+                  onTouchEnd={() => handleTouchEnd(bag.id, allImages.length)}
+                >
                   <SafeProductImage
                     src={currentImage}
                     alt={bag.name}
@@ -452,7 +490,7 @@ function Catalog({ bags, openModal, selectedCategory }) {
                             fontSize: '0.85rem',
                             padding: '6px 12px',
                             borderRadius: '0 0 12px 12px',
-                      boxSizing: 'border-box',
+                            boxSizing: 'border-box',
                             border: '1.5px solid',
                             borderColor: variant.quantity > 0 ? '#28a745' : '#dc3545',
                             color: '#333',

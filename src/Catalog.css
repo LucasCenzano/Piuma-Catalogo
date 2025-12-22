@@ -814,3 +814,14 @@
     -ms-grid-columns: repeat(auto-fill, minmax(380px, 1fr));
   }
 }
+/* Touch-enabled cursor for mobile swipe */
+.product-image-container {
+  cursor: grab;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: pan-y pinch-zoom;
+}
+
+.product-image-container:active {
+  cursor: grabbing;
+}
