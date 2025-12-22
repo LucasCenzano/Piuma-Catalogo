@@ -437,7 +437,7 @@ body {
 /* Hide arrows on mobile */
 @media (max-width: 767px) {
     .gallery-btn {
-        display: none;
+        display: none !important;
     }
 }
 

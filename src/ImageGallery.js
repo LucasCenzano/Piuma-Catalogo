@@ -50,8 +50,6 @@ function ImageGallery({ images, name }) {
         return () => clearInterval(interval);
     }, [images]);
 
-    const isMobile = window.innerWidth < 768;
-
     return (
         <div className="image-gallery">
             <div
@@ -69,19 +67,15 @@ function ImageGallery({ images, name }) {
 
             {images.length > 1 && (
                 <>
-                    {/* Desktop arrows - hidden on mobile */}
-                    {!isMobile && (
-                        <>
-                            <button className="gallery-btn prev-btn" onClick={handlePrevious}>
-                                &lt;
-                            </button>
-                            <button className="gallery-btn next-btn" onClick={handleNext}>
-                                &gt;
-                            </button>
-                        </>
-                    )}
+                    {/* Arrows - hidden on mobile via CSS */}
+                    <button className="gallery-btn prev-btn" onClick={handlePrevious}>
+                        &lt;
+                    </button>
+                    <button className="gallery-btn next-btn" onClick={handleNext}>
+                        &gt;
+                    </button>
 
-                    {/* Dot indicators - always visible */}
+                    {/* Dot indicators */}
                     <div className="gallery-dots">
                         {images.map((_, index) => (
                             <button
