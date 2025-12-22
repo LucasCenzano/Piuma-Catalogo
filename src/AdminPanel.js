@@ -3,6 +3,7 @@ import authService from './authService';
 import './AdminPanel.css';
 import './AdminPanelResponsive.css';
 import { Link } from 'react-router-dom';
+import ExchangeRateSection from './ExchangeRateSection';
 
 // Categorías válidas con íconos
 const ADMIN_SECTIONS = [
@@ -192,6 +193,7 @@ const AdminPanel = ({ onLogout }) => {
 
   // Exchange rate state
   const [exchangeRate, setExchangeRate] = useState(1200);
+  const [tempExchangeRate, setTempExchangeRate] = useState('');
 
   // ✅ 3. useMemo PARA ORDENAR Y FILTRAR LOS PRODUCTOS
   const sortedProducts = useMemo(() => {
@@ -387,6 +389,29 @@ const AdminPanel = ({ onLogout }) => {
     } catch (error) {
       console.error('Error cargando tipo de cambio:', error);
       setExchangeRate(1200); // Default fallback
+    }
+  };
+
+  const handleUpdateExchangeRate = async (e) => {
+    e.preventDefault();
+
+    const newRate = parseFloat(tempExchangeRate);
+    if (!newRate || newRate <= 0) {
+      alert('Por favor ingresa un tipo de cambio válido');
+      return;
+    }
+
+    try {
+      setLoading(true);
+      await authService.updateExchangeRate(newRate);
+      setExchangeRate(newRate);
+      setTempExchangeRate('');
+      alert(`✅ Tipo de cambio actualizado a $${newRate.toLocaleString('es-AR')} ARS por USD`);
+    } catch (error) {
+      console.error('Error actualizando tipo de cambio:', error);
+      alert('Error actualizando el tipo de cambio');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -2638,6 +2663,14 @@ const AdminPanel = ({ onLogout }) => {
                 </div>
               )}
             </div>
+
+            <ExchangeRateSection
+              exchangeRate={exchangeRate}
+              tempExchangeRate={tempExchangeRate}
+              setTempExchangeRate={setTempExchangeRate}
+              handleUpdateExchangeRate={handleUpdateExchangeRate}
+              loading={loading}
+            />
           </div>
         );
 
