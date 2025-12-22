@@ -191,6 +191,7 @@ const AdminPanel = ({ onLogout }) => {
   const [tempEditVariantName, setTempEditVariantName] = useState('');
   const [tempEditVariantStock, setTempEditVariantStock] = useState(true);
   const [tempEditVariantQuantity, setTempEditVariantQuantity] = useState(0);
+  const [tempEditVariantCode, setTempEditVariantCode] = useState('');
 
   // Exchange rate state
   const [exchangeRate, setExchangeRate] = useState(1200);
@@ -655,11 +656,13 @@ const AdminPanel = ({ onLogout }) => {
       setEditVariants([...editVariants, {
         color_name: tempEditVariantName.trim(),
         in_stock: parseInt(tempEditVariantQuantity) > 0, // Auto logic
-        quantity: parseInt(tempEditVariantQuantity) || 0
+        quantity: parseInt(tempEditVariantQuantity) || 0,
+        product_code: tempEditVariantCode.trim() || null
       }]);
       setTempEditVariantName('');
       setTempEditVariantStock(true);
       setTempEditVariantQuantity(0);
+      setTempEditVariantCode('');
     }
   };
 
@@ -2076,6 +2079,13 @@ const AdminPanel = ({ onLogout }) => {
                                             style={{ flex: 1, padding: '0.8rem', borderRadius: '6px', border: '1px solid #ced4da', fontSize: '0.95rem' }}
                                           />
                                           <input
+                                            type="text"
+                                            placeholder="Código (ej: MOCH-001-R)"
+                                            value={tempEditVariantCode}
+                                            onChange={(e) => setTempEditVariantCode(e.target.value)}
+                                            style={{ flex: 1, padding: '0.8rem', borderRadius: '6px', border: '1px solid #ced4da', fontSize: '0.95rem' }}
+                                          />
+                                          <input
                                             type="number"
                                             placeholder="Cant."
                                             value={tempEditVariantQuantity}
@@ -2325,6 +2335,13 @@ const AdminPanel = ({ onLogout }) => {
                                     placeholder="Color (ej: Rojo)"
                                     value={tempEditVariantName}
                                     onChange={(e) => setTempEditVariantName(e.target.value)}
+                                    style={{ flex: 1, padding: '0.5rem', borderRadius: '6px', border: '1px solid #ced4da', fontSize: '0.9rem' }}
+                                  />
+                                  <input
+                                    type="text"
+                                    placeholder="Código"
+                                    value={tempEditVariantCode}
+                                    onChange={(e) => setTempEditVariantCode(e.target.value)}
                                     style={{ flex: 1, padding: '0.5rem', borderRadius: '6px', border: '1px solid #ced4da', fontSize: '0.9rem' }}
                                   />
                                   <input
