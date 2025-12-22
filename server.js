@@ -342,12 +342,23 @@ app.post('/api/admin/products',
       );
       const nextId = maxIdResult.rows[0].next_id;
 
-      // Sanitize price
+      // Sanitize and format price
       const finalPrice = (function (p) {
-        if (!p) return '0';
+        if (!p) return '$0';
+        // Remove all non-numeric characters except dots and commas
         const clean = String(p).replace(/[^0-9.,-]/g, '');
+        // Normalize to use dot as decimal separator
         let normalized = clean.replace(/,/g, '.');
-        return (parseFloat(normalized) || 0).toString();
+        // Parse to number
+        const numericValue = parseFloat(normalized) || 0;
+        // Format to Argentine style: $20.000
+        const formatted = new Intl.NumberFormat('es-AR', {
+          style: 'currency',
+          currency: 'ARS',
+          minimumFractionDigits: 0,
+          maximumFractionDigits: 0
+        }).format(numericValue);
+        return formatted;
       })(price);
 
       const result = await query(`
@@ -450,6 +461,18 @@ app.put('/api/admin/products/:id',
           else if (field === 'imagesUrl') {
             dbField = 'images_url';
             value = JSON.stringify(value);
+          }
+          else if (field === 'price') {
+            // Format price to Argentine style
+            const clean = String(value).replace(/[^0-9.,-]/g, '');
+            const normalized = clean.replace(/,/g, '.');
+            const numericValue = parseFloat(normalized) || 0;
+            value = new Intl.NumberFormat('es-AR', {
+              style: 'currency',
+              currency: 'ARS',
+              minimumFractionDigits: 0,
+              maximumFractionDigits: 0
+            }).format(numericValue);
           }
           else if (field === 'isFeatured') dbField = 'is_featured';
           else if (field === 'isNew') dbField = 'is_new';
