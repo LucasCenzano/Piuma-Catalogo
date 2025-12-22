@@ -357,12 +357,9 @@
     font-size: 1.1rem;
   }
 
-  /* Botones siempre visibles en móvil pero más pequeños */
+  /* Botones de navegación ocultos en móvil - usar swipe y dots */
   .image-nav-btn {
-    opacity: 0.8;
-    width: 45px;
-    height: 45px;
-    font-size: 24px;
+    display: none !important;
   }
 
   .product-details {
