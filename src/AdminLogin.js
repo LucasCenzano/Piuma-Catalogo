@@ -9,6 +9,7 @@ function AdminLogin({ onLoginSuccess }) {
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -50,8 +51,8 @@ function AdminLogin({ onLoginSuccess }) {
         maxWidth: '400px'
       }}>
         <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
-          <h1 style={{ 
-            color: '#333', 
+          <h1 style={{
+            color: '#333',
             marginBottom: '0.5rem',
             fontSize: '2rem',
             fontWeight: 'bold'
@@ -96,7 +97,7 @@ function AdminLogin({ onLoginSuccess }) {
             />
           </div>
 
-          <div style={{ marginBottom: '2rem' }}>
+          <div style={{ marginBottom: '2rem', position: 'relative' }}>
             <label style={{
               display: 'block',
               marginBottom: '0.5rem',
@@ -106,7 +107,7 @@ function AdminLogin({ onLoginSuccess }) {
               Contraseña
             </label>
             <input
-              type="password"
+              type={showPassword ? "text" : "password"}
               name="password"
               value={formData.password}
               onChange={handleChange}
@@ -116,6 +117,7 @@ function AdminLogin({ onLoginSuccess }) {
               style={{
                 width: '100%',
                 padding: '0.75rem',
+                paddingRight: '3rem',
                 border: '2px solid #e1e1e1',
                 borderRadius: '8px',
                 fontSize: '1rem',
@@ -126,6 +128,28 @@ function AdminLogin({ onLoginSuccess }) {
               onFocus={(e) => e.target.style.borderColor = '#007bff'}
               onBlur={(e) => e.target.style.borderColor = '#e1e1e1'}
             />
+            <button
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              style={{
+                position: 'absolute',
+                right: '12px',
+                top: '50%',
+                transform: 'translateY(-50%)',
+                background: 'none',
+                border: 'none',
+                cursor: 'pointer',
+                padding: '4px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: '#666',
+                fontSize: '1.2rem'
+              }}
+              title={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+            >
+              {showPassword ? '👁️' : '👁️‍🗨️'}
+            </button>
           </div>
 
           {error && (
