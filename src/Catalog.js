@@ -56,7 +56,9 @@ const SafeProductImage = ({ src, alt, className, style, onClick, onError, ...pro
   }
 
   return (
-    <div style={{ position: 'relative', width: '100%', height: '100%' }}>
+    <div style={{ position: 'relative', width: 'calc(100% + 4rem)',
+                      marginLeft: '-2rem',
+                      marginRight: '-2rem', height: '100%' }}>
       {loading && (
         <div
           className={className}
@@ -65,7 +67,9 @@ const SafeProductImage = ({ src, alt, className, style, onClick, onError, ...pro
             position: 'absolute',
             top: 0,
             left: 0,
-            width: '100%',
+            width: 'calc(100% + 4rem)',
+                      marginLeft: '-2rem',
+                      marginRight: '-2rem',
             height: '100%',
             background: 'linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%)',
             backgroundSize: '200% 100%',
@@ -447,7 +451,8 @@ function Catalog({ bags, openModal, selectedCategory }) {
                           <div key={vIdx} style={{
                             fontSize: '0.85rem',
                             padding: '6px 12px',
-                            borderRadius: '8px',
+                            borderRadius: '0 0 12px 12px',
+                      boxSizing: 'border-box',
                             border: '1.5px solid',
                             borderColor: variant.quantity > 0 ? '#28a745' : '#dc3545',
                             color: '#333',
@@ -492,13 +497,16 @@ function Catalog({ bags, openModal, selectedCategory }) {
                     rel="noopener noreferrer"
                     style={{
                       display: 'block',
-                      width: '100%',
-                      marginTop: '1rem',
-                      padding: '0.8rem 1rem',
+                      width: 'calc(100% + 4rem)',
+                      marginLeft: '-2rem',
+                      marginRight: '-2rem',
+                      marginTop: '1.5rem',
+                      padding: '0.8rem 2rem',
                       background: 'linear-gradient(135deg, #25D366 0%, #128C7E 100%)',
                       color: 'white',
                       textAlign: 'center',
-                      borderRadius: '8px',
+                      borderRadius: '0 0 12px 12px',
+                      boxSizing: 'border-box',
                       textDecoration: 'none',
                       fontWeight: '600',
                       fontSize: '0.95rem',
