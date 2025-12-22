@@ -2487,10 +2487,10 @@ const AdminPanel = ({ onLogout }) => {
             <div style={{
               background: 'white',
               borderRadius: '16px',
-              padding: '2rem',
+              padding: window.innerWidth < 768 ? '1.5rem' : '2rem',
               boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1)',
               maxWidth: '800px',
-              margin: '2rem auto',
+              margin: window.innerWidth < 768 ? '1rem' : '2rem auto',
               border: '1px solid rgba(230, 227, 212, 0.5)'
             }}>
               <h3 style={{
@@ -2510,16 +2510,36 @@ const AdminPanel = ({ onLogout }) => {
               </p>
 
               {/* Crear nuevo filtro */}
-              <form onSubmit={handleCreateFilter} style={{ display: 'flex', gap: '1rem', marginBottom: '2rem' }}>
+              <form onSubmit={handleCreateFilter} style={{
+                display: 'flex',
+                flexDirection: window.innerWidth < 768 ? 'column' : 'row',
+                gap: '1rem',
+                marginBottom: '2rem'
+              }}>
                 <input
                   type="text"
                   placeholder="Nuevo filtro (ej: Liquidación)"
                   value={newFilterName}
                   onChange={e => setNewFilterName(e.target.value)}
-                  style={{ flex: 1, padding: '0.8rem', borderRadius: '8px', border: '1px solid #ddd' }}
+                  style={{
+                    flex: 1,
+                    padding: '0.8rem',
+                    borderRadius: '8px',
+                    border: '1px solid #ddd',
+                    width: window.innerWidth < 768 ? '100%' : 'auto',
+                    boxSizing: 'border-box'
+                  }}
                 />
                 <button type="submit" disabled={!newFilterName.trim()}
-                  style={{ background: '#333', color: 'white', border: 'none', padding: '0.8rem 1.5rem', borderRadius: '8px', cursor: 'pointer' }}>
+                  style={{
+                    background: '#333',
+                    color: 'white',
+                    border: 'none',
+                    padding: '0.8rem 1.5rem',
+                    borderRadius: '8px',
+                    cursor: 'pointer',
+                    width: window.innerWidth < 768 ? '100%' : 'auto'
+                  }}>
                   ➕ Crear
                 </button>
               </form>
@@ -2531,12 +2551,14 @@ const AdminPanel = ({ onLogout }) => {
                   {filters.map(filter => (
                     <div key={filter.id} style={{
                       display: 'flex',
+                      flexDirection: window.innerWidth < 768 ? 'column' : 'row',
                       justifyContent: 'space-between',
-                      alignItems: 'center',
+                      alignItems: window.innerWidth < 768 ? 'stretch' : 'center',
                       padding: '1rem',
                       background: '#f8f9fa',
                       borderRadius: '12px',
-                      border: '1px solid #dee2e6'
+                      border: '1px solid #dee2e6',
+                      gap: window.innerWidth < 768 ? '1rem' : '0'
                     }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
                         <div style={{
@@ -2551,7 +2573,12 @@ const AdminPanel = ({ onLogout }) => {
                         </span>
                       </div>
 
-                      <div style={{ display: 'flex', gap: '0.5rem' }}>
+                      <div style={{
+                        display: 'flex',
+                        gap: '0.5rem',
+                        flexWrap: 'wrap',
+                        justifyContent: window.innerWidth < 768 ? 'stretch' : 'flex-start'
+                      }}>
                         <button
                           onClick={() => handleUpdateFilterLabel(filter.id, filter.label)}
                           style={{
@@ -2560,7 +2587,8 @@ const AdminPanel = ({ onLogout }) => {
                             borderRadius: '8px',
                             background: 'white',
                             cursor: 'pointer',
-                            fontSize: '0.9rem'
+                            fontSize: '0.9rem',
+                            flex: window.innerWidth < 768 ? '1' : 'none'
                           }}
                         >
                           ✏️
@@ -2575,7 +2603,8 @@ const AdminPanel = ({ onLogout }) => {
                             color: filter.is_active ? '#c62828' : '#2e7d32',
                             cursor: 'pointer',
                             fontSize: '0.9rem',
-                            fontWeight: '600'
+                            fontWeight: '600',
+                            flex: window.innerWidth < 768 ? '1' : 'none'
                           }}
                         >
                           {filter.is_active ? 'OFF' : 'ON'}
