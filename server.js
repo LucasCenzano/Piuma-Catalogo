@@ -345,13 +345,15 @@ app.post('/api/admin/products',
       // Sanitize and format price
       const finalPrice = (function (p) {
         if (!p) return '$0';
-        // Remove all non-numeric characters except dots and commas
-        const clean = String(p).replace(/[^0-9.,-]/g, '');
-        // Normalize to use dot as decimal separator
-        let normalized = clean.replace(/,/g, '.');
+        // Remove currency symbols and spaces
+        let clean = String(p).replace(/[$\s]/g, '');
+        // Remove dots (thousands separator in Argentine format)
+        clean = clean.replace(/\./g, '');
+        // Convert comma to dot (decimal separator)
+        clean = clean.replace(/,/g, '.');
         // Parse to number
-        const numericValue = parseFloat(normalized) || 0;
-        // Format to Argentine style: $20.000
+        const numericValue = parseFloat(clean) || 0;
+        // Format to Argentine style: $30.000
         const formatted = new Intl.NumberFormat('es-AR', {
           style: 'currency',
           currency: 'ARS',
@@ -465,9 +467,10 @@ app.put('/api/admin/products/:id',
           }
           else if (field === 'price') {
             // Format price to Argentine style
-            const clean = String(value).replace(/[^0-9.,-]/g, '');
-            const normalized = clean.replace(/,/g, '.');
-            const numericValue = parseFloat(normalized) || 0;
+            let clean = String(value).replace(/[$\s]/g, '');
+            clean = clean.replace(/\./g, ''); // Remove thousands separator
+            clean = clean.replace(/,/g, '.'); // Convert decimal separator
+            const numericValue = parseFloat(clean) || 0;
             value = new Intl.NumberFormat('es-AR', {
               style: 'currency',
               currency: 'ARS',
