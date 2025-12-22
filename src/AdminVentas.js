@@ -407,7 +407,7 @@ const AdminVentas = () => {
 
   // ✅ Función para eliminar venta
   const handleDeleteSale = async (saleId) => {
-    if (!window.confirm('¿Estás seguro de que quieres eliminar esta venta?')) {
+    if (!window.confirm('⚠️ ¿ELIMINAR ESTA VENTA?\n\nEsta acción NO se puede deshacer.\nSe perderá todo el registro de la transacción.\n\n¿Estás completamente seguro?')) {
       return;
     }
 
@@ -1236,15 +1236,15 @@ const AdminVentas = () => {
 
                 {/* Productos Vendidos */}
                 {sale.items && sale.items.length > 0 && (
-                  <div style={{ 
-                    background: '#f8f9fa', 
-                    padding: '1rem', 
+                  <div style={{
+                    background: '#f8f9fa',
+                    padding: '1rem',
                     borderRadius: '8px',
                     border: '1px solid #e9ecef'
                   }}>
-                    <div style={{ 
-                      fontWeight: '600', 
-                      marginBottom: '0.75rem', 
+                    <div style={{
+                      fontWeight: '600',
+                      marginBottom: '0.75rem',
                       color: '#333',
                       fontSize: '0.9rem'
                     }}>
@@ -1252,8 +1252,8 @@ const AdminVentas = () => {
                     </div>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                       {sale.items.map((item, idx) => (
-                        <div key={idx} style={{ 
-                          display: 'flex', 
+                        <div key={idx} style={{
+                          display: 'flex',
                           justifyContent: 'space-between',
                           alignItems: 'center',
                           padding: '0.5rem',
@@ -1271,9 +1271,9 @@ const AdminVentas = () => {
                               </div>
                             )}
                           </div>
-                          <div style={{ 
-                            display: 'flex', 
-                            alignItems: 'center', 
+                          <div style={{
+                            display: 'flex',
+                            alignItems: 'center',
                             gap: '0.75rem',
                             fontSize: '0.85rem'
                           }}>
@@ -1290,21 +1290,40 @@ const AdminVentas = () => {
                   </div>
                 )}
                 {/* Acciones */}
-                <div style={{ paddingTop: '1rem', borderTop: '1px solid #eee', display: 'flex', justifyContent: 'flex-end', gap: '0.5rem' }}>
+                <div style={{
+                  paddingTop: '1rem',
+                  borderTop: '1px solid #eee',
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  gap: '1rem',
+                  flexWrap: 'wrap'
+                }}>
                   <button
                     onClick={() => startEditingSale(sale)}
                     style={{
-                      background: 'none',
-                      color: '#2c3e50',
-                      border: '1px solid #2c3e50',
-                      padding: '0.5rem 1rem',
-                      borderRadius: '6px',
+                      background: 'linear-gradient(135deg, #2c3e50 0%, #1a252f 100%)',
+                      color: 'white',
+                      border: 'none',
+                      padding: '0.65rem 1.25rem',
+                      borderRadius: '8px',
                       cursor: 'pointer',
-                      fontSize: '0.9rem',
+                      fontSize: '0.95rem',
                       fontWeight: '600',
                       display: 'flex',
                       alignItems: 'center',
-                      gap: '0.5rem'
+                      gap: '0.5rem',
+                      flex: window.innerWidth < 768 ? '1' : 'none',
+                      transition: 'transform 0.2s ease, box-shadow 0.2s ease',
+                      boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+                    }}
+                    onMouseEnter={(e) => {
+                      e.target.style.transform = 'translateY(-2px)';
+                      e.target.style.boxShadow = '0 4px 8px rgba(0,0,0,0.15)';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.target.style.transform = 'translateY(0)';
+                      e.target.style.boxShadow = '0 2px 4px rgba(0,0,0,0.1)';
                     }}
                   >
                     ✏️ Editar
@@ -1315,18 +1334,28 @@ const AdminVentas = () => {
                     style={{
                       background: 'none',
                       color: '#a85751',
-                      border: '1px solid #a85751',
-                      padding: '0.5rem 1rem',
+                      border: 'none',
+                      padding: '0.5rem',
                       borderRadius: '6px',
                       cursor: 'pointer',
-                      fontSize: '0.9rem',
-                      fontWeight: '600',
+                      fontSize: '1.3rem',
                       display: 'flex',
                       alignItems: 'center',
-                      gap: '0.5rem'
+                      justifyContent: 'center',
+                      opacity: 0.7,
+                      transition: 'opacity 0.2s ease, transform 0.2s ease'
                     }}
+                    onMouseEnter={(e) => {
+                      e.target.style.opacity = '1';
+                      e.target.style.transform = 'scale(1.1)';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.target.style.opacity = '0.7';
+                      e.target.style.transform = 'scale(1)';
+                    }}
+                    title="Eliminar venta (requiere confirmación)"
                   >
-                    🗑️ Eliminar
+                    🗑️
                   </button>
                 </div>
               </div>
