@@ -6,7 +6,7 @@ import { faInstagram, faWhatsapp } from '@fortawesome/free-brands-svg-icons';
 function ContactBanner() {
   // ✅ ¡IMPORTANTE! Reemplaza este número con el tuyo.
   // Formato: CodPaís + CodArea (sin 0) + Numero (sin 15). Ejemplo: 5493871234567
-  const whatsappNumber = '5493874526283';
+  const whatsappNumber = '5493874423595';
   const whatsappLink = `https://wa.me/${whatsappNumber}?text=Hola!%20Vengo%20del%20catálogo%20y%20quisiera%20consultar%20por%20un%20producto.`;
 
   return (

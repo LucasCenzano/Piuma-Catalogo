@@ -484,6 +484,38 @@ function Catalog({ bags, openModal, selectedCategory }) {
                       </div>
                     </div>
                   )}
+
+                  {/* Botón de Comprar por WhatsApp */}
+                  <a
+                    href={`https://wa.me/5493874423595?text=Hola!%20Me%20interesa%20comprar%20el%20producto:%20*${encodeURIComponent(bag.name)}*`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{
+                      display: 'block',
+                      width: '100%',
+                      marginTop: '1rem',
+                      padding: '0.8rem 1rem',
+                      background: 'linear-gradient(135deg, #25D366 0%, #128C7E 100%)',
+                      color: 'white',
+                      textAlign: 'center',
+                      borderRadius: '8px',
+                      textDecoration: 'none',
+                      fontWeight: '600',
+                      fontSize: '0.95rem',
+                      transition: 'all 0.3s ease',
+                      boxShadow: '0 2px 8px rgba(37, 211, 102, 0.3)'
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.transform = 'translateY(-2px)';
+                      e.currentTarget.style.boxShadow = '0 4px 12px rgba(37, 211, 102, 0.4)';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.transform = 'translateY(0)';
+                      e.currentTarget.style.boxShadow = '0 2px 8px rgba(37, 211, 102, 0.3)';
+                    }}
+                  >
+                    💬 Comprar por WhatsApp
+                  </a>
                 </div>
               </div>
             );
