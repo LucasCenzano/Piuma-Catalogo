@@ -285,7 +285,8 @@ app.get('/api/admin/products',
                      'id', pv.id,
                      'color_name', pv.color_name,
                      'in_stock', pv.in_stock,
-                     'quantity', pv.quantity
+                     'quantity', pv.quantity,
+                     'product_code', pv.product_code
                    )
                  ) FILTER (WHERE pv.id IS NOT NULL), 
                  '[]'
