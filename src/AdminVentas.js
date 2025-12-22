@@ -565,16 +565,16 @@ const AdminVentas = () => {
                     width: '100%',
                     padding: '1rem',
                     paddingRight: newSale.customer_id ? '2.5rem' : '1rem', // Espacio para el icono
-                    border: newSale.customer_id ? '2px solid #28a745' : '2px solid #e9ecef', // Borde verde si está seleccionado
+                    border: newSale.customer_id ? '2px solid #6b7c59' : '2px solid #e9ecef', // Borde verde si está seleccionado
                     borderRadius: '12px',
                     fontSize: '1rem',
                     outline: 'none',
                     transition: 'all 0.3s ease',
                     boxSizing: 'border-box'
                   }}
-                  onFocus={(e) => e.target.style.borderColor = newSale.customer_id ? '#28a745' : '#d4af37'}
+                  onFocus={(e) => e.target.style.borderColor = newSale.customer_id ? '#6b7c59' : '#d4af37'}
                   onBlur={(e) => {
-                    e.target.style.borderColor = newSale.customer_id ? '#28a745' : '#e9ecef';
+                    e.target.style.borderColor = newSale.customer_id ? '#6b7c59' : '#e9ecef';
                     setTimeout(() => setShowCustomerResults(false), 200);
                   }}
                 />
@@ -584,7 +584,7 @@ const AdminVentas = () => {
                     right: '10px',
                     top: '50%',
                     transform: 'translateY(-50%)',
-                    color: '#28a745',
+                    color: '#6b7c59',
                     fontWeight: 'bold',
                     fontSize: '1.2rem',
                     pointerEvents: 'none'
@@ -623,7 +623,7 @@ const AdminVentas = () => {
                           <div style={{ fontWeight: 'bold' }}>{c.first_name} {c.last_name}</div>
                           <div style={{ fontSize: '0.8rem', color: '#666' }}>{c.phone}</div>
                         </div>
-                        <div style={{ fontSize: '0.8rem', color: '#28a745', fontWeight: 'bold' }}>
+                        <div style={{ fontSize: '0.8rem', color: '#6b7c59', fontWeight: 'bold' }}>
                           {c.total_purchases} compras
                         </div>
                       </div>
@@ -745,7 +745,7 @@ const AdminVentas = () => {
                   }}
                 />
                 {newSale.amount_paid && (
-                  <span style={{ fontSize: '0.8rem', color: '#dc3545', fontWeight: 'bold' }}>
+                  <span style={{ fontSize: '0.8rem', color: '#a85751', fontWeight: 'bold' }}>
                     Debe: {formatCurrency(calculateTotal() - (parseFloat(newSale.amount_paid) || 0))}
                   </span>
                 )}
@@ -832,7 +832,7 @@ const AdminVentas = () => {
                       style={{
                         padding: '1rem 1.5rem',
                         border: '2px solid',
-                        borderColor: variant.in_stock ? '#28a745' : '#dc3545',
+                        borderColor: variant.in_stock ? '#6b7c59' : '#a85751',
                         borderRadius: '12px',
                         background: 'white',
                         color: variant.in_stock ? '#333' : '#999',
@@ -843,7 +843,7 @@ const AdminVentas = () => {
                     >
                       <span style={{
                         width: '20px', height: '20px', borderRadius: '50%',
-                        background: variant.in_stock ? '#28a745' : '#dc3545'
+                        background: variant.in_stock ? '#6b7c59' : '#a85751'
                       }}></span>
                       <span style={{ fontWeight: '600' }}>{variant.color_name}</span>
                       <span style={{ fontSize: '0.8rem' }}>{variant.in_stock ? 'En Stock' : 'Agotado'}</span>
@@ -912,7 +912,7 @@ const AdminVentas = () => {
                     {!product.images_url || (Array.isArray(product.images_url) && product.images_url.length === 0) ? <span style={{ fontSize: '2rem' }}>📦</span> : null}
                   </div>
                   <h5 style={{ margin: '0 0 0.25rem 0', fontSize: '0.9rem', color: '#333' }}>{product.name}</h5>
-                  <p style={{ margin: 0, fontSize: '0.85rem', fontWeight: 'bold', color: '#007bff' }}>{product.price}</p>
+                  <p style={{ margin: 0, fontSize: '0.85rem', fontWeight: 'bold', color: '#2c3e50' }}>{product.price}</p>
 
                   {/* Badge de stock */}
                   <div style={{
@@ -922,7 +922,7 @@ const AdminVentas = () => {
                     width: '10px',
                     height: '10px',
                     borderRadius: '50%',
-                    background: product.in_stock ? '#28a745' : '#dc3545'
+                    background: product.in_stock ? '#6b7c59' : '#a85751'
                   }} />
                 </div>
               ))}
@@ -991,7 +991,7 @@ const AdminVentas = () => {
                           type="button"
                           onClick={() => removeItemFromSale(index)}
                           style={{
-                            background: 'linear-gradient(135deg, #dc3545 0%, #c82333 100%)',
+                            background: 'linear-gradient(135deg, #a85751 0%, #8b4640 100%)',
                             color: 'white',
                             border: 'none',
                             padding: '0.5rem 1rem',
@@ -1134,7 +1134,7 @@ const AdminVentas = () => {
             width: '40px',
             height: '40px',
             border: '4px solid #f3f3f3',
-            borderTop: '4px solid #007bff',
+            borderTop: '4px solid #2c3e50',
             borderRadius: '50%',
             animation: 'spin 1s linear infinite',
             margin: '0 auto 1rem'
@@ -1190,11 +1190,11 @@ const AdminVentas = () => {
                     </div>
                   </div>
                   <div style={{ textAlign: 'right' }}>
-                    <div style={{ fontWeight: 'bold', fontSize: '1.2rem', color: isPending ? '#dc3545' : '#28a745' }}>
+                    <div style={{ fontWeight: 'bold', fontSize: '1.2rem', color: isPending ? '#a85751' : '#6b7c59' }}>
                       {formatCurrency(sale.total_amount)}
                     </div>
                     {isPending && (
-                      <div style={{ fontSize: '0.85rem', color: '#dc3545', fontWeight: 'bold' }}>
+                      <div style={{ fontSize: '0.85rem', color: '#a85751', fontWeight: 'bold' }}>
                         Debe: {formatCurrency(pendingAmount)}
                       </div>
                     )}
@@ -1280,7 +1280,7 @@ const AdminVentas = () => {
                             <span style={{ color: '#666' }}>
                               x{item.quantity}
                             </span>
-                            <span style={{ fontWeight: '600', color: '#28a745' }}>
+                            <span style={{ fontWeight: '600', color: '#6b7c59' }}>
                               {formatCurrency(item.subtotal)}
                             </span>
                           </div>
@@ -1295,8 +1295,8 @@ const AdminVentas = () => {
                     onClick={() => startEditingSale(sale)}
                     style={{
                       background: 'none',
-                      color: '#007bff',
-                      border: '1px solid #007bff',
+                      color: '#2c3e50',
+                      border: '1px solid #2c3e50',
                       padding: '0.5rem 1rem',
                       borderRadius: '6px',
                       cursor: 'pointer',
@@ -1314,8 +1314,8 @@ const AdminVentas = () => {
                     onClick={() => handleDeleteSale(sale.id)}
                     style={{
                       background: 'none',
-                      color: '#dc3545',
-                      border: '1px solid #dc3545',
+                      color: '#a85751',
+                      border: '1px solid #a85751',
                       padding: '0.5rem 1rem',
                       borderRadius: '6px',
                       cursor: 'pointer',
@@ -1402,7 +1402,7 @@ const AdminVentas = () => {
             </div>
 
             <div style={{
-              background: 'linear-gradient(135deg, #28a745 0%, #20c997 100%)',
+              background: 'linear-gradient(135deg, #6b7c59 0%, #8b9a7a 100%)',
               color: 'white',
               padding: '2rem',
               borderRadius: '16px',
@@ -1417,7 +1417,7 @@ const AdminVentas = () => {
             </div>
 
             <div style={{
-              background: 'linear-gradient(135deg, #dc3545 0%, #c82333 100%)',
+              background: 'linear-gradient(135deg, #a85751 0%, #8b4640 100%)',
               color: 'white',
               padding: '2rem',
               borderRadius: '16px',
@@ -1432,7 +1432,7 @@ const AdminVentas = () => {
             </div>
 
             <div style={{
-              background: 'linear-gradient(135deg, #28a745 0%, #20c997 100%)',
+              background: 'linear-gradient(135deg, #6b7c59 0%, #8b9a7a 100%)',
               color: 'white',
               padding: '2rem',
               borderRadius: '16px',
@@ -1447,7 +1447,7 @@ const AdminVentas = () => {
             </div>
 
             <div style={{
-              background: 'linear-gradient(135deg, #007bff 0%, #0056b3 100%)',
+              background: 'linear-gradient(135deg, #2c3e50 0%, #1a252f 100%)',
               color: 'white',
               padding: '2rem',
               borderRadius: '16px',
@@ -1520,7 +1520,7 @@ const AdminVentas = () => {
                     <div style={{
                       fontSize: '1.5rem',
                       fontWeight: '700',
-                      color: method.payment_method === 'efectivo' ? '#28a745' : '#007bff',
+                      color: method.payment_method === 'efectivo' ? '#6b7c59' : '#2c3e50',
                       marginBottom: '0.5rem'
                     }}>
                       {formatCurrency(method.revenue || 0)}
@@ -1725,7 +1725,7 @@ const AdminVentas = () => {
             <button
               onClick={() => window.location.href = '/admin'}
               style={{
-                background: 'linear-gradient(135deg, #007bff 0%, #0056b3 100%)',
+                background: 'linear-gradient(135deg, #2c3e50 0%, #1a252f 100%)',
                 color: 'white',
                 border: 'none',
                 padding: '0.75rem 1.5rem',
@@ -1927,7 +1927,7 @@ const AdminVentas = () => {
                 />
 
                 {editingSale.status === 'pending' && (
-                  <div style={{ marginTop: '0.5rem', color: '#dc3545', fontWeight: 'bold', fontSize: '0.9rem' }}>
+                  <div style={{ marginTop: '0.5rem', color: '#a85751', fontWeight: 'bold', fontSize: '0.9rem' }}>
                     Debe: {formatCurrency(editingSale.total_amount - (parseFloat(editingSale.amount_paid) || 0))}
                   </div>
                 )}
@@ -2178,7 +2178,7 @@ const CustomersListAPI = ({ authService, API_BASE_URL, formatCurrency, formatDat
               </button>
               <button
                 onClick={saveEdit}
-                style={{ padding: '0.8rem 1.5rem', borderRadius: '8px', border: 'none', background: '#28a745', color: 'white', cursor: 'pointer' }}
+                style={{ padding: '0.8rem 1.5rem', borderRadius: '8px', border: 'none', background: '#6b7c59', color: 'white', cursor: 'pointer' }}
               >
                 Guardar
               </button>
@@ -2237,7 +2237,7 @@ const CustomersListAPI = ({ authService, API_BASE_URL, formatCurrency, formatDat
           <div>Cargando clientes...</div>
         </div>
       ) : error ? (
-        <div style={{ textAlign: 'center', color: '#dc3545', padding: '2rem' }}>
+        <div style={{ textAlign: 'center', color: '#a85751', padding: '2rem' }}>
           {error}
         </div>
       ) : customers.length === 0 ? (
@@ -2275,11 +2275,11 @@ const CustomersListAPI = ({ authService, API_BASE_URL, formatCurrency, formatDat
                   🛒 {c.total_purchases} ventas
                 </span>
                 <div style={{ textAlign: 'right' }}>
-                  <div style={{ fontWeight: 'bold', color: '#28a745' }}>
+                  <div style={{ fontWeight: 'bold', color: '#6b7c59' }}>
                     {formatCurrency(c.total_spent)}
                   </div>
                   {Number(c.total_debt) > 0 && (
-                    <div style={{ color: '#dc3545', fontWeight: 'bold', fontSize: '0.9rem', marginTop: '0.2rem' }}>
+                    <div style={{ color: '#a85751', fontWeight: 'bold', fontSize: '0.9rem', marginTop: '0.2rem' }}>
                       Debe: {formatCurrency(c.total_debt)}
                     </div>
                   )}

@@ -106,7 +106,7 @@ const ProductWizard = ({ onSubmit, onCancel, categories = [] }) => {
         fontSize: '1.1rem',
         marginBottom: '0.5rem',
         background: stepNumber === currentStep ? 'linear-gradient(135deg, #d4af37 0%, #c19b26 100%)' :
-            stepNumber < currentStep ? '#28a745' : '#e9ecef',
+            stepNumber < currentStep ? '#6b7c59' : '#e9ecef',
         color: stepNumber <= currentStep ? 'white' : '#666',
         transition: 'all 0.3s ease'
     });
@@ -123,7 +123,7 @@ const ProductWizard = ({ onSubmit, onCancel, categories = [] }) => {
 
     const progressLineStyle = {
         ...lineStyle,
-        background: 'linear-gradient(90deg, #28a745 0%, #d4af37 100%)',
+        background: 'linear-gradient(90deg, #6b7c59 0%, #d4af37 100%)',
         width: `${((currentStep - 1) / (totalSteps - 1)) * 100}%`,
         transition: 'width 0.3s ease'
     };
@@ -154,7 +154,7 @@ const ProductWizard = ({ onSubmit, onCancel, categories = [] }) => {
                         </div>
                         <div style={{
                             fontSize: '0.85rem',
-                            color: step.num === currentStep ? '#d4af37' : step.num < currentStep ? '#28a745' : '#666',
+                            color: step.num === currentStep ? '#d4af37' : step.num < currentStep ? '#6b7c59' : '#666',
                             fontWeight: step.num === currentStep ? '600' : '400',
                             marginTop: '0.25rem'
                         }}>
@@ -431,7 +431,7 @@ const ProductWizard = ({ onSubmit, onCancel, categories = [] }) => {
                                     onClick={addVariant}
                                     style={{
                                         padding: '0.75rem 1.5rem',
-                                        background: '#28a745',
+                                        background: '#6b7c59',
                                         color: 'white',
                                         border: 'none',
                                         borderRadius: '8px',
@@ -531,7 +531,7 @@ const ProductWizard = ({ onSubmit, onCancel, categories = [] }) => {
                             )}
                             <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem' }}>
                                 {formData.is_featured && <span style={{ padding: '0.5rem 1rem', background: '#ffc107', borderRadius: '20px', fontSize: '0.9rem' }}>⭐ Destacado</span>}
-                                {formData.is_new && <span style={{ padding: '0.5rem 1rem', background: '#28a745', color: 'white', borderRadius: '20px', fontSize: '0.9rem' }}>✨ Nuevo</span>}
+                                {formData.is_new && <span style={{ padding: '0.5rem 1rem', background: '#6b7c59', color: 'white', borderRadius: '20px', fontSize: '0.9rem' }}>✨ Nuevo</span>}
                             </div>
                         </div>
                     </div>
@@ -607,7 +607,7 @@ const ProductWizard = ({ onSubmit, onCancel, categories = [] }) => {
                             type="submit"
                             style={{
                                 padding: '0.75rem 2rem',
-                                background: 'linear-gradient(135deg, #28a745 0%, #218838 100%)',
+                                background: 'linear-gradient(135deg, #6b7c59 0%, #5a6b4a 100%)',
                                 color: 'white',
                                 border: 'none',
                                 borderRadius: '8px',

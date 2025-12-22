@@ -92,7 +92,7 @@ function AdminLogin({ onLoginSuccess }) {
                 transition: 'border-color 0.2s',
                 boxSizing: 'border-box'
               }}
-              onFocus={(e) => e.target.style.borderColor = '#007bff'}
+              onFocus={(e) => e.target.style.borderColor = '#2c3e50'}
               onBlur={(e) => e.target.style.borderColor = '#e1e1e1'}
             />
           </div>
@@ -125,7 +125,7 @@ function AdminLogin({ onLoginSuccess }) {
                 transition: 'border-color 0.2s',
                 boxSizing: 'border-box'
               }}
-              onFocus={(e) => e.target.style.borderColor = '#007bff'}
+              onFocus={(e) => e.target.style.borderColor = '#2c3e50'}
               onBlur={(e) => e.target.style.borderColor = '#e1e1e1'}
             />
             <button
@@ -172,7 +172,7 @@ function AdminLogin({ onLoginSuccess }) {
             style={{
               width: '100%',
               padding: '0.875rem',
-              backgroundColor: loading ? '#6c757d' : '#007bff',
+              backgroundColor: loading ? '#6c757d' : '#2c3e50',
               color: 'white',
               border: 'none',
               borderRadius: '8px',
@@ -186,7 +186,7 @@ function AdminLogin({ onLoginSuccess }) {
               if (!loading) e.target.style.backgroundColor = '#0056b3';
             }}
             onMouseOut={(e) => {
-              if (!loading) e.target.style.backgroundColor = '#007bff';
+              if (!loading) e.target.style.backgroundColor = '#2c3e50';
             }}
           >
             {loading ? 'Iniciando sesión...' : 'Iniciar Sesión'}

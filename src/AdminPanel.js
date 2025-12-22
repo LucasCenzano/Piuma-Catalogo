@@ -692,7 +692,7 @@ const AdminPanel = ({ onLogout }) => {
 
             {/* Acceso directo al módulo de ventas */}
             <div style={{
-              background: 'linear-gradient(135deg, #28a745 0%, #20c997 100%)',
+              background: 'linear-gradient(135deg, #6b7c59 0%, #8b9a7a 100%)',
               borderRadius: '16px',
               padding: '2rem',
               marginBottom: '3rem',
@@ -716,7 +716,7 @@ const AdminPanel = ({ onLogout }) => {
                 <button
                   style={{
                     background: 'white',
-                    color: '#28a745',
+                    color: '#6b7c59',
                     // ... los mismos estilos que ya tenías
                     border: 'none',
                     padding: '1rem 2.5rem',
@@ -935,9 +935,9 @@ const AdminPanel = ({ onLogout }) => {
                   style={{
                     padding: '0.75rem 1.25rem',
                     borderRadius: '12px',
-                    border: '2px solid #dc3545',
+                    border: '2px solid #a85751',
                     background: 'white',
-                    color: '#dc3545',
+                    color: '#a85751',
                     cursor: 'pointer',
                     fontSize: '0.9rem',
                     fontWeight: '600',
@@ -1088,7 +1088,7 @@ const AdminPanel = ({ onLogout }) => {
                         type="checkbox"
                         checked={newIsNew}
                         onChange={(e) => setNewIsNew(e.target.checked)}
-                        style={{ width: '18px', height: '18px', accentColor: '#28a745' }}
+                        style={{ width: '18px', height: '18px', accentColor: '#6b7c59' }}
                       />
                       🆕 Nuevo
                     </label>
@@ -1159,7 +1159,7 @@ const AdminPanel = ({ onLogout }) => {
                         }}>
                           <span style={{
                             width: '12px', height: '12px', borderRadius: '50%',
-                            background: variant.in_stock ? '#28a745' : '#dc3545'
+                            background: variant.in_stock ? '#6b7c59' : '#a85751'
                           }}></span>
                           <span style={{ fontWeight: '500' }}>{variant.color_name}</span>
                           <button type="button" onClick={() => removeVariant(idx)} style={{ border: 'none', background: 'none', cursor: 'pointer', color: '#666' }}>✕</button>
@@ -1273,7 +1273,7 @@ const AdminPanel = ({ onLogout }) => {
                         onClick={addNewImage}
                         disabled={!newImageUrl}
                         style={{
-                          background: newImageUrl ? 'linear-gradient(135deg, #28a745 0%, #20c997 100%)' : '#6c757d',
+                          background: newImageUrl ? 'linear-gradient(135deg, #6b7c59 0%, #8b9a7a 100%)' : '#6c757d',
                           color: 'white',
                           border: 'none',
                           padding: '1rem 2rem',
@@ -1315,7 +1315,7 @@ const AdminPanel = ({ onLogout }) => {
                                   position: 'absolute',
                                   top: '-8px',
                                   right: '-8px',
-                                  background: '#dc3545',
+                                  background: '#a85751',
                                   color: 'white',
                                   border: 'none',
                                   borderRadius: '50%',
@@ -1619,7 +1619,7 @@ const AdminPanel = ({ onLogout }) => {
                                     {product.variants.map((v, i) => (
                                       <div key={i} style={{ marginBottom: '2px', display: 'flex', justifyContent: 'space-between' }}>
                                         <span style={{ color: '#333', fontWeight: '500' }}>{v.color_name}:</span>
-                                        <span style={{ color: v.quantity > 0 ? '#28a745' : '#dc3545' }}>{v.quantity}</span>
+                                        <span style={{ color: v.quantity > 0 ? '#6b7c59' : '#a85751' }}>{v.quantity}</span>
                                       </div>
                                     ))}
                                   </div>
@@ -1657,8 +1657,8 @@ const AdminPanel = ({ onLogout }) => {
                                     style={{
                                       padding: '0.6rem 1rem',
                                       background: editingProductId === product.id
-                                        ? 'linear-gradient(135deg, #dc3545 0%, #c82333 100%)'
-                                        : 'linear-gradient(135deg, #007bff 0%, #0056b3 100%)',
+                                        ? 'linear-gradient(135deg, #a85751 0%, #8b4640 100%)'
+                                        : 'linear-gradient(135deg, #2c3e50 0%, #1a252f 100%)',
                                       color: 'white',
                                       border: 'none',
                                       borderRadius: '8px',
@@ -1679,7 +1679,7 @@ const AdminPanel = ({ onLogout }) => {
                                     disabled={loading || editingProductId === product.id}
                                     style={{
                                       padding: '0.6rem 1rem',
-                                      background: 'linear-gradient(135deg, #dc3545 0%, #c82333 100%)',
+                                      background: 'linear-gradient(135deg, #a85751 0%, #8b4640 100%)',
                                       color: 'white',
                                       border: 'none',
                                       borderRadius: '8px',
@@ -1837,7 +1837,7 @@ const AdminPanel = ({ onLogout }) => {
                                                   type="checkbox"
                                                   checked={editIsNew}
                                                   onChange={(e) => setEditIsNew(e.target.checked)}
-                                                  style={{ width: '18px', height: '18px', accentColor: '#28a745' }}
+                                                  style={{ width: '18px', height: '18px', accentColor: '#6b7c59' }}
                                                 />
                                                 🆕 Nuevo
                                               </label>
@@ -1921,7 +1921,7 @@ const AdminPanel = ({ onLogout }) => {
                                               onClick={addEditImage}
                                               disabled={!editImageUrl}
                                               style={{
-                                                background: editImageUrl ? 'linear-gradient(135deg, #28a745 0%, #20c997 100%)' : '#6c757d',
+                                                background: editImageUrl ? 'linear-gradient(135deg, #6b7c59 0%, #8b9a7a 100%)' : '#6c757d',
                                                 color: 'white',
                                                 border: 'none',
                                                 padding: '1rem',
@@ -1961,7 +1961,7 @@ const AdminPanel = ({ onLogout }) => {
                                                         position: 'absolute',
                                                         top: '-8px',
                                                         right: '-8px',
-                                                        background: '#dc3545',
+                                                        background: '#a85751',
                                                         color: 'white',
                                                         border: 'none',
                                                         borderRadius: '50%',
@@ -2006,7 +2006,7 @@ const AdminPanel = ({ onLogout }) => {
                                             }}>
                                               <span style={{
                                                 width: '12px', height: '12px', borderRadius: '50%',
-                                                background: variant.in_stock ? '#28a745' : '#dc3545'
+                                                background: variant.in_stock ? '#6b7c59' : '#a85751'
                                               }}></span>
                                               <span style={{ fontWeight: '500' }}>{variant.color_name} : {variant.quantity || 0}</span>
                                               <button type="button" onClick={() => removeEditVariant(idx)} style={{ border: 'none', background: 'none', cursor: 'pointer', color: '#666', padding: '0 0 0 5px' }}>✕</button>
@@ -2035,7 +2035,7 @@ const AdminPanel = ({ onLogout }) => {
                                               type="checkbox"
                                               checked={tempEditVariantStock}
                                               onChange={(e) => setTempEditVariantStock(e.target.checked)}
-                                              style={{ width: '18px', height: '18px', accentColor: '#28a745' }}
+                                              style={{ width: '18px', height: '18px', accentColor: '#6b7c59' }}
                                             />
                                             <span style={{ fontWeight: '500' }}>En Stock</span>
                                           </label>
@@ -2062,7 +2062,7 @@ const AdminPanel = ({ onLogout }) => {
                                           type="submit"
                                           disabled={loading}
                                           style={{
-                                            background: loading ? '#6c757d' : 'linear-gradient(135deg, #28a745 0%, #20c997 100%)',
+                                            background: loading ? '#6c757d' : 'linear-gradient(135deg, #6b7c59 0%, #8b9a7a 100%)',
                                             color: 'white',
                                             border: 'none',
                                             padding: '1rem 2.5rem',
@@ -2141,7 +2141,7 @@ const AdminPanel = ({ onLogout }) => {
 
                               <div style={{ padding: '0.8rem', background: '#f8f9fa', borderRadius: '8px', border: '1px solid #e9ecef', display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
                                 <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                  <input type="checkbox" checked={editIsNew} onChange={(e) => setEditIsNew(e.target.checked)} style={{ width: '20px', height: '20px', accentColor: '#28a745' }} />
+                                  <input type="checkbox" checked={editIsNew} onChange={(e) => setEditIsNew(e.target.checked)} style={{ width: '20px', height: '20px', accentColor: '#6b7c59' }} />
                                   <span>🆕 Nuevo</span>
                                 </label>
                                 <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
@@ -2173,7 +2173,7 @@ const AdminPanel = ({ onLogout }) => {
                                     onClick={addEditImage}
                                     disabled={!editImageUrl}
                                     style={{
-                                      background: editImageUrl ? '#28a745' : '#ccc',
+                                      background: editImageUrl ? '#6b7c59' : '#ccc',
                                       color: 'white',
                                       border: 'none',
                                       borderRadius: '8px',
@@ -2214,7 +2214,7 @@ const AdminPanel = ({ onLogout }) => {
                                             position: 'absolute',
                                             top: '-5px',
                                             right: '-5px',
-                                            background: '#dc3545',
+                                            background: '#a85751',
                                             color: 'white',
                                             border: 'none',
                                             borderRadius: '50%',
@@ -2258,7 +2258,7 @@ const AdminPanel = ({ onLogout }) => {
                                     }}>
                                       <span style={{
                                         width: '10px', height: '10px', borderRadius: '50%',
-                                        background: variant.in_stock ? '#28a745' : '#dc3545'
+                                        background: variant.in_stock ? '#6b7c59' : '#a85751'
                                       }}></span>
                                       <span style={{ fontWeight: '500' }}>{variant.color_name}</span>
                                       <button type="button" onClick={() => removeEditVariant(idx)} style={{ border: 'none', background: 'none', cursor: 'pointer', color: '#999', padding: '0 0 0 5px' }}>✕</button>
@@ -2303,7 +2303,7 @@ const AdminPanel = ({ onLogout }) => {
                               </div>
 
                               <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.5rem' }}>
-                                <button type="submit" disabled={loading} style={{ flex: 1, padding: '1rem', background: '#28a745', color: 'white', border: 'none', borderRadius: '8px', fontWeight: 'bold' }}>Guardar</button>
+                                <button type="submit" disabled={loading} style={{ flex: 1, padding: '1rem', background: '#6b7c59', color: 'white', border: 'none', borderRadius: '8px', fontWeight: 'bold' }}>Guardar</button>
                                 <button type="button" onClick={cancelEditing} style={{ flex: 1, padding: '1rem', background: '#666', color: 'white', border: 'none', borderRadius: '8px', fontWeight: 'bold' }}>Cancelar</button>
                               </div>
                             </div>
@@ -2336,8 +2336,8 @@ const AdminPanel = ({ onLogout }) => {
                               </button>
                             </div>
                             <div style={{ display: 'flex', gap: '0.75rem' }}>
-                              <button onClick={() => startEditing(product)} style={{ flex: 1, padding: '0.9rem', background: '#007bff', color: 'white', border: 'none', borderRadius: '10px', fontWeight: '600', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}>✏️ Editar</button>
-                              <button onClick={() => handleDeleteProduct(product.id)} style={{ flex: 1, padding: '0.9rem', background: '#dc3545', color: 'white', border: 'none', borderRadius: '10px', fontWeight: '600', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}>🗑️ Borrar</button>
+                              <button onClick={() => startEditing(product)} style={{ flex: 1, padding: '0.9rem', background: '#2c3e50', color: 'white', border: 'none', borderRadius: '10px', fontWeight: '600', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}>✏️ Editar</button>
+                              <button onClick={() => handleDeleteProduct(product.id)} style={{ flex: 1, padding: '0.9rem', background: '#a85751', color: 'white', border: 'none', borderRadius: '10px', fontWeight: '600', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}>🗑️ Borrar</button>
                             </div>
                           </div>
                         </>
@@ -2462,7 +2462,7 @@ const AdminPanel = ({ onLogout }) => {
                         style={{
                           background: 'none',
                           border: 'none',
-                          color: '#dc3545',
+                          color: '#a85751',
                           cursor: 'pointer',
                           fontSize: '1.2rem',
                           padding: '0.25rem',
@@ -2563,7 +2563,7 @@ const AdminPanel = ({ onLogout }) => {
                       <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
                         <div style={{
                           width: '12px', height: '12px', borderRadius: '50%',
-                          background: filter.is_active ? '#28a745' : '#dc3545'
+                          background: filter.is_active ? '#6b7c59' : '#a85751'
                         }} />
                         <span style={{ fontWeight: '500', color: '#333', fontSize: '1.1rem' }}>
                           {filter.label}
@@ -2654,7 +2654,7 @@ const AdminPanel = ({ onLogout }) => {
           <div style={{ fontSize: '4rem', marginBottom: '1rem', opacity: 0.5 }}>🔒</div>
           <h2 style={{
             fontFamily: 'Didot, serif',
-            color: '#dc3545',
+            color: '#a85751',
             marginBottom: '1rem',
             fontSize: '2rem',
             fontWeight: '400'
@@ -2956,7 +2956,7 @@ const AdminPanel = ({ onLogout }) => {
             <button
               onClick={() => setError(null)}
               style={{
-                background: 'linear-gradient(135deg, #dc3545 0%, #c82333 100%)',
+                background: 'linear-gradient(135deg, #a85751 0%, #8b4640 100%)',
                 color: 'white',
                 border: 'none',
                 padding: '0.75rem 1.5rem',
