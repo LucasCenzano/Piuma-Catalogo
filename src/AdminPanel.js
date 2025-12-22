@@ -162,7 +162,7 @@ const AdminPanel = ({ onLogout }) => {
   const [newDiscountPercentage, setNewDiscountPercentage] = useState(0);
   const [newTags, setNewTags] = useState([]); // Array of strings
   const [newProductCode, setNewProductCode] = useState('');
-  const [newUnitCostUsd, setNewUnitCostUsd] = useState('');
+  const [newUnitCostArs, setNewUnitCostArs] = useState('');
 
   // Estados para variantes (colores) - Creación
   const [newVariants, setNewVariants] = useState([]); // [{color_name, in_stock, quantity}]
@@ -183,7 +183,7 @@ const AdminPanel = ({ onLogout }) => {
   const [editDiscountPercentage, setEditDiscountPercentage] = useState(0);
   const [editTags, setEditTags] = useState([]); // Array of strings
   const [editProductCode, setEditProductCode] = useState('');
-  const [editUnitCostUsd, setEditUnitCostUsd] = useState('');
+  const [editUnitCostArs, setEditUnitCostArs] = useState('');
 
   // Estados para variantes (colores) - Edición
   const [editVariants, setEditVariants] = useState([]); // [{id, color_name, in_stock, quantity}]
@@ -444,7 +444,7 @@ const AdminPanel = ({ onLogout }) => {
         variants: newVariants,
         tags: newTags,
         productCode: newProductCode.trim(),
-        unitCostUsd: newUnitCostUsd ? parseFloat(newUnitCostUsd) : 0
+        unitCostArs: newUnitCostArs ? parseFloat(newUnitCostArs) : 0
       });
 
       // Limpiar formulario
@@ -463,7 +463,7 @@ const AdminPanel = ({ onLogout }) => {
       setTempVariantStock(true);
       setNewTags([]); // Reset tags
       setNewProductCode('');
-      setNewUnitCostUsd('');
+      setNewUnitCostArs('');
       setShowAddForm(false);
 
       await loadProducts();
@@ -506,7 +506,7 @@ const AdminPanel = ({ onLogout }) => {
         variants: editVariants,
         tags: editTags,
         productCode: editProductCode.trim(),
-        unitCostUsd: editUnitCostUsd ? parseFloat(editUnitCostUsd) : 0
+        unitCostArs: editUnitCostArs ? parseFloat(editUnitCostArs) : 0
       });
 
       cancelEditing();
@@ -566,7 +566,7 @@ const AdminPanel = ({ onLogout }) => {
     setEditVariants(product.variants || []); // Load variants
     setEditTags(product.tags || []);
     setEditProductCode(product.product_code || '');
-    setEditUnitCostUsd(String(product.unit_cost_usd || ''));
+    setEditUnitCostArs(String(product.unit_cost_ars || ''));
   };
 
   const cancelEditing = () => {
@@ -1011,9 +1011,9 @@ const AdminPanel = ({ onLogout }) => {
                       <input
                         type="number"
                         step="0.01"
-                        placeholder="Costo Unitario USD (opcional)"
-                        value={newUnitCostUsd}
-                        onChange={(e) => setNewUnitCostUsd(e.target.value)}
+                        placeholder="Costo Unitario ARS (opcional)"
+                        value={newUnitCostArs}
+                        onChange={(e) => setNewUnitCostArs(e.target.value)}
                         style={{
                           padding: '1rem',
                           border: '2px solid #e9ecef',
@@ -1025,16 +1025,6 @@ const AdminPanel = ({ onLogout }) => {
                           width: '100%'
                         }}
                       />
-                      {newUnitCostUsd && (
-                        <div style={{
-                          fontSize: '0.85rem',
-                          color: '#6b7c59',
-                          marginTop: '0.5rem',
-                          fontWeight: '500'
-                        }}>
-                          💵 En ARS: ${(parseFloat(newUnitCostUsd) * exchangeRate).toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                        </div>
-                      )}
                     </div>
                   </div>
 
@@ -1791,9 +1781,9 @@ const AdminPanel = ({ onLogout }) => {
                                               <input
                                                 type="number"
                                                 step="0.01"
-                                                value={editUnitCostUsd}
-                                                onChange={(e) => setEditUnitCostUsd(e.target.value)}
-                                                placeholder="Costo Unitario USD"
+                                                value={editUnitCostArs}
+                                                onChange={(e) => setEditUnitCostArs(e.target.value)}
+                                                placeholder="Costo Unitario ARS"
                                                 style={{
                                                   padding: '1rem',
                                                   border: '2px solid #e9ecef',
@@ -1804,19 +1794,17 @@ const AdminPanel = ({ onLogout }) => {
                                                   width: '100%'
                                                 }}
                                               />
-                                              {editUnitCostUsd && (
+                                              {editUnitCostArs && editPrice && (
                                                 <div style={{
                                                   fontSize: '0.85rem',
                                                   color: '#6b7c59',
                                                   marginTop: '0.5rem',
                                                   fontWeight: '500'
                                                 }}>
-                                                  💵 En ARS: ${(parseFloat(editUnitCostUsd) * exchangeRate).toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                                                  {editPrice && (
-                                                    <span style={{ marginLeft: '1rem', color: '#d4af37' }}>
-                                                      | 📊 Margen: {((parseFloat(editPrice.replace(/[^0-9.-]/g, '')) - (parseFloat(editUnitCostUsd) * exchangeRate)) / parseFloat(editPrice.replace(/[^0-9.-]/g, '')) * 100).toFixed(1)}%
-                                                    </span>
-                                                  )}
+                                                  💰 Costo: ${parseFloat(editUnitCostArs).toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                                  <span style={{ marginLeft: '1rem', color: '#d4af37' }}>
+                                                    | 📊 Margen: {((parseFloat(editPrice.replace(/[^0-9.-]/g, '')) - parseFloat(editUnitCostArs)) / parseFloat(editPrice.replace(/[^0-9.-]/g, '')) * 100).toFixed(1)}%
+                                                  </span>
                                                 </div>
                                               )}
                                             </div>

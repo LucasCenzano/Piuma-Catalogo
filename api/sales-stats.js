@@ -300,21 +300,16 @@ module.exports = async function handler(req, res) {
     const profitStats = await query(`
       SELECT 
         COALESCE(SUM(si.subtotal), 0) as total_revenue,
-        COALESCE(SUM(si.quantity * p.unit_cost_usd * er.rate), 0) as total_cost,
-        COALESCE(SUM(si.subtotal) - SUM(si.quantity * p.unit_cost_usd * er.rate), 0) as total_profit,
+        COALESCE(SUM(si.quantity * p.unit_cost_ars), 0) as total_cost,
+        COALESCE(SUM(si.subtotal) - SUM(si.quantity * p.unit_cost_ars), 0) as total_profit,
         CASE 
           WHEN SUM(si.subtotal) > 0 THEN 
-            ROUND(((SUM(si.subtotal) - SUM(si.quantity * p.unit_cost_usd * er.rate)) / SUM(si.subtotal) * 100)::numeric, 2)
+            ROUND(((SUM(si.subtotal) - SUM(si.quantity * p.unit_cost_ars)) / SUM(si.subtotal) * 100)::numeric, 2)
           ELSE 0 
         END as profit_margin_percentage
       FROM sale_items si
       JOIN sales s ON si.sale_id = s.id
       JOIN products p ON si.product_id = p.id
-      CROSS JOIN (
-        SELECT rate FROM exchange_rates 
-        WHERE currency_from = 'USD' AND currency_to = 'ARS' 
-        ORDER BY updated_at DESC LIMIT 1
-      ) er
       WHERE 1=1 ${dateFilter}
     `, queryParams);
 
@@ -327,21 +322,16 @@ module.exports = async function handler(req, res) {
         p.category,
         SUM(si.quantity) as units_sold,
         COALESCE(SUM(si.subtotal), 0) as revenue,
-        COALESCE(SUM(si.quantity * p.unit_cost_usd * er.rate), 0) as cost,
-        COALESCE(SUM(si.subtotal) - SUM(si.quantity * p.unit_cost_usd * er.rate), 0) as profit,
+        COALESCE(SUM(si.quantity * p.unit_cost_ars), 0) as cost,
+        COALESCE(SUM(si.subtotal) - SUM(si.quantity * p.unit_cost_ars), 0) as profit,
         CASE 
           WHEN SUM(si.subtotal) > 0 THEN 
-            ROUND(((SUM(si.subtotal) - SUM(si.quantity * p.unit_cost_usd * er.rate)) / SUM(si.subtotal) * 100)::numeric, 2)
+            ROUND(((SUM(si.subtotal) - SUM(si.quantity * p.unit_cost_ars)) / SUM(si.subtotal) * 100)::numeric, 2)
           ELSE 0 
         END as margin_percentage
       FROM sale_items si
       JOIN sales s ON si.sale_id = s.id
       JOIN products p ON si.product_id = p.id
-      CROSS JOIN (
-        SELECT rate FROM exchange_rates 
-        WHERE currency_from = 'USD' AND currency_to = 'ARS' 
-        ORDER BY updated_at DESC LIMIT 1
-      ) er
       WHERE 1=1 ${dateFilter}
       GROUP BY p.id, p.name, p.product_code, p.category
       ORDER BY profit DESC
@@ -355,21 +345,16 @@ module.exports = async function handler(req, res) {
         COUNT(DISTINCT si.sale_id) as sales_count,
         SUM(si.quantity) as units_sold,
         COALESCE(SUM(si.subtotal), 0) as revenue,
-        COALESCE(SUM(si.quantity * p.unit_cost_usd * er.rate), 0) as cost,
-        COALESCE(SUM(si.subtotal) - SUM(si.quantity * p.unit_cost_usd * er.rate), 0) as profit,
+        COALESCE(SUM(si.quantity * p.unit_cost_ars), 0) as cost,
+        COALESCE(SUM(si.subtotal) - SUM(si.quantity * p.unit_cost_ars), 0) as profit,
         CASE 
           WHEN SUM(si.subtotal) > 0 THEN 
-            ROUND(((SUM(si.subtotal) - SUM(si.quantity * p.unit_cost_usd * er.rate)) / SUM(si.subtotal) * 100)::numeric, 2)
+            ROUND(((SUM(si.subtotal) - SUM(si.quantity * p.unit_cost_ars)) / SUM(si.subtotal) * 100)::numeric, 2)
           ELSE 0 
         END as margin_percentage
       FROM sale_items si
       JOIN sales s ON si.sale_id = s.id
       JOIN products p ON si.product_id = p.id
-      CROSS JOIN (
-        SELECT rate FROM exchange_rates 
-        WHERE currency_from = 'USD' AND currency_to = 'ARS' 
-        ORDER BY updated_at DESC LIMIT 1
-      ) er
       WHERE 1=1 ${dateFilter}
       GROUP BY p.category
       ORDER BY profit DESC

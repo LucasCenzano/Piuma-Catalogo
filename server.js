@@ -334,7 +334,7 @@ app.post('/api/admin/products',
     try {
       const {
         name, price, category, description, inStock, imagesUrl,
-        isFeatured, isNew, discountPercentage, productCode, unitCostUsd
+        isFeatured, isNew, discountPercentage, productCode, unitCostArs
       } = req.body;
 
       const maxIdResult = await query(
@@ -354,7 +354,7 @@ app.post('/api/admin/products',
         INSERT INTO products (
           id, name, price, category, description, in_stock, images_url,
           is_featured, is_new, discount_percentage, tags,
-          product_code, unit_cost_usd,
+          product_code, unit_cost_ars,
           created_at, updated_at, is_active
         )
         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, true)
@@ -372,7 +372,7 @@ app.post('/api/admin/products',
         discountPercentage || 0,
         req.body.tags || [],
         productCode || null,
-        unitCostUsd ? parseFloat(unitCostUsd) : 0
+        unitCostArs ? parseFloat(unitCostArs) : 0
       ]);
 
       const product = result.rows[0];
@@ -436,7 +436,7 @@ app.put('/api/admin/products/:id',
       const values = [];
       const allowedFields = [
         'name', 'price', 'category', 'description', 'inStock', 'imagesUrl',
-        'isFeatured', 'isNew', 'discountPercentage', 'tags', 'productCode', 'unitCostUsd'
+        'isFeatured', 'isNew', 'discountPercentage', 'tags', 'productCode', 'unitCostArs'
       ];
       let paramCount = 1;
 
@@ -455,8 +455,8 @@ app.put('/api/admin/products/:id',
           else if (field === 'isNew') dbField = 'is_new';
           else if (field === 'discountPercentage') dbField = 'discount_percentage';
           else if (field === 'productCode') dbField = 'product_code';
-          else if (field === 'unitCostUsd') {
-            dbField = 'unit_cost_usd';
+          else if (field === 'unitCostArs') {
+            dbField = 'unit_cost_ars';
             value = value ? parseFloat(value) : 0;
           }
 
