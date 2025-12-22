@@ -1233,6 +1233,62 @@ const AdminVentas = () => {
                   </span>
                 </div>
 
+
+                {/* Productos Vendidos */}
+                {sale.items && sale.items.length > 0 && (
+                  <div style={{ 
+                    background: '#f8f9fa', 
+                    padding: '1rem', 
+                    borderRadius: '8px',
+                    border: '1px solid #e9ecef'
+                  }}>
+                    <div style={{ 
+                      fontWeight: '600', 
+                      marginBottom: '0.75rem', 
+                      color: '#333',
+                      fontSize: '0.9rem'
+                    }}>
+                      📦 Productos ({sale.items.length})
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                      {sale.items.map((item, idx) => (
+                        <div key={idx} style={{ 
+                          display: 'flex', 
+                          justifyContent: 'space-between',
+                          alignItems: 'center',
+                          padding: '0.5rem',
+                          background: 'white',
+                          borderRadius: '6px',
+                          fontSize: '0.85rem'
+                        }}>
+                          <div style={{ flex: 1 }}>
+                            <div style={{ fontWeight: '600', color: '#333' }}>
+                              {item.product_name}
+                            </div>
+                            {item.variant_name && (
+                              <div style={{ color: '#666', fontSize: '0.8rem' }}>
+                                🎨 {item.variant_name}
+                              </div>
+                            )}
+                          </div>
+                          <div style={{ 
+                            display: 'flex', 
+                            alignItems: 'center', 
+                            gap: '0.75rem',
+                            fontSize: '0.85rem'
+                          }}>
+                            <span style={{ color: '#666' }}>
+                              x{item.quantity}
+                            </span>
+                            <span style={{ fontWeight: '600', color: '#28a745' }}>
+                              {formatCurrency(item.subtotal)}
+                            </span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
                 {/* Acciones */}
                 <div style={{ paddingTop: '1rem', borderTop: '1px solid #eee', display: 'flex', justifyContent: 'flex-end', gap: '0.5rem' }}>
                   <button
