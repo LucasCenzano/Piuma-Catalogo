@@ -201,13 +201,22 @@ const AdminPanel = ({ onLogout }) => {
   const sortedProducts = useMemo(() => {
     let sortableProducts = [...products];
 
-    // Filtrar por búsqueda (nombre o código)
+    // Filtrar por búsqueda (nombre, código de producto, o código de variante)
     if (productSearch.trim()) {
       const searchLower = productSearch.toLowerCase();
-      sortableProducts = sortableProducts.filter(product =>
-        product.name?.toLowerCase().includes(searchLower) ||
-        product.product_code?.toLowerCase().includes(searchLower)
-      );
+      sortableProducts = sortableProducts.filter(product => {
+        // Buscar en nombre y código de producto
+        const matchesNameOrCode =
+          product.name?.toLowerCase().includes(searchLower) ||
+          product.product_code?.toLowerCase().includes(searchLower);
+
+        // Buscar en códigos de variantes
+        const matchesVariantCode = product.variants?.some(variant =>
+          variant.product_code?.toLowerCase().includes(searchLower)
+        );
+
+        return matchesNameOrCode || matchesVariantCode;
+      });
     }
 
     // Ordenar
@@ -1004,6 +1013,7 @@ const AdminPanel = ({ onLogout }) => {
                       value={newProductCode}
                       onChange={(e) => setNewProductCode(e.target.value)}
                       style={{
+                        display: 'none', // Oculto: ahora cada variante tiene su código
                         padding: '1rem',
                         border: '2px solid #e9ecef',
                         borderRadius: '12px',
@@ -1789,6 +1799,7 @@ const AdminPanel = ({ onLogout }) => {
                                               onChange={(e) => setEditProductCode(e.target.value)}
                                               placeholder="Código del Producto"
                                               style={{
+                                                display: 'none', // Oculto: ahora cada variante tiene su código
                                                 padding: '1rem',
                                                 border: '2px solid #e9ecef',
                                                 borderRadius: '12px',
