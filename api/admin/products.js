@@ -120,7 +120,8 @@ module.exports = async function handler(req, res) {
             ORDER BY category, name
           `);
 
-          const products = result.rows.map(product => {
+
+          const products = await Promise.all(result.rows.map(async (product) => {
             if (typeof product.images_url === 'string') {
               try {
                 product.images_url = JSON.parse(product.images_url);
@@ -128,10 +129,18 @@ module.exports = async function handler(req, res) {
                 product.images_url = [];
               }
             }
-            return product;
-          });
 
-          console.log(`Enviando ${products.length} productos`);
+            // Load variants for each product
+            const variantsResult = await query(
+              'SELECT * FROM product_variants WHERE product_id = $1 ORDER BY id',
+              [product.id]
+            );
+            product.variants = variantsResult.rows;
+
+            return product;
+          }));
+
+          console.log(`Enviando ${products.length} productos con sus variantes`);
           return res.status(200).json(products);
         }
 
