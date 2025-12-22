@@ -956,7 +956,7 @@ const AdminPanel = ({ onLogout }) => {
               <div style={{
                 background: 'white',
                 borderRadius: '16px',
-                padding: '2.5rem',
+                padding: window.innerWidth < 768 ? '1.5rem' : '2.5rem',
                 marginBottom: '2rem',
                 boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1)',
                 border: '1px solid rgba(230, 227, 212, 0.5)',
@@ -986,7 +986,7 @@ const AdminPanel = ({ onLogout }) => {
                 <form onSubmit={handleCreateProduct}>
                   <div style={{
                     display: 'grid',
-                    gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
+                    gridTemplateColumns: window.innerWidth < 768 ? '1fr' : 'repeat(auto-fit, minmax(300px, 1fr))',
                     gap: '1.5rem',
                     marginBottom: '1.5rem'
                   }}>
@@ -1026,7 +1026,7 @@ const AdminPanel = ({ onLogout }) => {
 
                   <div style={{
                     display: 'grid',
-                    gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
+                    gridTemplateColumns: window.innerWidth < 768 ? '1fr' : 'repeat(auto-fit, minmax(250px, 1fr))',
                     gap: '1.5rem',
                     marginBottom: '1.5rem'
                   }}>
@@ -1075,7 +1075,7 @@ const AdminPanel = ({ onLogout }) => {
 
                   <div style={{
                     display: 'grid',
-                    gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+                    gridTemplateColumns: window.innerWidth < 768 ? '1fr' : 'repeat(auto-fit, minmax(200px, 1fr))',
                     gap: '1.5rem',
                     marginBottom: '1.5rem',
                     padding: '1rem',
