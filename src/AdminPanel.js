@@ -5,6 +5,7 @@ import './AdminPanelResponsive.css';
 import { Link } from 'react-router-dom';
 import ExchangeRateSection from './ExchangeRateSection';
 import ImageUploader from './ImageUploader';
+import Dashboard from './components/Dashboard';
 
 // Categorías válidas con íconos
 const ADMIN_SECTIONS = [
@@ -695,124 +696,17 @@ const AdminPanel = ({ onLogout }) => {
     switch (activeSection) {
       case 'dashboard':
         return (
-          <div>
-            <h2 style={{
-              fontFamily: 'Didot, serif',
-              fontSize: '2.5rem',
-              color: '#333',
-              textAlign: 'center',
-              marginBottom: '3rem',
-              fontWeight: '400'
-            }}>
-              📊 Panel de Control
-            </h2>
-            <DashboardStats products={products} categoriesCount={categories.length} />
-
-            {/* Productos recientes */}
-            <div style={{
-              background: 'white',
-              borderRadius: '16px',
-              padding: '2rem',
-              boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1)',
-              border: '1px solid rgba(230, 227, 212, 0.5)'
-            }}>
-              <h3 style={{
-                fontFamily: 'Didot, serif',
-                fontSize: '1.8rem',
-                color: '#333',
-                marginBottom: '1.5rem',
-                fontWeight: '400'
-              }}>
-                📦 Productos Recientes
-              </h3>
-              <div style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))',
-                gap: '1.5rem'
-              }}>
-                {products.slice(0, 6).map(product => (
-                  <div key={product.id} style={{
-                    background: 'linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%)',
-                    borderRadius: '12px',
-                    padding: '1rem',
-                    textAlign: 'center',
-                    border: '1px solid #dee2e6'
-                  }}>
-                    <SafeImage
-                      src={getProductImageUrl(product)}
-                      alt={product.name}
-                      style={{
-                        width: '60px',
-                        height: '60px',
-                        objectFit: 'cover',
-                        borderRadius: '8px',
-                        margin: '0 auto 1rem'
-                      }}
-                    />
-                    <h4 style={{ margin: '0 0 0.5rem 0', fontSize: '0.9rem' }}>{product.name}</h4>
-                    <span style={{
-                      display: 'inline-block',
-                      padding: '0.25rem 0.5rem',
-                      borderRadius: '12px',
-                      fontSize: '0.7rem',
-                      fontWeight: '600',
-                      textTransform: 'uppercase',
-                      letterSpacing: '0.5px',
-                      background: product.in_stock ? '#d4edda' : '#f8d7da',
-                      color: product.in_stock ? '#155724' : '#721c24'
-                    }}>
-                      {product.in_stock ? '✅ En Stock' : '❌ Sin Stock'}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Acceso directo al módulo de ventas */}
-            <div style={{
-              background: 'linear-gradient(135deg, #6b7c59 0%, #8b9a7a 100%)',
-              borderRadius: '16px',
-              padding: '2rem',
-              marginBottom: '3rem',
-              textAlign: 'center',
-              boxShadow: '0 8px 32px rgba(40, 167, 69, 0.3)'
-            }}>
-              <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>💰</div>
-              <h3 style={{
-                color: 'white',
-                fontSize: '1.8rem',
-                marginBottom: '1rem',
-                fontFamily: 'Didot, serif',
-                fontWeight: '400'
-              }}>
-                Módulo de Ventas
-              </h3>
-              <p style={{ color: 'white', opacity: 0.9, marginBottom: '2rem', fontSize: '1.1rem' }}>
-                Registra ventas, gestiona clientes y visualiza estadísticas
-              </p>
-              <Link to="/admin/ventas" style={{ textDecoration: 'none' }}>
-                <button
-                  style={{
-                    background: 'white',
-                    color: '#6b7c59',
-                    // ... los mismos estilos que ya tenías
-                    border: 'none',
-                    padding: '1rem 2.5rem',
-                    borderRadius: '12px',
-                    fontSize: '1.1rem',
-                    fontWeight: '600',
-                    cursor: 'pointer',
-                    boxShadow: '0 4px 15px rgba(0, 0, 0, 0.1)',
-                    transition: 'all 0.3s ease'
-                  }}
-                // Ya no necesita el onClick
-                >
-                  🚀 Ir a Ventas
-                </button>
-              </Link>
-            </div>
-          </div>
+          <Dashboard
+            productos={products}
+            clientes={[]}
+            ventas={[]}
+            onCreateProduct={() => {
+              setShowAddForm(true);
+              setActiveSection('products');
+            }}
+          />
         );
+
 
       case 'products':
         return (
@@ -1292,8 +1186,8 @@ const AdminPanel = ({ onLogout }) => {
 
                     {/* Uploader de Cloudinary */}
                     <div style={{ marginBottom: '1.5rem' }}>
-                      <p style={{ 
-                        marginBottom: '0.75rem', 
+                      <p style={{
+                        marginBottom: '0.75rem',
                         fontWeight: '500',
                         color: '#6b7c59',
                         fontSize: '0.95rem'
@@ -1326,8 +1220,8 @@ const AdminPanel = ({ onLogout }) => {
 
                     {/* Input de URL */}
                     <div>
-                      <p style={{ 
-                        marginBottom: '0.75rem', 
+                      <p style={{
+                        marginBottom: '0.75rem',
                         fontWeight: '500',
                         color: '#6b7c59',
                         fontSize: '0.95rem'
@@ -2025,8 +1919,8 @@ const AdminPanel = ({ onLogout }) => {
 
                                           {/* Uploader de Cloudinary */}
                                           <div style={{ marginBottom: '1.5rem' }}>
-                                            <p style={{ 
-                                              marginBottom: '0.75rem', 
+                                            <p style={{
+                                              marginBottom: '0.75rem',
                                               fontWeight: '500',
                                               color: '#6b7c59',
                                               fontSize: '0.95rem'
@@ -2059,8 +1953,8 @@ const AdminPanel = ({ onLogout }) => {
 
                                           {/* Input de URL */}
                                           <div>
-                                            <p style={{ 
-                                              marginBottom: '0.75rem', 
+                                            <p style={{
+                                              marginBottom: '0.75rem',
                                               fontWeight: '500',
                                               color: '#6b7c59',
                                               fontSize: '0.95rem'
