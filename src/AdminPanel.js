@@ -2023,6 +2023,52 @@ const AdminPanel = ({ onLogout }) => {
                                             🖼️ Gestión de Imágenes
                                           </h5>
 
+                                          {/* Uploader de Cloudinary */}
+                                          <div style={{ marginBottom: '1.5rem' }}>
+                                            <p style={{ 
+                                              marginBottom: '0.75rem', 
+                                              fontWeight: '500',
+                                              color: '#6b7c59',
+                                              fontSize: '0.95rem'
+                                            }}>
+                                              📤 Subir desde tu computadora (Recomendado):
+                                            </p>
+                                            <ImageUploader
+                                              multiple={true}
+                                              onImageUploaded={(urls) => {
+                                                if (Array.isArray(urls)) {
+                                                  setEditImages([...editImages, ...urls]);
+                                                } else {
+                                                  setEditImages([...editImages, urls]);
+                                                }
+                                              }}
+                                            />
+                                          </div>
+
+                                          {/* Separador */}
+                                          <div style={{
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            margin: '1.5rem 0',
+                                            gap: '1rem'
+                                          }}>
+                                            <div style={{ flex: 1, height: '1px', background: '#dee2e6' }} />
+                                            <span style={{ color: '#6c757d', fontSize: '0.9rem', fontWeight: '500' }}>O</span>
+                                            <div style={{ flex: 1, height: '1px', background: '#dee2e6' }} />
+                                          </div>
+
+                                          {/* Input de URL */}
+                                          <div>
+                                            <p style={{ 
+                                              marginBottom: '0.75rem', 
+                                              fontWeight: '500',
+                                              color: '#6b7c59',
+                                              fontSize: '0.95rem'
+                                            }}>
+                                              🔗 Agregar desde URL:
+                                            </p>
+
+                                          </div>
                                           <div style={{ display: 'flex', gap: '1rem', marginBottom: '1rem' }}>
                                             <input
                                               type="url"

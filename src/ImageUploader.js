@@ -85,7 +85,7 @@ const ImageUploader = ({ onImageUploaded, multiple = false }) => {
                 htmlFor="image-upload"
                 style={{
                     display: 'inline-block',
-                    padding: '1rem 2rem',
+                    padding: window.innerWidth < 768 ? '0.875rem 1.5rem' : '1rem 2rem',
                     background: uploading
                         ? 'linear-gradient(135deg, #6c757d 0%, #5a6268 100%)'
                         : 'linear-gradient(135deg, #6b7c59 0%, #8b9a7a 100%)',
@@ -98,7 +98,8 @@ const ImageUploader = ({ onImageUploaded, multiple = false }) => {
                     border: 'none',
                     boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
                     width: '100%',
-                    boxSizing: 'border-box'
+                    boxSizing: 'border-box',
+                    fontSize: window.innerWidth < 768 ? '0.9rem' : '1rem'
                 }}
             >
                 {uploading ? (
