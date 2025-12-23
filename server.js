@@ -17,6 +17,7 @@ const { validationResult } = require('express-validator');
 const salesHandler = require('./api/sales');
 const salesStatsHandler = require('./api/sales-stats');
 const customersHandler = require('./api/customers');
+const uploadHandler = require('./api/upload');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -191,6 +192,10 @@ app.post('/api/auth/change-password', authenticate, async (req, res) => {
     res.status(500).json({ error: 'Error interno del servidor' });
   }
 });
+
+// ========== RUTAS DE UPLOAD (CLOUDINARY) ==========
+app.use('/api/upload', uploadHandler);
+
 
 // ========== RUTAS DE PRODUCTOS (PÚBLICAS) ==========
 

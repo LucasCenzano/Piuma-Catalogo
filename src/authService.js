@@ -181,10 +181,14 @@ class AuthService {
       throw new Error('Sesión expirada');
     }
 
+    // Detectar si el body es FormData
+    const isFormData = options.body instanceof FormData;
+
     const config = {
       ...options,
       headers: {
-        'Content-Type': 'application/json',
+        // Solo agregar Content-Type si NO es FormData
+        ...(isFormData ? {} : { 'Content-Type': 'application/json' }),
         'Authorization': `Bearer ${currentToken}`,
         'Cache-Control': 'no-cache, no-store, must-revalidate',
         'Pragma': 'no-cache',

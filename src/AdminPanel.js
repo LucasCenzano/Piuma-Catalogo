@@ -4,6 +4,7 @@ import './AdminPanel.css';
 import './AdminPanelResponsive.css';
 import { Link } from 'react-router-dom';
 import ExchangeRateSection from './ExchangeRateSection';
+import ImageUploader from './ImageUploader';
 
 // Categorías válidas con íconos
 const ADMIN_SECTIONS = [
@@ -1289,6 +1290,52 @@ const AdminPanel = ({ onLogout }) => {
                       🖼️ Agregar Imágenes
                     </h4>
 
+                    {/* Uploader de Cloudinary */}
+                    <div style={{ marginBottom: '1.5rem' }}>
+                      <p style={{ 
+                        marginBottom: '0.75rem', 
+                        fontWeight: '500',
+                        color: '#6b7c59',
+                        fontSize: '0.95rem'
+                      }}>
+                        📤 Subir desde tu computadora (Recomendado):
+                      </p>
+                      <ImageUploader
+                        multiple={true}
+                        onImageUploaded={(urls) => {
+                          if (Array.isArray(urls)) {
+                            setNewImages([...newImages, ...urls]);
+                          } else {
+                            setNewImages([...newImages, urls]);
+                          }
+                        }}
+                      />
+                    </div>
+
+                    {/* Separador */}
+                    <div style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      margin: '1.5rem 0',
+                      gap: '1rem'
+                    }}>
+                      <div style={{ flex: 1, height: '1px', background: '#dee2e6' }} />
+                      <span style={{ color: '#6c757d', fontSize: '0.9rem', fontWeight: '500' }}>O</span>
+                      <div style={{ flex: 1, height: '1px', background: '#dee2e6' }} />
+                    </div>
+
+                    {/* Input de URL */}
+                    <div>
+                      <p style={{ 
+                        marginBottom: '0.75rem', 
+                        fontWeight: '500',
+                        color: '#6b7c59',
+                        fontSize: '0.95rem'
+                      }}>
+                        🔗 Agregar desde URL:
+                      </p>
+
+                    </div>
                     <div style={{
                       display: 'flex',
                       flexDirection: window.innerWidth < 768 ? 'column' : 'row',
