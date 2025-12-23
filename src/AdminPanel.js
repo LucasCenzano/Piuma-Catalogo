@@ -2,7 +2,6 @@ import React, { useState, useEffect, useMemo } from 'react';
 import authService from './authService';
 import './AdminPanel.css';
 import './AdminPanelResponsive.css';
-import { Link } from 'react-router-dom';
 import ExchangeRateSection from './ExchangeRateSection';
 import ImageUploader from './ImageUploader';
 import Dashboard from './components/Dashboard';
@@ -52,77 +51,6 @@ const SafeImage = ({ src, alt, style, ...props }) => {
       onError={() => setImageError(true)}
       {...props}
     />
-  );
-};
-
-// Componente Dashboard Stats
-const DashboardStats = ({ products, categoriesCount }) => {
-  const stats = {
-    total: products.length,
-    inStock: products.filter(p => p.in_stock).length,
-    outStock: products.filter(p => !p.in_stock).length,
-    categories: categoriesCount || [...new Set(products.map(p => p.category))].length
-  };
-
-  return (
-    <div style={{
-      display: 'grid',
-      gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
-      gap: '2rem',
-      marginBottom: '3rem'
-    }}>
-      <div style={{
-        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-        color: 'white',
-        padding: '2rem',
-        borderRadius: '16px',
-        boxShadow: '0 8px 32px rgba(102, 126, 234, 0.3)',
-        textAlign: 'center'
-      }}>
-        <div style={{ fontSize: '3rem', marginBottom: '0.5rem' }}>📦</div>
-        <h3 style={{ margin: '0 0 0.5rem 0', fontSize: '2.5rem', fontWeight: '700' }}>{stats.total}</h3>
-        <p style={{ margin: 0, opacity: 0.9 }}>Total Productos</p>
-      </div>
-
-      <div style={{
-        background: 'linear-gradient(135deg, #2ed573 0%, #3742fa 100%)',
-        color: 'white',
-        padding: '2rem',
-        borderRadius: '16px',
-        boxShadow: '0 8px 32px rgba(46, 213, 115, 0.3)',
-        textAlign: 'center'
-      }}>
-        <div style={{ fontSize: '3rem', marginBottom: '0.5rem' }}>✅</div>
-        <h3 style={{ margin: '0 0 0.5rem 0', fontSize: '2.5rem', fontWeight: '700' }}>{stats.inStock}</h3>
-        <p style={{ margin: 0, opacity: 0.9 }}>En Stock</p>
-      </div>
-
-      <div style={{
-        background: 'linear-gradient(135deg, #ff6b6b 0%, #ff8e53 100%)',
-        color: 'white',
-        padding: '2rem',
-        borderRadius: '16px',
-        boxShadow: '0 8px 32px rgba(255, 107, 107, 0.3)',
-        textAlign: 'center'
-      }}>
-        <div style={{ fontSize: '3rem', marginBottom: '0.5rem' }}>❌</div>
-        <h3 style={{ margin: '0 0 0.5rem 0', fontSize: '2.5rem', fontWeight: '700' }}>{stats.outStock}</h3>
-        <p style={{ margin: 0, opacity: 0.9 }}>Sin Stock</p>
-      </div>
-
-      <div style={{
-        background: 'linear-gradient(135deg, #ffa726 0%, #fb8c00 100%)',
-        color: 'white',
-        padding: '2rem',
-        borderRadius: '16px',
-        boxShadow: '0 8px 32px rgba(255, 167, 38, 0.3)',
-        textAlign: 'center'
-      }}>
-        <div style={{ fontSize: '3rem', marginBottom: '0.5rem' }}>📂</div>
-        <h3 style={{ margin: '0 0 0.5rem 0', fontSize: '2.5rem', fontWeight: '700' }}>{stats.categories}</h3>
-        <p style={{ margin: 0, opacity: 0.9 }}>Categorías</p>
-      </div>
-    </div>
   );
 };
 
