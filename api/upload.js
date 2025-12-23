@@ -35,8 +35,9 @@ router.post('/upload', authenticate, upload.single('image'), async (req, res) =>
                 resource_type: 'image',
                 transformation: [
                     { width: 1200, height: 1200, crop: 'limit' }, // Limitar tamaño máximo
-                    { quality: 'auto:good' }, // Optimización automática
-                    { fetch_format: 'auto' } // Formato automático (WebP si es soportado)
+                    { quality: 'auto:eco' }, // Máxima compresión manteniendo calidad aceptable
+                    { fetch_format: 'auto' }, // Formato automático (WebP si es soportado)
+                    { flags: 'lossy' } // Compresión con pérdida para reducir tamaño
                 ]
             },
             (error, result) => {
@@ -78,8 +79,9 @@ router.post('/upload-multiple', authenticate, upload.array('images', 10), async 
                         resource_type: 'image',
                         transformation: [
                             { width: 1200, height: 1200, crop: 'limit' },
-                            { quality: 'auto:good' },
-                            { fetch_format: 'auto' }
+                            { quality: 'auto:eco' }, // Máxima compresión
+                            { fetch_format: 'auto' },
+                            { flags: 'lossy' } // Compresión con pérdida
                         ]
                     },
                     (error, result) => {
