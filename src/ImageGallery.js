@@ -10,7 +10,7 @@ function ImageGallery({ images, name }) {
 
     // Minimum swipe distance (in px)
     const minSwipeDistance = 50;
-    const AUTO_PLAY_DELAY = 3000; // 3 seconds
+    const AUTO_PLAY_DELAY = 5000; // 5 seconds
     const PAUSE_DURATION = 10000; // 10 seconds after user interaction
 
     // Clear and restart the auto-play interval
