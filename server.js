@@ -56,7 +56,7 @@ if (process.env.NODE_ENV === 'development') {
 // ========== RUTAS DE AUTENTICACIÓN ==========
 
 // Login
-app.post('/api/auth', /* loginLimiter, */ loginValidation, async (req, res) => {
+app.post('/api/auth', loginLimiter, loginValidation, async (req, res) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
     return res.status(400).json({
@@ -125,7 +125,7 @@ app.post('/api/auth', /* loginLimiter, */ loginValidation, async (req, res) => {
     res.status(500).json({
       error: 'Error interno del servidor',
       code: 'INTERNAL_ERROR',
-      details: error.message // DEBUG: exposing error
+      details: process.env.NODE_ENV === 'development' ? error.message : undefined
     });
   }
 });
