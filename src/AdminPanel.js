@@ -4,6 +4,8 @@ import './AdminPanel.css';
 import './AdminPanelResponsive.css';
 import ExchangeRateSection from './ExchangeRateSection';
 import ImageUploader from './ImageUploader';
+import DraggableImageList from './DraggableImageList';
+import SafeImage from './SafeImage';
 import Dashboard from './components/Dashboard';
 
 // Categorías válidas con íconos
@@ -16,43 +18,6 @@ const ADMIN_SECTIONS = [
 ];
 
 // NOTE: VALID_CATEGORIES replaced by dynamic state
-
-// Componente para imagen segura
-const SafeImage = ({ src, alt, style, ...props }) => {
-  const [imageError, setImageError] = useState(false);
-
-  if (!src || imageError) {
-    return (
-      <div
-        style={{
-          ...style,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          backgroundColor: '#f8f9fa',
-          border: '2px dashed #dee2e6',
-          color: '#6c757d',
-          fontSize: '0.8rem',
-          textAlign: 'center',
-          borderRadius: '8px'
-        }}
-        {...props}
-      >
-        📷 Sin imagen
-      </div>
-    );
-  }
-
-  return (
-    <img
-      src={src}
-      alt={alt}
-      style={style}
-      onError={() => setImageError(true)}
-      {...props}
-    />
-  );
-};
 
 // Componente principal del Admin Panel
 const AdminPanel = ({ onLogout }) => {
@@ -1204,52 +1169,11 @@ const AdminPanel = ({ onLogout }) => {
                     </div>
 
                     {newImages.length > 0 && (
-                      <div>
-                        <p style={{ marginBottom: '1rem', fontWeight: '500' }}>
-                          Imágenes agregadas ({newImages.length}/10):
-                        </p>
-                        <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
-                          {newImages.map((url, index) => (
-                            <div key={index} style={{ position: 'relative' }}>
-                              <SafeImage
-                                src={url}
-                                alt={`Imagen ${index + 1}`}
-                                style={{
-                                  width: '80px',
-                                  height: '80px',
-                                  objectFit: 'cover',
-                                  borderRadius: '8px',
-                                  border: '2px solid #dee2e6'
-                                }}
-                              />
-                              <button
-                                type="button"
-                                onClick={() => removeNewImage(index)}
-                                style={{
-                                  position: 'absolute',
-                                  top: '-8px',
-                                  right: '-8px',
-                                  background: '#a85751',
-                                  color: 'white',
-                                  border: 'none',
-                                  borderRadius: '50%',
-                                  width: '24px',
-                                  height: '24px',
-                                  cursor: 'pointer',
-                                  fontSize: '14px',
-                                  fontWeight: 'bold',
-                                  display: 'flex',
-                                  alignItems: 'center',
-                                  justifyContent: 'center',
-                                  boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
-                                }}
-                              >
-                                ×
-                              </button>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
+                      <DraggableImageList
+                        images={newImages}
+                        onReorder={(reorderedImages) => setNewImages(reorderedImages)}
+                        onRemove={(index) => removeNewImage(index)}
+                      />
                     )}
                   </div>
 
@@ -1927,51 +1851,11 @@ const AdminPanel = ({ onLogout }) => {
                                           </div>
 
                                           {editImages.length > 0 && (
-                                            <div>
-                                              <p style={{ marginBottom: '1rem', fontWeight: '500' }}>
-                                                Imágenes ({editImages.length}/10):
-                                              </p>
-                                              <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
-                                                {editImages.map((url, index) => (
-                                                  <div key={index} style={{ position: 'relative' }}>
-                                                    <SafeImage
-                                                      src={url}
-                                                      alt={`Imagen ${index + 1}`}
-                                                      style={{
-                                                        width: '60px',
-                                                        height: '60px',
-                                                        objectFit: 'cover',
-                                                        borderRadius: '8px',
-                                                        border: '2px solid #dee2e6'
-                                                      }}
-                                                    />
-                                                    <button
-                                                      type="button"
-                                                      onClick={() => removeEditImage(index)}
-                                                      style={{
-                                                        position: 'absolute',
-                                                        top: '-8px',
-                                                        right: '-8px',
-                                                        background: '#a85751',
-                                                        color: 'white',
-                                                        border: 'none',
-                                                        borderRadius: '50%',
-                                                        width: '24px',
-                                                        height: '24px',
-                                                        cursor: 'pointer',
-                                                        fontSize: '14px',
-                                                        fontWeight: 'bold',
-                                                        display: 'flex',
-                                                        alignItems: 'center',
-                                                        justifyContent: 'center'
-                                                      }}
-                                                    >
-                                                      ×
-                                                    </button>
-                                                  </div>
-                                                ))}
-                                              </div>
-                                            </div>
+                                            <DraggableImageList
+                                              images={editImages}
+                                              onReorder={(reorderedImages) => setEditImages(reorderedImages)}
+                                              onRemove={(index) => removeEditImage(index)}
+                                            />
                                           )}
                                         </div>
                                       </div>
@@ -2158,6 +2042,32 @@ const AdminPanel = ({ onLogout }) => {
                               <div style={{ background: '#f8f9fa', padding: '1rem', borderRadius: '8px', border: '1px solid #e9ecef' }}>
                                 <h5 style={{ margin: '0 0 0.8rem 0', fontSize: '0.95rem', color: '#666' }}>🖼️ Imágenes ({editImages.length})</h5>
 
+                                {/* Uploader de Cloudinary para móvil */}
+                                <div style={{ marginBottom: '1rem' }}>
+                                  <ImageUploader
+                                    multiple={true}
+                                    onImageUploaded={(urls) => {
+                                      if (Array.isArray(urls)) {
+                                        setEditImages([...editImages, ...urls]);
+                                      } else {
+                                        setEditImages([...editImages, urls]);
+                                      }
+                                    }}
+                                  />
+                                </div>
+
+                                {/* Separador */}
+                                <div style={{
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  margin: '1rem 0',
+                                  gap: '0.5rem'
+                                }}>
+                                  <div style={{ flex: 1, height: '1px', background: '#dee2e6' }} />
+                                  <span style={{ color: '#6c757d', fontSize: '0.8rem', fontWeight: '500' }}>O</span>
+                                  <div style={{ flex: 1, height: '1px', background: '#dee2e6' }} />
+                                </div>
+
                                 <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem' }}>
                                   <input
                                     type="url"
@@ -2186,53 +2096,12 @@ const AdminPanel = ({ onLogout }) => {
                                   </button>
                                 </div>
 
-                                {editImages.length > 0 ? (
-                                  <div style={{
-                                    display: 'grid',
-                                    gridTemplateColumns: 'repeat(auto-fill, minmax(60px, 1fr))',
-                                    gap: '0.8rem'
-                                  }}>
-                                    {editImages.map((url, i) => (
-                                      <div key={i} style={{ position: 'relative', aspectRatio: '1' }}>
-                                        <SafeImage
-                                          src={url}
-                                          alt={`Img ${i}`}
-                                          style={{
-                                            width: '100%',
-                                            height: '100%',
-                                            objectFit: 'cover',
-                                            borderRadius: '8px',
-                                            border: '1px solid #dee2e6'
-                                          }}
-                                        />
-                                        <button
-                                          type="button"
-                                          onClick={() => removeEditImage(i)}
-                                          style={{
-                                            position: 'absolute',
-                                            top: '-5px',
-                                            right: '-5px',
-                                            background: '#a85751',
-                                            color: 'white',
-                                            border: 'none',
-                                            borderRadius: '50%',
-                                            width: '22px',
-                                            height: '22px',
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            justifyContent: 'center',
-                                            fontSize: '14px',
-                                            fontWeight: 'bold',
-                                            boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
-                                          }}
-                                        >
-                                          ×
-                                        </button>
-                                      </div>
-                                    ))}
-                                  </div>
-                                ) : (
-                                  <p style={{ fontSize: '0.85rem', color: '#999', textAlign: 'center', fontStyle: 'italic', margin: 0 }}>Sin imágenes</p>
+                                {editImages.length > 0 && (
+                                  <DraggableImageList
+                                    images={editImages}
+                                    onReorder={(reorderedImages) => setEditImages(reorderedImages)}
+                                    onRemove={(index) => removeEditImage(index)}
+                                  />
                                 )}
                               </div>
 
