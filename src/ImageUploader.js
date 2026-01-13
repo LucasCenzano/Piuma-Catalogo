@@ -1,17 +1,16 @@
 import React, { useState } from 'react';
 import authService from './authService';
 
-
 // Configuración de API URL
 const API_BASE_URL = process.env.REACT_APP_API_URL ||
     (process.env.NODE_ENV === 'development' ? 'http://localhost:3001' : '');
 
-const ImageUploader = ({ onImageUploaded, multiple = false }) =& gt; {
+const ImageUploader = ({ onImageUploaded, multiple = false }) => {
     const [uploading, setUploading] = useState(false);
     const [progress, setProgress] = useState(0);
     const [error, setError] = useState(null);
 
-    const handleFileChange = async(e) =& gt; {
+    const handleFileChange = async (e) => {
         const files = e.target.files;
         if (!files || files.length === 0) return;
 
@@ -34,7 +33,7 @@ const ImageUploader = ({ onImageUploaded, multiple = false }) =& gt; {
             if (multiple) {
                 // Subir múltiples imágenes
                 const formData = new FormData();
-                Array.from(files).forEach(file =& gt; {
+                Array.from(files).forEach(file => {
                     console.log('📎 Agregando archivo:', file.name, file.size, 'bytes');
                     formData.append('images', file);
                 });
@@ -60,9 +59,9 @@ const ImageUploader = ({ onImageUploaded, multiple = false }) =& gt; {
                 const data = await response.json();
                 console.log('✅ Imágenes subidas exitosamente:', data);
 
-                if (data.success & amp;& amp; data.images) {
+                if (data.success && data.images) {
                     // Devolver array de URLs
-                    onImageUploaded(data.images.map(img =& gt; img.url));
+                    onImageUploaded(data.images.map(img => img.url));
                 }
             } else {
                 // Subir una sola imagen
@@ -88,7 +87,7 @@ const ImageUploader = ({ onImageUploaded, multiple = false }) =& gt; {
                 const data = await response.json();
                 console.log('✅ Imagen subida exitosamente:', data);
 
-                if (data.success & amp;& amp; data.url) {
+                if (data.success && data.url) {
                     onImageUploaded(data.url);
                 }
             }
@@ -116,91 +115,84 @@ const ImageUploader = ({ onImageUploaded, multiple = false }) =& gt; {
     };
 
     return (
-        & lt;div style = {{ width: '100%' }
-}& gt;
-            & lt; label
-htmlFor = "image-upload"
-style = {{
-    display: 'inline-block',
-        padding: window.innerWidth & lt; 768 ? '0.875rem 1.5rem' : '1rem 2rem',
-            background: uploading
-                ? 'linear-gradient(135deg, #6c757d 0%, #5a6268 100%)'
-                : 'linear-gradient(135deg, #6b7c59 0%, #8b9a7a 100%)',
-                color: 'white',
+        <div style={{ width: '100%' }}>
+            <label
+                htmlFor="image-upload"
+                style={{
+                    display: 'inline-block',
+                    padding: window.innerWidth < 768 ? '0.875rem 1.5rem' : '1rem 2rem',
+                    background: uploading
+                        ? 'linear-gradient(135deg, #6c757d 0%, #5a6268 100%)'
+                        : 'linear-gradient(135deg, #6b7c59 0%, #8b9a7a 100%)',
+                    color: 'white',
                     borderRadius: '12px',
-                        cursor: uploading ? 'not-allowed' : 'pointer',
-                            fontWeight: '600',
-                                textAlign: 'center',
-                                    transition: 'all 0.3s ease',
-                                        border: 'none',
-                                            boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
-                                                width: '100%',
-                                                    boxSizing: 'border-box',
-                                                        fontSize: window.innerWidth & lt; 768 ? '0.9rem' : '1rem'
-}}
-            & gt;
-{
-    uploading ? (
-                    & lt;& gt;
-                        & lt;span style = {{ marginRight: '0.5rem' }
-}& gt;⏳& lt;/span&gt;
-                        Subiendo... { progress }%
-                    & lt;/&gt;
+                    cursor: uploading ? 'not-allowed' : 'pointer',
+                    fontWeight: '600',
+                    textAlign: 'center',
+                    transition: 'all 0.3s ease',
+                    border: 'none',
+                    boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
+                    width: '100%',
+                    boxSizing: 'border-box',
+                    fontSize: window.innerWidth < 768 ? '0.9rem' : '1rem'
+                }}
+            >
+                {uploading ? (
+                    <>
+                        <span style={{ marginRight: '0.5rem' }}>⏳</span>
+                        Subiendo... {progress}%
+                    </>
                 ) : (
-                    & lt;& gt;
-                        & lt;span style = {{ marginRight: '0.5rem' }}& gt;📤& lt;/span&gt;
-{ multiple ? 'Subir Imágenes' : 'Subir Imagen' }
-                    & lt;/&gt;
+                    <>
+                        <span style={{ marginRight: '0.5rem' }}>📤</span>
+                        {multiple ? 'Subir Imágenes' : 'Subir Imagen'}
+                    </>
                 )}
-            & lt;/label&gt;
+            </label>
 
-            & lt; input
-id = "image-upload"
-type = "file"
-accept = "image/*"
-multiple = { multiple }
-onChange = { handleFileChange }
-disabled = { uploading }
-style = {{ display: 'none' }}
-            /&gt;
+            <input
+                id="image-upload"
+                type="file"
+                accept="image/*"
+                multiple={multiple}
+                onChange={handleFileChange}
+                disabled={uploading}
+                style={{ display: 'none' }}
+            />
 
-{
-    error & amp;& amp; (
-                & lt;div style = {{
-        marginTop: '1rem',
-            padding: '0.75rem',
-                background: '#f8d7da',
+            {error && (
+                <div style={{
+                    marginTop: '1rem',
+                    padding: '0.75rem',
+                    background: '#f8d7da',
                     color: '#721c24',
-                        borderRadius: '8px',
-                            fontSize: '0.9rem',
-                                border: '1px solid #f5c6cb'
-    }
-}& gt;
-                    ❌ { error }
-                & lt;/div&gt;
+                    borderRadius: '8px',
+                    fontSize: '0.9rem',
+                    border: '1px solid #f5c6cb'
+                }}>
+                    ❌ {error}
+                </div>
             )}
 
-{
-    uploading & amp;& amp; (
-                & lt;div style = {{
-        marginTop: '1rem',
-            width: '100%',
-                height: '4px',
+            {uploading && (
+                <div style={{
+                    marginTop: '1rem',
+                    width: '100%',
+                    height: '4px',
                     background: '#e9ecef',
-                        borderRadius: '2px',
-                            overflow: 'hidden'
-    }
-}& gt;
-                    & lt;div style = {{
-    width: `${progress}%`,
-        height: '100%',
-            background: 'linear-gradient(90deg, #6b7c59 0%, #8b9a7a 100%)',
-                transition: 'width 0.3s ease',
-                    borderRadius: '2px'
-}} /&gt;
-                & lt;/div&gt;
+                    borderRadius: '2px',
+                    overflow: 'hidden'
+                }}>
+                    <div style={{
+                        width: `${progress}%`,
+                        height: '100%',
+                        background: 'linear-gradient(90deg, #6b7c59 0%, #8b9a7a 100%)',
+                        transition: 'width 0.3s ease',
+                        borderRadius: '2px'
+                    }} />
+                </div>
             )}
-        & lt;/div&gt;
+        </div>
     );
 };
 
