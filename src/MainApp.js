@@ -65,8 +65,16 @@ function MainApp() {
             console.log('🚀 Iniciando carga de productos...');
             setLoadingProgress(30);
 
-            // Obtener productos de la API
-            const products = await dataService.getAllProducts();
+            // Crear una promesa con timeout
+            const timeoutPromise = new Promise((_, reject) =>
+                setTimeout(() => reject(new Error('Tiempo de espera agotado. Tu conexión parece lenta o el servidor está tardando mucho.')), 15000)
+            );
+
+            // Obtener productos de la API con carrera contra el timeout
+            const products = await Promise.race([
+                dataService.getAllProducts(),
+                timeoutPromise
+            ]);
             setLoadingProgress(60);
 
             console.log(`📦 ${products.length} productos obtenidos de la API`);
@@ -97,7 +105,7 @@ function MainApp() {
 
         } catch (err) {
             console.error('❌ Error cargando productos:', err);
-            setError('Error al cargar productos. Por favor, intenta recargar la página.');
+            setError(err.message || 'Error al cargar productos. Por favor, intenta recargar la página.');
         } finally {
             // ✅ Pequeño delay para que el usuario vea el 100%
             setTimeout(() => {
