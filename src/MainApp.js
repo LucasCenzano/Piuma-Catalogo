@@ -283,7 +283,7 @@ function MainApp() {
                         }} />
                     </div>
 
-                    <p style={{
+                    <p className="notranslate" style={{
                         fontSize: '1rem',
                         color: '#666',
                         margin: 0
