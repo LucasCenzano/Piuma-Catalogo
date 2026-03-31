@@ -21,5 +21,41 @@
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+*.log
 
 .vercel
+
+# Migration and setup scripts (run locally, not needed in repo)
+migrate_*.js
+migration_*.js
+create_*_table.js
+setup*.js
+update_schema.js
+update_sale_items_schema.js
+
+# Test and debug scripts
+test-*.js
+test_*.js
+check_*.js
+verify-*.js
+fix_*.js
+generateSecureHash.js
+
+# Temporary documentation
+DIAGNOSTICO_*.md
+ACCIONES_*.md
+DASHBOARD_MEJORAS.md
+DASHBOARD_REORGANIZADO.md
+CLOUDINARY_INTEGRATION.md
+GUIA_PASO_A_PASO.md
+INDICE_DOCUMENTACION.md
+LEEME_*.txt
+README_CLOUDINARY.md
+RESUMEN_*.md
+SECURITY_AUDIT.md
+SECURITY_SETUP.md
+SECURITY_SUMMARY.md
+EJEMPLO_INTEGRACION.js
+
+# Duplicate source files (files with spaces in name)
+src/*\ *.js
