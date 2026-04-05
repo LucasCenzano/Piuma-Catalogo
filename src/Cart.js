@@ -1,7 +1,7 @@
 import React from 'react';
 import './Cart.css';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faTimes, faTrash, faWhatsapp } from '@fortawesome/free-solid-svg-icons';
+import { faTimes, faTrash } from '@fortawesome/free-solid-svg-icons';
 import { faWhatsapp as fabWhatsapp } from '@fortawesome/free-brands-svg-icons';
 
 function Cart({ isOpen, onClose, cartItems, removeFromCart, updateQuantity }) {

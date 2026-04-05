@@ -36,7 +36,7 @@ function Footer() {
               <FaWhatsapp />
             </a>
             <a
-              href="#"
+              href="https://www.tiktok.com/@piuma"
               target="_blank"
               rel="noopener noreferrer"
               className="footer-social-link"
