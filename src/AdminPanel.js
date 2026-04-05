@@ -2,7 +2,6 @@ import React, { useState, useEffect, useMemo } from 'react';
 import authService from './authService';
 import './AdminPanel.css';
 import './AdminPanelResponsive.css';
-import ExchangeRateSection from './ExchangeRateSection';
 import ImageUploader from './ImageUploader';
 import DraggableImageList from './DraggableImageList';
 import SafeImage from './SafeImage';
@@ -89,8 +88,7 @@ const AdminPanel = ({ onLogout }) => {
   const [tempEditVariantCode, setTempEditVariantCode] = useState('');
 
   // Exchange rate state
-  const [exchangeRate, setExchangeRate] = useState(1200);
-  const [tempExchangeRate, setTempExchangeRate] = useState('');
+
 
   // ✅ 3. useMemo PARA ORDENAR Y FILTRAR LOS PRODUCTOS
   const sortedProducts = useMemo(() => {
@@ -173,7 +171,6 @@ const AdminPanel = ({ onLogout }) => {
     loadProducts();
     loadCategories();
     loadFilters();
-    loadExchangeRate();
   }, []);
 
   const loadFilters = async () => {
@@ -294,39 +291,6 @@ const AdminPanel = ({ onLogout }) => {
     } catch (error) {
       console.error('Error cargando productos:', error);
       setError(`Error cargando productos: ${error.message}`);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const loadExchangeRate = async () => {
-    try {
-      const data = await authService.getExchangeRate();
-      setExchangeRate(data.rate || 1200);
-    } catch (error) {
-      console.error('Error cargando tipo de cambio:', error);
-      setExchangeRate(1200); // Default fallback
-    }
-  };
-
-  const handleUpdateExchangeRate = async (e) => {
-    e.preventDefault();
-
-    const newRate = parseFloat(tempExchangeRate);
-    if (!newRate || newRate <= 0) {
-      alert('Por favor ingresa un tipo de cambio válido');
-      return;
-    }
-
-    try {
-      setLoading(true);
-      await authService.updateExchangeRate(newRate);
-      setExchangeRate(newRate);
-      setTempExchangeRate('');
-      alert(`✅ Tipo de cambio actualizado a $${newRate.toLocaleString('es-AR')} ARS por USD`);
-    } catch (error) {
-      console.error('Error actualizando tipo de cambio:', error);
-      alert('Error actualizando el tipo de cambio');
     } finally {
       setLoading(false);
     }
@@ -837,7 +801,8 @@ const AdminPanel = ({ onLogout }) => {
                           fontFamily: 'Montserrat, sans-serif',
                           transition: 'all 0.3s ease',
                           outline: 'none',
-                          width: '100%'
+                          width: '100%',
+                          boxSizing: 'border-box'
                         }}
                       />
                     </div>
@@ -1007,20 +972,6 @@ const AdminPanel = ({ onLogout }) => {
                         }}
                       />
                       <input
-                        type="text"
-                        placeholder="Código (ej: MOCH-001-R)"
-                        value={tempVariantCode}
-                        onChange={(e) => setTempVariantCode(e.target.value)}
-                        style={{
-                          flex: 1,
-                          padding: '0.75rem',
-                          borderRadius: '8px',
-                          border: '1px solid #ced4da',
-                          width: window.innerWidth < 768 ? '100%' : 'auto',
-                          boxSizing: 'border-box'
-                        }}
-                      />
-                      <input
                         type="number"
                         placeholder="Cant."
                         value={tempVariantQuantity}
@@ -1099,74 +1050,7 @@ const AdminPanel = ({ onLogout }) => {
                       />
                     </div>
 
-                    {/* Separador */}
-                    <div style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      margin: '1.5rem 0',
-                      gap: '1rem'
-                    }}>
-                      <div style={{ flex: 1, height: '1px', background: '#dee2e6' }} />
-                      <span style={{ color: '#6c757d', fontSize: '0.9rem', fontWeight: '500' }}>O</span>
-                      <div style={{ flex: 1, height: '1px', background: '#dee2e6' }} />
-                    </div>
 
-                    {/* Input de URL */}
-                    <div>
-                      <p style={{
-                        marginBottom: '0.75rem',
-                        fontWeight: '500',
-                        color: '#6b7c59',
-                        fontSize: '0.95rem'
-                      }}>
-                        🔗 Agregar desde URL:
-                      </p>
-
-                    </div>
-                    <div style={{
-                      display: 'flex',
-                      flexDirection: window.innerWidth < 768 ? 'column' : 'row',
-                      gap: '1rem',
-                      marginBottom: '1rem',
-                      flexWrap: 'wrap'
-                    }}>
-                      <input
-                        type="url"
-                        placeholder="URL de la imagen (ej: https://...)"
-                        value={newImageUrl}
-                        onChange={(e) => setNewImageUrl(e.target.value)}
-                        style={{
-                          flex: 1,
-                          minWidth: window.innerWidth < 768 ? '100%' : '300px',
-                          padding: '1rem',
-                          border: '2px solid #e9ecef',
-                          borderRadius: '12px',
-                          fontSize: '1rem',
-                          outline: 'none',
-                          boxSizing: 'border-box'
-                        }}
-                      />
-
-                      <button
-                        type="button"
-                        onClick={addNewImage}
-                        disabled={!newImageUrl}
-                        style={{
-                          background: newImageUrl ? 'linear-gradient(135deg, #6b7c59 0%, #8b9a7a 100%)' : '#6c757d',
-                          color: 'white',
-                          border: 'none',
-                          padding: '1rem 2rem',
-                          borderRadius: '12px',
-                          cursor: newImageUrl ? 'pointer' : 'not-allowed',
-                          fontWeight: '600',
-                          width: window.innerWidth < 768 ? '100%' : 'auto',
-                          transition: 'all 0.3s ease',
-                          whiteSpace: 'nowrap'
-                        }}
-                      >
-                        ➕ Agregar
-                      </button>
-                    </div>
 
                     {newImages.length > 0 && (
                       <DraggableImageList
@@ -1626,7 +1510,8 @@ const AdminPanel = ({ onLogout }) => {
                                                   fontSize: '1rem',
                                                   outline: 'none',
                                                   transition: 'all 0.3s ease',
-                                                  width: '100%'
+                                                  width: '100%',
+                                                  boxSizing: 'border-box'
                                                 }}
                                               />
                                               {editUnitCostArs && editPrice && (
@@ -1791,64 +1676,7 @@ const AdminPanel = ({ onLogout }) => {
                                             />
                                           </div>
 
-                                          {/* Separador */}
-                                          <div style={{
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            margin: '1.5rem 0',
-                                            gap: '1rem'
-                                          }}>
-                                            <div style={{ flex: 1, height: '1px', background: '#dee2e6' }} />
-                                            <span style={{ color: '#6c757d', fontSize: '0.9rem', fontWeight: '500' }}>O</span>
-                                            <div style={{ flex: 1, height: '1px', background: '#dee2e6' }} />
-                                          </div>
 
-                                          {/* Input de URL */}
-                                          <div>
-                                            <p style={{
-                                              marginBottom: '0.75rem',
-                                              fontWeight: '500',
-                                              color: '#6b7c59',
-                                              fontSize: '0.95rem'
-                                            }}>
-                                              🔗 Agregar desde URL:
-                                            </p>
-
-                                          </div>
-                                          <div style={{ display: 'flex', gap: '1rem', marginBottom: '1rem' }}>
-                                            <input
-                                              type="url"
-                                              placeholder="URL de la imagen"
-                                              value={editImageUrl}
-                                              onChange={(e) => setEditImageUrl(e.target.value)}
-                                              style={{
-                                                flex: 1,
-                                                padding: '1rem',
-                                                border: '2px solid #e9ecef',
-                                                borderRadius: '12px',
-                                                fontSize: '1rem',
-                                                outline: 'none'
-                                              }}
-                                            />
-
-                                            <button
-                                              type="button"
-                                              onClick={addEditImage}
-                                              disabled={!editImageUrl}
-                                              style={{
-                                                background: editImageUrl ? 'linear-gradient(135deg, #6b7c59 0%, #8b9a7a 100%)' : '#6c757d',
-                                                color: 'white',
-                                                border: 'none',
-                                                padding: '1rem',
-                                                borderRadius: '12px',
-                                                cursor: editImageUrl ? 'pointer' : 'not-allowed',
-                                                fontWeight: '600',
-                                                minWidth: '80px'
-                                              }}
-                                            >
-                                              ➕
-                                            </button>
-                                          </div>
 
                                           {editImages.length > 0 && (
                                             <DraggableImageList
@@ -1896,13 +1724,6 @@ const AdminPanel = ({ onLogout }) => {
                                             placeholder="Nombre del color (ej: Rojo)"
                                             value={tempEditVariantName}
                                             onChange={(e) => setTempEditVariantName(e.target.value)}
-                                            style={{ flex: 1, padding: '0.8rem', borderRadius: '6px', border: '1px solid #ced4da', fontSize: '0.95rem' }}
-                                          />
-                                          <input
-                                            type="text"
-                                            placeholder="Código (ej: MOCH-001-R)"
-                                            value={tempEditVariantCode}
-                                            onChange={(e) => setTempEditVariantCode(e.target.value)}
                                             style={{ flex: 1, padding: '0.8rem', borderRadius: '6px', border: '1px solid #ced4da', fontSize: '0.95rem' }}
                                           />
                                           <input
@@ -2056,45 +1877,7 @@ const AdminPanel = ({ onLogout }) => {
                                   />
                                 </div>
 
-                                {/* Separador */}
-                                <div style={{
-                                  display: 'flex',
-                                  alignItems: 'center',
-                                  margin: '1rem 0',
-                                  gap: '0.5rem'
-                                }}>
-                                  <div style={{ flex: 1, height: '1px', background: '#dee2e6' }} />
-                                  <span style={{ color: '#6c757d', fontSize: '0.8rem', fontWeight: '500' }}>O</span>
-                                  <div style={{ flex: 1, height: '1px', background: '#dee2e6' }} />
-                                </div>
 
-                                <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem' }}>
-                                  <input
-                                    type="url"
-                                    placeholder="URL de imagen..."
-                                    value={editImageUrl}
-                                    onChange={(e) => setEditImageUrl(e.target.value)}
-                                    style={{ flex: 1, padding: '0.8rem', border: '1px solid #ddd', borderRadius: '8px', fontSize: '16px' }}
-                                  />
-                                  <button
-                                    type="button"
-                                    onClick={addEditImage}
-                                    disabled={!editImageUrl}
-                                    style={{
-                                      background: editImageUrl ? '#6b7c59' : '#ccc',
-                                      color: 'white',
-                                      border: 'none',
-                                      borderRadius: '8px',
-                                      width: '50px',
-                                      fontSize: '1.2rem',
-                                      display: 'flex',
-                                      alignItems: 'center',
-                                      justifyContent: 'center'
-                                    }}
-                                  >
-                                    +
-                                  </button>
-                                </div>
 
                                 {editImages.length > 0 && (
                                   <DraggableImageList
@@ -2140,13 +1923,6 @@ const AdminPanel = ({ onLogout }) => {
                                     placeholder="Color (ej: Rojo)"
                                     value={tempEditVariantName}
                                     onChange={(e) => setTempEditVariantName(e.target.value)}
-                                    style={{ flex: 1, padding: '0.5rem', borderRadius: '6px', border: '1px solid #ced4da', fontSize: '0.9rem' }}
-                                  />
-                                  <input
-                                    type="text"
-                                    placeholder="Código"
-                                    value={tempEditVariantCode}
-                                    onChange={(e) => setTempEditVariantCode(e.target.value)}
                                     style={{ flex: 1, padding: '0.5rem', borderRadius: '6px', border: '1px solid #ced4da', fontSize: '0.9rem' }}
                                   />
                                   <input
@@ -2499,13 +2275,6 @@ const AdminPanel = ({ onLogout }) => {
               )}
             </div>
 
-            <ExchangeRateSection
-              exchangeRate={exchangeRate}
-              tempExchangeRate={tempExchangeRate}
-              setTempExchangeRate={setTempExchangeRate}
-              handleUpdateExchangeRate={handleUpdateExchangeRate}
-              loading={loading}
-            />
           </div>
         );
 
