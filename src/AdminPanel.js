@@ -49,7 +49,7 @@ const AdminPanel = ({ onLogout }) => {
   const [newDescription, setNewDescription] = useState('');
   const [newInStock, setNewInStock] = useState(true);
   const [newImages, setNewImages] = useState([]);
-  const [newImageUrl, setNewImageUrl] = useState('');
+
 
   const [newIsFeatured, setNewIsFeatured] = useState(false);
   const [newIsNew, setNewIsNew] = useState(false);
@@ -72,7 +72,7 @@ const AdminPanel = ({ onLogout }) => {
   const [editDescription, setEditDescription] = useState('');
   const [editInStock, setEditInStock] = useState(true);
   const [editImages, setEditImages] = useState([]);
-  const [editImageUrl, setEditImageUrl] = useState('');
+
   const [editIsFeatured, setEditIsFeatured] = useState(false);
   const [editIsNew, setEditIsNew] = useState(false);
   const [editDiscountPercentage, setEditDiscountPercentage] = useState(0);
@@ -335,7 +335,7 @@ const AdminPanel = ({ onLogout }) => {
       setNewDescription('');
       setNewInStock(true);
       setNewImages([]);
-      setNewImageUrl('');
+
       setNewIsFeatured(false);
       setNewIsNew(false);
       setNewDiscountPercentage(0);
@@ -440,7 +440,7 @@ const AdminPanel = ({ onLogout }) => {
     setEditDescription(product.description || '');
     setEditInStock(product.in_stock);
     setEditImages(Array.isArray(product.images_url) ? product.images_url : []);
-    setEditImageUrl('');
+
     setEditIsFeatured(product.is_featured || false);
     setEditIsNew(product.is_new || false);
     setEditDiscountPercentage(product.discount_percentage || 0);
@@ -458,7 +458,7 @@ const AdminPanel = ({ onLogout }) => {
     setEditDescription('');
     setEditInStock(true);
     setEditImages([]);
-    setEditImageUrl('');
+
     setEditIsFeatured(false);
     setEditIsNew(false);
     setEditDiscountPercentage(0);
@@ -467,23 +467,9 @@ const AdminPanel = ({ onLogout }) => {
     setTempEditVariantStock(true);
   };
 
-  const addNewImage = () => {
-    if (newImageUrl.trim()) {
-      setNewImages([...newImages, newImageUrl.trim()]);
-      setNewImageUrl('');
-    }
-  };
-
   const removeNewImage = (index) => {
     const updated = newImages.filter((_, i) => i !== index);
     setNewImages(updated);
-  };
-
-  const addEditImage = () => {
-    if (editImageUrl.trim()) {
-      setEditImages([...editImages, editImageUrl.trim()]);
-      setEditImageUrl('');
-    }
   };
 
   const removeEditImage = (index) => {
