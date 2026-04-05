@@ -3,7 +3,7 @@ import React, { useMemo } from 'react';
 import { DollarSign, TrendingUp, Users, AlertCircle, Star, Sparkles, FileText, Tag, Plus } from 'lucide-react';
 import { LineChart, Line, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
-const Dashboard = ({ productos, clientes, ventas, onCreateProduct }) => {
+const Dashboard = ({ productos, clientes, ventas, onCreateProduct, onNavigate }) => {
   const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899'];
 
   // Estadísticas básicas
@@ -379,7 +379,7 @@ const Dashboard = ({ productos, clientes, ventas, onCreateProduct }) => {
           Gestiona ventas, clientes y visualiza estadísticas
         </p>
         <button
-          onClick={() => window.location.href = '/admin/ventas'}
+          onClick={() => onNavigate('sales')}
           style={{
             background: 'white',
             color: '#6b7c59',

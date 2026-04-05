@@ -6,10 +6,11 @@ import ImageUploader from './ImageUploader';
 import DraggableImageList from './DraggableImageList';
 import SafeImage from './SafeImage';
 import Dashboard from './components/Dashboard';
+import AdminVentas from './AdminVentas';
 
 // Categorías válidas con íconos
 const ADMIN_SECTIONS = [
-  { id: 'sales', name: 'Ventas', icon: '💰', path: '/admin/ventas' },
+  { id: 'sales', name: 'Ventas', icon: '💰' },
   { id: 'dashboard', name: 'Tablero', icon: '📊' },
   { id: 'products', name: 'Productos', icon: '🛍️' },
   { id: 'reports', name: 'Informes', icon: '📋' },
@@ -537,6 +538,9 @@ const AdminPanel = ({ onLogout }) => {
   // Renderizar contenido según la sección activa
   const renderContent = () => {
     switch (activeSection) {
+      case 'sales':
+        return <AdminVentas />;
+
       case 'dashboard':
         return (
           <Dashboard
@@ -547,6 +551,7 @@ const AdminPanel = ({ onLogout }) => {
               setShowAddForm(true);
               setActiveSection('products');
             }}
+            onNavigate={(id) => setActiveSection(id)}
           />
         );
 
@@ -2425,13 +2430,7 @@ const AdminPanel = ({ onLogout }) => {
             {ADMIN_SECTIONS.map(section => (
               <button
                 key={section.id}
-                onClick={() => {
-                  if (section.path) {
-                    window.location.href = section.path;
-                  } else {
-                    setActiveSection(section.id);
-                  }
-                }}
+                onClick={() => setActiveSection(section.id)}
                 style={{
                   background: activeSection === section.id
                     ? 'linear-gradient(135deg, #d4af37 0%, #c19b26 100%)'
@@ -2519,12 +2518,8 @@ const AdminPanel = ({ onLogout }) => {
                   <button
                     key={section.id}
                     onClick={() => {
-                      if (section.path) {
-                        window.location.href = section.path;
-                      } else {
-                        setActiveSection(section.id);
-                        setMobileMenuOpen(false);
-                      }
+                      setActiveSection(section.id);
+                      setMobileMenuOpen(false);
                     }}
                     style={{
                       background: activeSection === section.id
