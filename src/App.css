@@ -1,38 +1,48 @@
+/* ============================================================
+   PIUMA — Design System
+   Variables globales centralizadas. Cualquier otro CSS
+   puede consumir estas variables vía var(--piuma-*)
+   ============================================================ */
+
+:root {
+  /* Paleta de marca */
+  --piuma-cream:       #f9f7f4;
+  --piuma-beige:       #e6e3d4;
+  --piuma-beige-mid:   #f0ede0;
+  --piuma-gold:        #d4af37;
+  --piuma-gold-mid:    #c4a265;
+  --piuma-brown-dark:  #3a2e20;
+  --piuma-brown:       #5a4a3a;
+  --piuma-brown-light: #9a8a7a;
+
+  /* Tipografía */
+  --font-serif:   'Playfair Display', Georgia, serif;
+  --font-sans:    'Montserrat', sans-serif;
+
+  /* Espaciados */
+  --radius-sm:    6px;
+  --radius-md:    12px;
+  --radius-lg:    20px;
+  --radius-pill:  50px;
+
+  /* Sombras */
+  --shadow-sm:    0 2px 8px rgba(0, 0, 0, 0.08);
+  --shadow-md:    0 4px 20px rgba(0, 0, 0, 0.12);
+  --shadow-lg:    0 8px 32px rgba(0, 0, 0, 0.14);
+
+  /* Transición estándar */
+  --transition:   all 0.3s ease;
+}
+
+/* Base reset */
 .App {
-  text-align: center;
-}
-
-.App-logo {
-  height: 40vmin;
-  pointer-events: none;
-}
-
-@media (prefers-reduced-motion: no-preference) {
-  .App-logo {
-    animation: App-logo-spin infinite 20s linear;
-  }
-}
-
-.App-header {
-  background-color: #282c34;
+  text-align: left;
   min-height: 100vh;
   display: flex;
   flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  font-size: calc(10px + 2vmin);
-  color: white;
+  background-color: var(--piuma-cream);
 }
 
-.App-link {
-  color: #61dafb;
-}
-
-@keyframes App-logo-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
+main {
+  flex: 1;
 }

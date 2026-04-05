@@ -9,17 +9,38 @@ body {
 }
 
 /* Estilos para el encabezado principal (el nombre de tu tienda) */
+.App-header {
+    background: linear-gradient(135deg, #f9f7f4 0%, #e6e3d4 100%);
+    padding: 2.5rem 2rem 2rem;
+    text-align: center;
+    border-bottom: 1px solid rgba(0,0,0,0.06);
+}
+
 .App-header h1 {
     font-family: 'Playfair Display', serif;
-    font-weight: 400; /* Regular, evita bold pesado */
-    font-style: italic; /* Agrega un toque elegante */
-    font-size: 2.5rem; /* Ajusta el tamaño como prefieras */
+    font-weight: 400;
+    font-style: italic;
+    font-size: 3rem;
     text-align: center;
+    color: #3a2e20;
+    margin: 0;
+    letter-spacing: 2px;
+    line-height: 1.1;
+}
+
+.App-header-subtitle {
+    font-family: 'Montserrat', sans-serif;
+    font-size: 0.78rem;
+    font-weight: 500;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    color: #9a8a7a;
+    margin: 0.5rem 0 0 0;
 }
 
 /* Estilos para los nombres de los productos */
 .bag-details h3 {
-    font-family: 'Didot', serif;
+    font-family: 'Playfair Display', serif;
     font-size: 1.2rem;
 }
 
@@ -34,25 +55,27 @@ body {
     font-family: 'Montserrat', sans-serif;
 }
 
-/* Estilos para el menú de hamburguesa */
+/* ===== NAVBAR ===== */
 .main-nav {
-    position: relative;
-    background-color: #e6e3d4; /* Color beige */
-    padding: 1rem;
-    text-align: left;
-    z-index: 100;
-}
-/* En tu archivo styles.css */
-
-.bag-image {
-  width: 100%; /* Hace que la imagen ocupe todo el ancho de su contenedor */
-  height: 250px; /* Establece una altura fija (puedes ajustarla a tu gusto) */
-  object-fit: cover; /* Evita que la imagen se deforme. La recorta para que encaje perfectamente. */
-  display: block; /* Elimina cualquier espacio extra que a veces los navegadores añaden a las imágenes */
-  border-radius: 8px; /* Opcional: añade bordes redondeados para un look más moderno */
+    background-color: #f0ede0;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+    position: sticky;
+    top: 0;
+    z-index: 200;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
 }
 
+.nav-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    min-height: 60px;
+    padding: 0 1.5rem;
+    max-width: 1400px;
+    margin: 0 auto;
+}
 
+/* ===== HAMBURGUESA — solo en mobile ===== */
 .hamburger-menu-btn {
     background: none;
     border: none;
@@ -61,40 +84,44 @@ body {
     display: flex;
     flex-direction: column;
     justify-content: space-around;
-    width: 30px;
-    height: 25px;
+    width: 28px;
+    height: 22px;
     position: relative;
     z-index: 1000;
+    flex-shrink: 0;
 }
 
 .hamburger-menu-btn .bar {
     width: 100%;
-    height: 3px;
-    background-color: #000000; /* Un color más oscuro para que resalte sobre el beige */
+    height: 2.5px;
+    background-color: #3a2e20;
     border-radius: 5px;
     transition: all 0.3s ease-in-out;
+    transform-origin: center;
 }
 
-/* El menú que se despliega */
+/* ===== MENU LIST — mobile: dropdown, desktop: pills horizontal ===== */
 .menu-list {
     list-style: none;
     margin: 0;
     padding: 0;
+    /* Mobile: dropdown colapsable */
     display: flex;
     flex-direction: column;
     position: absolute;
     top: 100%;
     left: 0;
     width: 100%;
-    background-color: #e6e3d4;
+    background-color: #f0ede0;
     max-height: 0;
     overflow: hidden;
     transition: max-height 0.4s ease-in-out, padding 0.4s ease-in-out;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
 }
 
 .menu-list.open {
     max-height: 500px;
-    padding: 1rem 0;
+    padding: 0.75rem 0;
 }
 
 .menu-item {
@@ -104,18 +131,78 @@ body {
 .menu-item button {
     background: none;
     border: none;
-    color: rgb(0, 0, 0);
-    padding: 1rem;
+    color: #5a4a3a;
+    padding: 0.85rem 1.25rem;
     cursor: pointer;
-    font-size: 1rem;
+    font-size: 0.9rem;
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 500;
     width: 100%;
     text-align: left;
-    transition: background-color 0.3s ease;
+    transition: background-color 0.2s ease, color 0.2s ease;
+    letter-spacing: 0.3px;
 }
 
-.menu-item button:hover,
+.menu-item button:hover {
+    background-color: rgba(0, 0, 0, 0.04);
+    color: #3a2e20;
+}
+
 .menu-item button.active {
-    background-color: #e6e3d4;;
+    background-color: rgba(196, 162, 101, 0.15);
+    color: #8a6a30;
+    font-weight: 600;
+}
+
+/* ===== DESKTOP NAV (≥769px) ===== */
+@media (min-width: 769px) {
+    /* Esconder hamburguesa */
+    .hamburger-menu-btn {
+        display: none;
+    }
+
+    /* Pills horizontales */
+    .menu-list {
+        position: static;
+        display: flex !important;
+        flex-direction: row;
+        flex-wrap: wrap;
+        max-height: none;
+        overflow: visible;
+        background: transparent;
+        box-shadow: none;
+        padding: 0;
+        gap: 0.25rem;
+        flex: 1;
+    }
+
+    .menu-item {
+        text-align: left;
+    }
+
+    .menu-item button {
+        width: auto;
+        padding: 0.45rem 1.1rem;
+        border-radius: 20px;
+        font-size: 0.85rem;
+        font-weight: 500;
+        color: #5a4a3a;
+        transition: all 0.2s ease;
+        white-space: nowrap;
+        text-align: center;
+    }
+
+    .menu-item button:hover {
+        background-color: rgba(196, 162, 101, 0.2);
+        color: #3a2e20;
+    }
+
+    .menu-item button.active {
+        background: linear-gradient(135deg, #c4a265 0%, #d4af37 100%);
+        color: white;
+        font-weight: 600;
+        box-shadow: 0 2px 8px rgba(196, 162, 101, 0.4);
+    }
 }
 
 /* Estilos para las sugerencias de categoría */
@@ -237,25 +324,7 @@ body {
     margin-left: 10px; /* Separación del nombre del producto */
     display: inline-block;
 }
-/* Estilos para el Footer */
-.footer {
-    background-color: #e6e3d4; /* El mismo beige de la barra de navegación */
-    color: #6a6659; /* El mismo gris oscuro de los íconos */
-    padding: 20px;
-    text-align: center;
-    margin-top: auto; /* Empuja el footer hacia abajo */
-}
-
-.footer-content {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-}
-
-.social-links {
-    margin-top: 10px;
-}
-
+/* === SOCIAL ICONS (usados en otros contextos) === */
 .social-icon {
     font-size: 1.5rem;
     color: #6a6659;
@@ -267,40 +336,7 @@ body {
     color: #333; /* Color más oscuro al pasar el ratón */
 }
 
-/* === AÑADIR ESTOS NUEVOS ESTILOS AL FINAL DE TU ARCHIVO styles.css === */
-
-/* Contenedor para el contenido de la barra de navegación */
-.nav-content {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    min-height: 60px;
-    padding: 0 1rem; /* Ajusta el padding para que no esté pegado a los bordes */
-}
-
-/* El menú que se despliega (ajuste para que no interfiera con el nuevo layout) */
-.menu-list {
-    list-style: none;
-    margin: 0;
-    padding: 0;
-    display: flex;
-    flex-direction: column;
-    position: absolute;
-    top: 100%;
-    /* Empieza desde la izquierda, cubriendo el ancho completo */
-    left: 0;
-    width: 100%;
-    background-color: #e6e3d4;
-    max-height: 0;
-    overflow: hidden;
-    transition: max-height 0.4s ease-in-out, padding 0.4s ease-in-out;
-}
-
-/* Ajuste al padding de la barra de navegación principal */
-.main-nav {
-    min-height: 60px; /* o el valor que tengas en móvil */
-    padding: 0; /* El padding ahora lo controla .nav-content */
-}
+/* === SEARCH CONTAINER === */
 .search-container {
     position: relative;
     display: flex; /* Coloca input e ícono en línea */
@@ -372,6 +408,46 @@ body {
 
 .suggestion-item:hover {
     background-color: #f0f0f0; /* Fondo gris claro al pasar el ratón */
+}
+
+/* === CART BUTTON IN NAV === */
+.cart-nav-btn {
+    background: transparent;
+    border: none;
+    color: #5a4a3a;
+    font-size: 1.25rem;
+    cursor: pointer;
+    position: relative;
+    padding: 0.5rem;
+    margin-left: 0.5rem;
+    transition: color 0.2s ease, transform 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.cart-nav-btn:hover {
+    color: #c4a265;
+    transform: translateY(-2px);
+}
+
+.cart-badge {
+    position: absolute;
+    top: 0;
+    right: 0;
+    background-color: #e74c3c;
+    color: white;
+    font-size: 0.65rem;
+    font-weight: bold;
+    min-width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transform: translate(20%, -20%);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    font-family: 'Montserrat', sans-serif;
 }
 
 /* Ajuste para pantallas grandes */

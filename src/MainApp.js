@@ -1,12 +1,15 @@
-// MainApp.js - SOLUCIÓN ACTUALIZADA
+// MainApp.js
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import Catalog from './Catalog';
 import ImageModal from './ImageModal';
+import Cart from './Cart'; // ✅
+import './App.css';
 import './styles.css';
 import dataService from './dataService';
 import Footer from './Footer';
+import HeroBanner from './HeroBanner';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faSearch } from '@fortawesome/free-solid-svg-icons';
+import { faSearch, faShoppingCart } from '@fortawesome/free-solid-svg-icons'; // ✅
 import Pagination from './Pagination';
 import ContactBanner from './ContactBanner';
 
@@ -17,6 +20,10 @@ function MainApp() {
     const [searchTerm, setSearchTerm] = useState('');
     const [searchResults, setSearchResults] = useState([]);
     const [showSuggestions, setShowSuggestions] = useState(false);
+
+    // ✅ Estados del carrito
+    const [cartItems, setCartItems] = useState([]);
+    const [isCartOpen, setIsCartOpen] = useState(false);
 
     // Estados para manejar datos de la DB
     const [bagsData, setBagsData] = useState([]);
@@ -205,6 +212,39 @@ function MainApp() {
         setModalImage(null);
     };
 
+    // ✅ Funciones del Carrito
+    const addToCart = (product) => {
+        setCartItems(prev => {
+            const existing = prev.find(item => item.id === product.id);
+            if (existing) {
+                // Si ya está, aumentamos la cantidad (puedes limitar al stock si lo necesitas)
+                return prev.map(item => item.id === product.id 
+                    ? { ...item, cartQuantity: item.cartQuantity + 1 } 
+                    : item);
+            } else {
+                // Si es nuevo, lo agregamos
+                return [...prev, { ...product, cartQuantity: 1 }];
+            }
+        });
+        setIsCartOpen(true); // Opcional: abrir el carrito automáticamente al agregar algo
+    };
+
+    const removeFromCart = (productId) => {
+        setCartItems(prev => prev.filter(item => item.id !== productId));
+    };
+
+    const updateCartQuantity = (productId, newQuantity) => {
+        if (newQuantity < 1) {
+            removeFromCart(productId);
+            return;
+        }
+        setCartItems(prev => prev.map(item => item.id === productId ? { ...item, cartQuantity: newQuantity } : item));
+    };
+
+    const getCartTotalItems = () => {
+        return cartItems.reduce((acc, item) => acc + item.cartQuantity, 0);
+    };
+
     // Lógica de filtrado del catálogo
     const filteredBags = bagsData.filter(bag => {
         const matchesCategory = selectedCategory === 'Todos' || bag.category === selectedCategory;
@@ -229,7 +269,6 @@ function MainApp() {
         loadProducts();
     };
 
-    // ✅ Pantalla de carga optimizada con progreso
     if (loading) {
         return (
             <div className="App">
@@ -243,33 +282,35 @@ function MainApp() {
                     flexDirection: 'column',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    minHeight: '50vh'
+                    minHeight: '60vh'
                 }}>
-                    {/* ✅ Indicador de progreso visual */}
+                    {/* Spinner on-brand con colores Piuma */}
                     <div style={{
-                        width: '80px',
-                        height: '80px',
-                        border: '6px solid #f3f3f3',
-                        borderTop: '6px solid #007bff',
+                        width: '72px',
+                        height: '72px',
+                        border: '5px solid #e6e3d4',
+                        borderTop: '5px solid #c4a265',
                         borderRadius: '50%',
-                        animation: 'spin 1s linear infinite',
+                        animation: 'spin 0.9s linear infinite',
                         marginBottom: '2rem'
                     }}></div>
 
                     <p style={{
-                        fontSize: '1.3rem',
-                        color: '#333',
-                        marginBottom: '1rem',
-                        fontWeight: '600'
+                        fontFamily: "'Playfair Display', serif",
+                        fontStyle: 'italic',
+                        fontSize: '1.4rem',
+                        color: '#5a4a3a',
+                        marginBottom: '1.5rem',
+                        fontWeight: '400'
                     }}>
-                        Cargando productos...
+                        Cargando colección...
                     </p>
 
-                    {/* ✅ Barra de progreso */}
+                    {/* Barra de progreso on-brand */}
                     <div style={{
-                        width: '300px',
-                        height: '8px',
-                        backgroundColor: '#e0e0e0',
+                        width: '260px',
+                        height: '4px',
+                        backgroundColor: '#e6e3d4',
                         borderRadius: '4px',
                         overflow: 'hidden',
                         marginBottom: '1rem'
@@ -277,31 +318,31 @@ function MainApp() {
                         <div style={{
                             width: `${loadingProgress}%`,
                             height: '100%',
-                            backgroundColor: '#007bff',
-                            transition: 'width 0.3s ease',
+                            background: 'linear-gradient(90deg, #c4a265, #d4af37)',
+                            transition: 'width 0.4s ease',
                             borderRadius: '4px'
                         }} />
                     </div>
 
-                    <p className="notranslate" style={{
-                        fontSize: '1rem',
-                        color: '#666',
-                        margin: 0
+                    <p style={{
+                        fontSize: '0.85rem',
+                        color: '#9a8a7a',
+                        margin: 0,
+                        letterSpacing: '0.5px',
+                        textTransform: 'uppercase'
                     }}>
-                        {loadingProgress < 30 && 'Conectando con la base de datos...'}
+                        {loadingProgress < 30 && 'Conectando...'}
                         {loadingProgress >= 30 && loadingProgress < 60 && 'Obteniendo productos...'}
-                        {loadingProgress >= 60 && loadingProgress < 80 && 'Procesando imágenes...'}
-                        {loadingProgress >= 80 && 'Finalizando...'}
+                        {loadingProgress >= 60 && loadingProgress < 80 && 'Preparando catálogo...'}
+                        {loadingProgress >= 80 && 'Casi listo...'}
                     </p>
 
-                    <style>
-                        {`
-                            @keyframes spin {
-                                0% { transform: rotate(0deg); }
-                                100% { transform: rotate(360deg); }
-                            }
-                        `}
-                    </style>
+                    <style>{`
+                        @keyframes spin {
+                            0% { transform: rotate(0deg); }
+                            100% { transform: rotate(360deg); }
+                        }
+                    `}</style>
                 </div>
             </div>
         );
@@ -315,15 +356,19 @@ function MainApp() {
 
             <nav className="main-nav">
                 <div className="nav-content">
+                    {/* Botón hamburguesa — solo visible en mobile */}
                     <button
                         className="hamburger-menu-btn"
                         onClick={() => setIsMenuOpen(!isMenuOpen)}
+                        aria-label="Abrir menú de categorías"
+                        aria-expanded={isMenuOpen}
                     >
-                        <div className="bar"></div>
-                        <div className="bar"></div>
-                        <div className="bar"></div>
+                        <div className={`bar ${isMenuOpen ? 'open' : ''}`}></div>
+                        <div className={`bar ${isMenuOpen ? 'open' : ''}`}></div>
+                        <div className={`bar ${isMenuOpen ? 'open' : ''}`}></div>
                     </button>
 
+                    {/* Lista de categorías: pills en desktop, dropdown en mobile */}
                     <ul className={`menu-list ${isMenuOpen ? 'open' : ''}`}>
                         {categories.map(category => (
                             <li key={category} className="menu-item">
@@ -380,6 +425,18 @@ function MainApp() {
                             </ul>
                         )}
                     </div>
+
+                    {/* ✅ Botón del carrito */}
+                    <button 
+                        className="cart-nav-btn" 
+                        onClick={() => setIsCartOpen(true)}
+                        aria-label="Abrir carrito"
+                    >
+                        <FontAwesomeIcon icon={faShoppingCart} />
+                        {getCartTotalItems() > 0 && (
+                            <span className="cart-badge">{getCartTotalItems()}</span>
+                        )}
+                    </button>
                 </div>
             </nav>
 
@@ -415,14 +472,21 @@ function MainApp() {
 
 
 
+            <HeroBanner
+                onCTAClick={() => {
+                    const catalog = document.querySelector('.catalog-container');
+                    if (catalog) catalog.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }}
+            />
+
             <main>
                 <Catalog
-                    bags={currentItemsOnPage} // ✅ PASO 5: PASAR SOLO LOS ITEMS DE LA PÁGINA ACTUAL
+                    bags={currentItemsOnPage}
                     openModal={openModal}
                     selectedCategory={selectedCategory}
+                    addToCart={addToCart} // ✅ Pasar función
                 />
 
-                {/* ✅ PASO 6: AÑADIR EL COMPONENTE DE PAGINACIÓN */}
                 <Pagination
                     currentPage={currentPage}
                     totalPages={totalPages}
@@ -432,6 +496,15 @@ function MainApp() {
             </main>
 
             {modalImage && <ImageModal src={modalImage.src} alt={modalImage.alt} images={modalImage.images} initialIndex={modalImage.index} closeModal={closeModal} />}
+
+            {/* ✅ Componente del Carrito */}
+            <Cart 
+                isOpen={isCartOpen}
+                onClose={() => setIsCartOpen(false)}
+                cartItems={cartItems}
+                removeFromCart={removeFromCart}
+                updateQuantity={updateCartQuantity}
+            />
 
             <Footer />
         </div>

@@ -162,13 +162,33 @@
 
 .product-category {
   font-size: 0.95rem;
-  /* ✅ Aumentado de 0.85rem a 0.95rem */
   color: var(--primary-gray);
   text-transform: uppercase;
   letter-spacing: 1px;
   margin: 0;
   text-align: center;
 }
+
+/* Badge flotante de categoría sobre la imagen */
+.product-category-badge {
+  position: absolute;
+  bottom: 14px;
+  left: 14px;
+  background: rgba(255, 255, 255, 0.92);
+  color: #5a4a3a;
+  font-family: 'Montserrat', sans-serif;
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  padding: 4px 10px;
+  border-radius: 20px;
+  backdrop-filter: blur(8px);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+  z-index: 3;
+  pointer-events: none;
+}
+
 
 /* Botones de navegación de imágenes - ✅ TAMAÑO AUMENTADO */
 .image-nav-btn {

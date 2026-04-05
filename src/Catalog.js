@@ -100,7 +100,7 @@ const SafeProductImage = ({ src, alt, className, style, onClick, onError, ...pro
 
 
 // --- Componente Catalog ---
-function Catalog({ bags, openModal, selectedCategory }) {
+function Catalog({ bags, openModal, selectedCategory, addToCart }) {
   const [currentImageIndexes, setCurrentImageIndexes] = useState({});
   /* const { preloadProgress } = useImagePreloader(bags); - Removed for performance */
   const [sortOrder, setSortOrder] = useState('default');
@@ -362,9 +362,43 @@ function Catalog({ bags, openModal, selectedCategory }) {
 
 
       {sortedAndFilteredBags.length === 0 ? (
-        <div style={{ textAlign: 'center', padding: '3rem', color: '#666', fontSize: '1.2rem' }}>
-          <div style={{ fontSize: '3rem', marginBottom: '1rem', opacity: 0.5 }}>🛍️</div>
-          <p>No hay productos disponibles para esta selección.</p>
+        <div style={{
+          textAlign: 'center',
+          padding: '5rem 2rem',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          gap: '1.5rem'
+        }}>
+          {/* Ilustración SVG minimalista */}
+          <svg width="120" height="120" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ opacity: 0.35 }}>
+            <circle cx="60" cy="60" r="56" stroke="#c4a265" strokeWidth="2" strokeDasharray="8 4"/>
+            <path d="M38 48h44l-6 34H44L38 48z" stroke="#c4a265" strokeWidth="2" strokeLinejoin="round" fill="none"/>
+            <path d="M48 48c0-6.627 5.373-12 12-12s12 5.373 12 12" stroke="#c4a265" strokeWidth="2" strokeLinecap="round" fill="none"/>
+            <circle cx="52" cy="68" r="2.5" fill="#c4a265"/>
+            <circle cx="68" cy="68" r="2.5" fill="#c4a265"/>
+          </svg>
+          <div>
+            <p style={{
+              fontFamily: "'Playfair Display', serif",
+              fontStyle: 'italic',
+              fontSize: '1.6rem',
+              color: '#5a4a3a',
+              margin: '0 0 0.5rem 0',
+              fontWeight: '400'
+            }}>
+              Sin productos disponibles
+            </p>
+            <p style={{
+              fontFamily: "'Montserrat', sans-serif",
+              fontSize: '0.9rem',
+              color: '#9a8a7a',
+              margin: 0,
+              letterSpacing: '0.3px'
+            }}>
+              Probá cambiando la categoría o el filtro seleccionado.
+            </p>
+          </div>
         </div>
       ) : (
         <div className="catalog-grid">
@@ -405,13 +439,6 @@ function Catalog({ bags, openModal, selectedCategory }) {
 
             return (
               <div key={bag.id} className="product-card">
-                {/* Category above image */}
-                {bag.category && (
-                  <p className="product-category" style={{ marginTop: '0', marginBottom: '8px', textAlign: 'center' }}>
-                    {bag.category}
-                  </p>
-                )}
-
                 <div
                   className="product-image-container"
                   onTouchStart={handleTouchStart}
@@ -425,6 +452,13 @@ function Catalog({ bags, openModal, selectedCategory }) {
                     loading={index < 4 ? "eager" : "lazy"}
                     onClick={() => currentImage && openModal(currentImage, bag.name, allImages, currentIndex)}
                   />
+
+                  {/* Categoria como badge flotante abajo-izquierda */}
+                  {bag.category && (
+                    <span className="product-category-badge">
+                      {bag.category}
+                    </span>
+                  )}
 
                   {/* Badges Overlay */}
                   <div className="product-badges" style={{ position: 'absolute', top: '10px', left: '10px', display: 'flex', flexDirection: 'column', gap: '5px', zIndex: 2 }}>
@@ -528,40 +562,47 @@ function Catalog({ bags, openModal, selectedCategory }) {
                     </div>
                   )}
 
-                  {/* Botón de Comprar por WhatsApp */}
-                  <a
-                    href={`https://wa.me/5493874423595?text=Hola!%20Me%20interesa%20comprar%20el%20producto:%20*${encodeURIComponent(bag.name)}*`}
-                    target="_blank"
-                    rel="noopener noreferrer"
+                  {/* Botón Añadir al carrito */}
+                  <button
+                    onClick={() => addToCart(bag)}
+                    disabled={!isInStock}
                     style={{
-                      display: 'block',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '8px',
                       width: 'calc(100% + 4rem)',
                       marginLeft: '-2rem',
                       marginRight: '-2rem',
                       marginTop: '1.5rem',
                       padding: '0.8rem 2rem',
-                      background: 'linear-gradient(135deg, #25D366 0%, #128C7E 100%)',
-                      color: 'white',
+                      background: isInStock ? 'linear-gradient(135deg, #25D366 0%, #128C7E 100%)' : '#e0e0e0',
+                      color: isInStock ? 'white' : '#999',
+                      border: 'none',
                       textAlign: 'center',
                       borderRadius: '0 0 12px 12px',
                       boxSizing: 'border-box',
-                      textDecoration: 'none',
                       fontWeight: '600',
                       fontSize: '0.95rem',
+                      cursor: isInStock ? 'pointer' : 'not-allowed',
                       transition: 'all 0.3s ease',
-                      boxShadow: '0 2px 8px rgba(37, 211, 102, 0.3)'
+                      boxShadow: isInStock ? '0 2px 8px rgba(37, 211, 102, 0.3)' : 'none'
                     }}
                     onMouseEnter={(e) => {
-                      e.currentTarget.style.transform = 'translateY(-2px)';
-                      e.currentTarget.style.boxShadow = '0 4px 12px rgba(37, 211, 102, 0.4)';
+                      if (isInStock) {
+                        e.currentTarget.style.transform = 'translateY(-2px)';
+                        e.currentTarget.style.boxShadow = '0 4px 12px rgba(37, 211, 102, 0.4)';
+                      }
                     }}
                     onMouseLeave={(e) => {
-                      e.currentTarget.style.transform = 'translateY(0)';
-                      e.currentTarget.style.boxShadow = '0 2px 8px rgba(37, 211, 102, 0.3)';
+                      if (isInStock) {
+                        e.currentTarget.style.transform = 'translateY(0)';
+                        e.currentTarget.style.boxShadow = '0 2px 8px rgba(37, 211, 102, 0.3)';
+                      }
                     }}
                   >
-                    💬 Comprar por WhatsApp
-                  </a>
+                    🛒 {isInStock ? 'Agregar al carrito' : 'Sin stock'}
+                  </button>
                 </div>
               </div>
             );

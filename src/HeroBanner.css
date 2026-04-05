@@ -1,0 +1,187 @@
+/* ============================================================
+   HERO BANNER — Piuma
+   ============================================================ */
+
+.hero-banner {
+  position: relative;
+  background: linear-gradient(135deg, #f9f7f4 0%, #ede9db 60%, #e0dbc9 100%);
+  padding: 4rem 2rem 4.5rem;
+  overflow: hidden;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+/* Patrón de fondo sutil (grid de puntos) */
+.hero-bg-pattern {
+  position: absolute;
+  inset: 0;
+  background-image: radial-gradient(circle, rgba(196, 162, 101, 0.18) 1px, transparent 1px);
+  background-size: 28px 28px;
+  pointer-events: none;
+}
+
+/* Contenido centrado */
+.hero-content {
+  position: relative;
+  z-index: 2;
+  max-width: 680px;
+  margin: 0 auto;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.1rem;
+}
+
+/* Línea dorada decorativa */
+.hero-line {
+  width: 48px;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, #c4a265, transparent);
+  border-radius: 2px;
+  margin-bottom: 0.25rem;
+}
+
+/* Eyebrow tag */
+.hero-eyebrow {
+  font-family: 'Montserrat', sans-serif;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: #c4a265;
+  margin: 0;
+}
+
+/* Título principal */
+.hero-title {
+  font-family: 'Playfair Display', serif;
+  font-size: clamp(2rem, 5vw, 3.2rem);
+  font-weight: 400;
+  color: #3a2e20;
+  line-height: 1.2;
+  margin: 0;
+}
+
+.hero-title em {
+  font-style: italic;
+  color: #8a6a30;
+}
+
+/* Subtítulo */
+.hero-subtitle {
+  font-family: 'Montserrat', sans-serif;
+  font-size: 1rem;
+  color: #7a6a5a;
+  line-height: 1.65;
+  margin: 0;
+  max-width: 480px;
+}
+
+/* Botones CTA */
+.hero-actions {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin-top: 0.5rem;
+}
+
+.hero-cta-primary {
+  font-family: 'Montserrat', sans-serif;
+  font-size: 0.88rem;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  padding: 0.75rem 2rem;
+  border-radius: 50px;
+  border: none;
+  background: linear-gradient(135deg, #c4a265 0%, #d4af37 100%);
+  color: white;
+  cursor: pointer;
+  box-shadow: 0 4px 16px rgba(196, 162, 101, 0.4);
+  transition: all 0.3s ease;
+}
+
+.hero-cta-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(196, 162, 101, 0.5);
+}
+
+.hero-cta-secondary {
+  font-family: 'Montserrat', sans-serif;
+  font-size: 0.88rem;
+  font-weight: 500;
+  padding: 0.75rem 1.75rem;
+  border-radius: 50px;
+  border: 1.5px solid rgba(196, 162, 101, 0.5);
+  color: #8a6a30;
+  text-decoration: none;
+  background: transparent;
+  transition: all 0.3s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.hero-cta-secondary:hover {
+  background: rgba(196, 162, 101, 0.1);
+  border-color: #c4a265;
+  transform: translateY(-2px);
+}
+
+/* Elementos decorativos flotantes */
+.hero-deco {
+  position: absolute;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(212, 175, 55, 0.12), transparent 70%);
+  pointer-events: none;
+}
+
+.hero-deco-1 {
+  width: 300px;
+  height: 300px;
+  top: -100px;
+  right: -80px;
+}
+
+.hero-deco-2 {
+  width: 200px;
+  height: 200px;
+  bottom: -60px;
+  left: -50px;
+  background: radial-gradient(circle, rgba(196, 162, 101, 0.1), transparent 70%);
+}
+
+.hero-deco-3 {
+  width: 120px;
+  height: 120px;
+  top: 30px;
+  left: 10%;
+  background: radial-gradient(circle, rgba(212, 175, 55, 0.08), transparent 70%);
+}
+
+/* Responsive */
+@media (max-width: 600px) {
+  .hero-banner {
+    padding: 3rem 1.5rem 3.5rem;
+  }
+
+  .hero-title {
+    font-size: 2.2rem;
+  }
+
+  .hero-actions {
+    flex-direction: column;
+    width: 100%;
+    gap: 1rem;
+    align-items: center;
+  }
+
+  .hero-cta-primary,
+  .hero-cta-secondary {
+    width: 100%;
+    max-width: 320px; /* Evita que queden excesivamente anchos en formato tablet chicas o phones grandes */
+    box-sizing: border-box; /* Fundamental para que el padding no rompa el width 100% y desborde la pantalla */
+    justify-content: center;
+    text-align: center;
+  }
+}
